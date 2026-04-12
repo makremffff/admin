@@ -323,17 +323,55 @@ hr.sep{border:none;border-top:1px solid var(--bdr);margin:11px 0}
 
     <!-- TASKS -->
     <div class="page" id="p-tasks">
-      <div class="topbar"><div><h2>إدارة التاسك</h2><div class="sub">إضافة وحذف مهام</div></div></div>
+      <div class="topbar"><div><h2>إدارة التاسك</h2><div class="sub">إضافة وحذف مهام — جدول tasks الرئيسي</div></div></div>
 
       <div class="tform">
         <h3>➕ مهمة جديدة</h3>
-        <div class="fg"><label class="fl">اسم المهمة *</label><input class="fi" id="tn" placeholder="انضم لقناتنا" /></div>
+
+        <!-- اسم + نوع -->
         <div class="frow">
-          <div class="fg"><label class="fl">أيقونة (Emoji)</label><input class="fi" id="ti" placeholder="📢" maxlength="4" /></div>
-          <div class="fg"><label class="fl">الجائزة (TON) *</label><input class="fi" id="tr" type="number" step="0.001" placeholder="0.05" /></div>
+          <div class="fg" style="flex:2">
+            <label class="fl">اسم المهمة *</label>
+            <input class="fi" id="tn" placeholder="انضم لقناتنا" />
+          </div>
+          <div class="fg">
+            <label class="fl">نوع المهمة *</label>
+            <select class="fi" id="tt" onchange="onTypeChange()">
+              <option value="channel">📢 Channel</option>
+              <option value="url">🔗 URL</option>
+            </select>
+          </div>
         </div>
-        <div class="fg"><label class="fl">الرابط * (t.me يُكتشف تلقائياً كـ Telegram)</label><input class="fi" id="tu" placeholder="https://t.me/..." /></div>
-        <div class="fg"><label class="fl">وصف (اختياري)</label><input class="fi" id="td" placeholder="..." /></div>
+
+        <!-- أيقونة + جائزة -->
+        <div class="frow">
+          <div class="fg">
+            <label class="fl">أيقونة (Emoji)</label>
+            <input class="fi" id="ti" placeholder="📢" maxlength="4" />
+          </div>
+          <div class="fg">
+            <label class="fl">الجائزة (TON) *</label>
+            <input class="fi" id="tr" type="number" step="0.001" placeholder="0.005" />
+          </div>
+        </div>
+
+        <!-- حقل القناة (channel) -->
+        <div class="fg" id="field-channel">
+          <label class="fl">يوزرنيم القناة * (بدون @)</label>
+          <input class="fi" id="tch" placeholder="my_channel" />
+        </div>
+
+        <!-- حقل الرابط (url) -->
+        <div class="fg" id="field-url" style="display:none">
+          <label class="fl">الرابط الكامل *</label>
+          <input class="fi" id="tu" placeholder="https://example.com" />
+        </div>
+
+        <div class="fg">
+          <label class="fl">وصف (اختياري)</label>
+          <input class="fi" id="td" placeholder="..." />
+        </div>
+
         <button class="btn btn-g btn-full" style="margin-top:4px" onclick="addTask()">إضافة المهمة</button>
       </div>
 
@@ -344,7 +382,7 @@ hr.sep{border:none;border-top:1px solid var(--bdr);margin:11px 0}
 
       <div class="jbox">
         <div class="jhead">
-          <span>JSON — الصق في index.html</span>
+          <span>JSON — عرض المهام</span>
           <button class="btn btn-gh btn-sm" onclick="copyJson()">📋 نسخ</button>
         </div>
         <textarea id="tj" readonly></textarea>
@@ -632,69 +670,107 @@ async function resolveWD(tid, idx, verdict) {
 async function loadTasks() {
   try {
     const r = await api('get_tasks');
-    if(r.ok){ tasks=r.tasks||[]; renderTasks(); }
-  } catch(_) {
-    const s = localStorage.getItem('atasks');
-    tasks = s ? JSON.parse(s) : [];
-    renderTasks();
-  }
+    if (r.ok) { tasks = r.tasks || []; renderTasks(); }
+    else toast('⚠️ ' + r.error, true);
+  } catch(e) { toast('❌ فشل تحميل المهام', true); }
+}
+
+function onTypeChange() {
+  const type = document.getElementById('tt').value;
+  document.getElementById('field-channel').style.display = type === 'channel' ? '' : 'none';
+  document.getElementById('field-url').style.display     = type === 'url'     ? '' : 'none';
 }
 
 function renderTasks() {
   document.getElementById('tc').textContent = tasks.length;
   const tl = document.getElementById('tl');
-  if(!tasks.length){
+  if (!tasks.length) {
     tl.innerHTML = `<div class="lrow" style="color:var(--muted)">لا توجد مهام</div>`;
   } else {
     tl.innerHTML = tasks.map(t => {
-      const isTG = t.url&&(t.url.includes('t.me')||t.url.includes('telegram'));
-      return `<div class="tk">
-        <div class="tk-ic ${isTG?'tg':''}">${isTG?'✈️':(t.icon||'⭐')}</div>
+      const isChannel = t.task_type === 'channel';
+      const linkInfo  = isChannel
+        ? `@${t.channel || '—'}`
+        : (t.url || '—');
+      const typeBadge = isChannel
+        ? `<span style="color:var(--blue);font-size:9px;font-family:var(--mono)">📢 CHANNEL</span>`
+        : `<span style="color:var(--green);font-size:9px;font-family:var(--mono)">🔗 URL</span>`;
+      const activeStyle = t.is_active === false
+        ? 'opacity:.45'
+        : '';
+      return `<div class="tk" style="${activeStyle}">
+        <div class="tk-ic ${isChannel ? 'tg' : ''}">${t.icon || '⭐'}</div>
         <div class="tk-info">
-          <div class="tk-name">${t.name}</div>
-          <div class="tk-reward">+${t.reward} TON</div>
-          <div class="tk-url">${t.url}</div>
+          <div class="tk-name">${t.name} &nbsp; ${typeBadge}</div>
+          <div class="tk-reward">+${parseFloat(t.reward).toFixed(3)} TON</div>
+          <div class="tk-url">${linkInfo}</div>
         </div>
-        <button class="tk-del" onclick="deleteTask('${t.id}')">🗑️</button>
+        <button class="tk-del" title="حذف" onclick="deleteTask('${t.id}')">🗑️</button>
       </div>`;
     }).join('');
   }
   document.getElementById('tj').value = JSON.stringify(tasks, null, 2);
-  localStorage.setItem('atasks', JSON.stringify(tasks));
 }
 
 async function addTask() {
-  const name = document.getElementById('tn').value.trim();
-  const icon = document.getElementById('ti').value.trim() || '⭐';
+  const name  = document.getElementById('tn').value.trim();
+  const icon  = document.getElementById('ti').value.trim();   // لا نستبدل — نأخذها كما هي
   const reward = parseFloat(document.getElementById('tr').value);
-  const url = document.getElementById('tu').value.trim();
-  const desc = document.getElementById('td').value.trim();
-  if(!name||!url||isNaN(reward)){ toast('⚠️ يرجى ملء الحقول المطلوبة', true); return; }
+  const type  = document.getElementById('tt').value;           // 'channel' | 'url'
+  const channel = document.getElementById('tch').value.trim().replace('@','');
+  const url   = document.getElementById('tu').value.trim();
+  const desc  = document.getElementById('td').value.trim();
 
-  const isTG = url.includes('t.me')||url.includes('telegram');
-  const task = { id:'t'+Date.now(), icon:isTG?'✈️':icon, name, reward,
-    task_type: isTG?'channel':'url', url, description:desc };
+  // Validation
+  if (!name)          { toast('⚠️ اسم المهمة مطلوب', true); return; }
+  if (isNaN(reward))  { toast('⚠️ الجائزة مطلوبة', true); return; }
+  if (type === 'channel' && !channel) { toast('⚠️ يوزرنيم القناة مطلوب', true); return; }
+  if (type === 'url'     && !url)     { toast('⚠️ الرابط مطلوب', true); return; }
+
+  // توليد id نظيف من الاسم
+  const rawId = name.toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_أ-ي]/g, '')
+    .slice(0, 32) + '_' + Date.now().toString().slice(-5);
+
+  const task = {
+    id:          rawId,
+    icon:        icon || (type === 'channel' ? '📢' : '🔗'),  // افتراضي حسب النوع فقط إذا فارغة
+    name,
+    reward,
+    task_type:   type,
+    url:         type === 'url'     ? url     : null,
+    channel:     type === 'channel' ? channel : null,
+    description: desc,
+    is_active:   true,
+  };
 
   try {
-    await api('add_task', task);
-  } catch(_) {}
+    const r = await api('add_task', task);
+    if (!r.ok) { toast('❌ ' + (r.error || 'فشل الإضافة'), true); return; }
+  } catch(e) { toast('❌ خطأ في الاتصال', true); return; }
 
   tasks.push(task);
   renderTasks();
-  ['tn','ti','tr','tu','td'].forEach(id => document.getElementById(id).value='');
-  toast('✅ تمت الإضافة');
+  // تنظيف الحقول
+  ['tn','ti','tr','tch','tu','td'].forEach(id => document.getElementById(id).value = '');
+  toast('✅ تمت الإضافة في جدول tasks');
 }
 
 async function deleteTask(id) {
-  try { await api('delete_task', { id }); } catch(_) {}
-  tasks = tasks.filter(t => t.id!==id);
+  if (!confirm('حذف المهمة؟ سيُحذف أيضاً سجل إنجازات المستخدمين لها.')) return;
+  try {
+    const r = await api('delete_task', { id });
+    if (!r.ok) { toast('❌ ' + r.error, true); return; }
+  } catch(e) { toast('❌ خطأ', true); return; }
+  tasks = tasks.filter(t => t.id !== id);
   renderTasks();
   toast('🗑️ تم الحذف');
 }
 
 function copyJson() {
   navigator.clipboard.writeText(document.getElementById('tj').value)
-    .then(()=>toast('📋 تم النسخ'));
+    .then(() => toast('📋 تم النسخ'));
 }
 
 // ══════════════════════════════════════
