@@ -228,41 +228,60 @@ module.exports = async (req, res) => {
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  TASKS
+    //  TASKS — يستخدم جدول tasks الرئيسي (نفس جدول اللعبة)
     // ══════════════════════════════════════════════════════════════
     if (action === 'get_tasks') {
+      // bootstrap الجدول إذا لم يكن موجوداً
       await sql(`
-        CREATE TABLE IF NOT EXISTS admin_tasks (
-          id          TEXT PRIMARY KEY,
-          icon        TEXT NOT NULL DEFAULT '⭐',
-          name        TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS tasks (
+          id          TEXT          PRIMARY KEY,
+          icon        TEXT          NOT NULL DEFAULT '⭐',
+          name        TEXT          NOT NULL,
           reward      NUMERIC(18,6) NOT NULL DEFAULT 0,
-          task_type   TEXT NOT NULL DEFAULT 'channel',
-          url         TEXT NOT NULL,
-          description TEXT NOT NULL DEFAULT '',
-          created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          task_type   TEXT          NOT NULL DEFAULT 'url',
+          url         TEXT,
+          channel     TEXT,
+          description TEXT          NOT NULL DEFAULT '',
+          is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
+          sort_order  INT           NOT NULL DEFAULT 0,
+          created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
         )
       `);
-      const tasks = await sql(`SELECT * FROM admin_tasks ORDER BY created_at ASC`);
+      const tasks = await sql(`SELECT * FROM tasks ORDER BY sort_order ASC, created_at ASC`);
       return res.status(200).json({ ok: true, tasks });
     }
 
     if (action === 'add_task') {
-      const { id, icon, name, reward, task_type, url, description } = body;
-      if (!id || !name || !url) return res.status(400).json({ ok: false, error: 'Missing fields' });
+      const { id, icon, name, reward, task_type, url, channel, description } = body;
+      if (!id || !name) return res.status(400).json({ ok: false, error: 'Missing id or name' });
 
-      await sql(`
-        CREATE TABLE IF NOT EXISTS admin_tasks (
-          id TEXT PRIMARY KEY, icon TEXT, name TEXT, reward NUMERIC(18,6),
-          task_type TEXT, url TEXT, description TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
-        )
-      `);
+      // تحقق: channel task يحتاج channel، url task يحتاج url
+      if (task_type === 'channel' && !channel)
+        return res.status(400).json({ ok: false, error: 'channel task requires channel username' });
+      if (task_type === 'url' && !url)
+        return res.status(400).json({ ok: false, error: 'url task requires url' });
+
+      // sort_order = آخر قيمة + 1
+      const maxOrder = await sql(`SELECT COALESCE(MAX(sort_order),0) AS m FROM tasks`);
+      const nextOrder = parseInt(maxOrder[0]?.m || 0) + 1;
+
       await sql(
-        `INSERT INTO admin_tasks (id, icon, name, reward, task_type, url, description)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `INSERT INTO tasks (id, icon, name, reward, task_type, url, channel, description, sort_order)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
          ON CONFLICT (id) DO UPDATE SET
-           icon=$2, name=$3, reward=$4, task_type=$5, url=$6, description=$7`,
-        [id, icon || '⭐', name, parseFloat(reward || 0), task_type || 'channel', url, description || '']
+           icon=$2, name=$3, reward=$4, task_type=$5,
+           url=$6, channel=$7, description=$8`,
+        [
+          id,
+          icon || '⭐',
+          name,
+          parseFloat(reward || 0),
+          task_type || 'url',
+          task_type === 'url'     ? (url || null)     : null,
+          task_type === 'channel' ? (channel || null)  : null,
+          description || '',
+          nextOrder,
+        ]
       );
       return res.status(200).json({ ok: true });
     }
@@ -270,7 +289,16 @@ module.exports = async (req, res) => {
     if (action === 'delete_task') {
       const { id } = body;
       if (!id) return res.status(400).json({ ok: false, error: 'Missing id' });
-      await sql(`DELETE FROM admin_tasks WHERE id = $1`, [id]);
+      // أيضاً احذف إنجازات المستخدمين المرتبطة
+      await sql(`DELETE FROM user_tasks WHERE task_id = $1`, [id]).catch(() => {});
+      await sql(`DELETE FROM tasks WHERE id = $1`, [id]);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'toggle_task') {
+      const { id, is_active } = body;
+      if (!id) return res.status(400).json({ ok: false, error: 'Missing id' });
+      await sql(`UPDATE tasks SET is_active = $2 WHERE id = $1`, [id, Boolean(is_active)]);
       return res.status(200).json({ ok: true });
     }
 
