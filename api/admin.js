@@ -7,7 +7,7 @@
 const { neon } = require('@neondatabase/serverless');
 
 // ══ ضع قيمك هنا مباشرة ══
-const DATABASE_URL  = postgresql://neondb_owner:npg_yDcoKb86gOju@ep-still-band-an84kg60-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require;
+const DATABASE_URL = process.env.DATABASE_URL;
 const ADMIN_SECRET  = 'admin-secret-key-2025';          // ← مفتاح سري بينك وبين admin.html
 
 // ── SQL executor ─────────────────────────────────────────────────
