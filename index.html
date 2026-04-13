@@ -3,273 +3,990 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🍅 Admin — Tomato Farm</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<title>Tomato Farm — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS — 8px Grid System
+═══════════════════════════════════════════ */
 :root {
-  --bg:    #070d09; --surf:  #0d1610; --card:  #101910;
-  --bdr:   rgba(94,207,136,.11); --bdr2: rgba(94,207,136,.22);
-  --green: #5ecf88; --gdim:  rgba(94,207,136,.08);
-  --gold:  #f5c63e; --qdim:  rgba(245,198,62,.08);
-  --red:   #e05050; --rdim:  rgba(224,80,80,.08);
-  --blue:  #4ab6e6;
-  --text:  #d0eedd; --dim:   rgba(208,238,221,.45); --muted: rgba(208,238,221,.22);
-  --mono: 'IBM Plex Mono', monospace; --sans: 'Tajawal', sans-serif;
-  --nb: 62px;
+  /* Surfaces */
+  --bg:      #050b07;
+  --surf-1:  #080f0a;
+  --surf-2:  #0c1510;
+  --surf-3:  #111d14;
+  --surf-4:  #162219;
+
+  /* Borders */
+  --bdr-1:   rgba(80,200,120,.07);
+  --bdr-2:   rgba(80,200,120,.14);
+  --bdr-3:   rgba(80,200,120,.24);
+
+  /* Brand */
+  --green:   #4ecb7a;
+  --green-d: #3aad64;
+  --green-g: rgba(78,203,122,.06);
+  --green-g2:rgba(78,203,122,.12);
+  --glow:    0 0 20px rgba(78,203,122,.18);
+
+  /* Accents */
+  --gold:    #f0c040;
+  --gold-g:  rgba(240,192,64,.06);
+  --red:     #e05555;
+  --red-g:   rgba(224,85,85,.07);
+  --blue:    #4ab4e8;
+  --blue-g:  rgba(74,180,232,.06);
+  --purple:  #9b7aff;
+
+  /* Text */
+  --t1: #cce8d8;
+  --t2: rgba(204,232,216,.62);
+  --t3: rgba(204,232,216,.35);
+  --t4: rgba(204,232,216,.18);
+
+  /* Type */
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Tajawal', sans-serif;
+
+  /* Spacing (8px grid) */
+  --s1: 4px;  --s2: 8px;   --s3: 12px;
+  --s4: 16px; --s5: 20px;  --s6: 24px;
+  --s7: 32px; --s8: 40px;  --s9: 48px;
+
+  /* Radii */
+  --r1: 6px; --r2: 10px; --r3: 14px; --r4: 20px;
+
+  /* Nav */
+  --nb: 64px;
+  --sb: 220px;
+
+  /* Transitions */
+  --t-fast: .12s ease;
+  --t-base: .2s ease;
+  --t-slow: .35s ease;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;font-family:var(--sans);color:var(--text);background:var(--bg);overflow:hidden}
-body::before{content:'';position:fixed;inset:0;
-  background-image:linear-gradient(rgba(94,207,136,.012) 1px,transparent 1px),
-                   linear-gradient(90deg,rgba(94,207,136,.012) 1px,transparent 1px);
-  background-size:28px 28px;pointer-events:none;z-index:0}
 
-/* LOGIN */
-#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9000}
-.lbox{background:var(--card);border:1px solid var(--bdr2);border-radius:18px;padding:36px 28px;width:320px;text-align:center}
-.lbox .logo{font-size:46px;margin-bottom:10px}
-.lbox h2{font-family:var(--mono);color:var(--green);font-size:15px;letter-spacing:.08em;margin-bottom:4px}
-.lbox p{color:var(--muted);font-size:11px;font-family:var(--mono);margin-bottom:24px}
-.lbox input{width:100%;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;
-  padding:12px 14px;color:var(--text);font-family:var(--mono);font-size:16px;text-align:center;
-  outline:none;letter-spacing:.2em;margin-bottom:14px;transition:border-color .2s}
-.lbox input:focus{border-color:var(--green)}
-.lerr{color:var(--red);font-family:var(--mono);font-size:11px;margin-top:8px;display:none}
-
-/* LAYOUT */
-#app{display:flex;height:100vh;position:relative;z-index:1}
-
-/* SIDEBAR */
-#sidebar{width:210px;flex-shrink:0;background:var(--surf);border-left:1px solid var(--bdr);
-  display:flex;flex-direction:column;height:100vh;overflow-y:auto}
-.sb-logo{padding:20px 16px 16px;border-bottom:1px solid var(--bdr)}
-.sb-logo .em{font-size:26px}
-.sb-logo h1{font-family:var(--mono);font-size:12px;color:var(--green);letter-spacing:.07em;margin-top:5px;text-transform:uppercase}
-.sb-logo small{font-family:var(--mono);font-size:9px;color:var(--muted)}
-nav{flex:1;padding:10px 0}
-.ns{padding:4px 12px;font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase;margin-top:10px}
-.ni{display:flex;align-items:center;gap:9px;padding:9px 14px;cursor:pointer;color:var(--dim);
-  font-size:14px;font-weight:500;transition:all .16s;border-right:2px solid transparent;margin:1px 0}
-.ni:hover{background:var(--gdim);color:var(--text)}
-.ni.act{background:var(--gdim);color:var(--green);border-right-color:var(--green)}
-.ni .ic{font-size:16px;width:20px;text-align:center;flex-shrink:0}
-.ni .badge{margin-right:auto;background:var(--red);color:#fff;font-size:9px;
-  font-family:var(--mono);padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
-.sb-foot{padding:12px 14px;border-top:1px solid var(--bdr);font-family:var(--mono);font-size:9px;color:var(--muted)}
-.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);
-  margin-left:5px;animation:bl 2s infinite}
-@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
-
-/* MAIN */
-#main{flex:1;overflow-y:auto;overflow-x:hidden;height:100vh}
-.page{display:none;padding:22px 20px 120px}
-.page.act{display:block}
-
-/* TOPBAR */
-.topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:10px;flex-wrap:wrap}
-.topbar h2{font-family:var(--mono);font-size:16px;color:var(--green);letter-spacing:.04em}
-.topbar .sub{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
-
-/* STATS */
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:18px}
-.sc{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:13px 15px;position:relative;overflow:hidden}
-.sc::after{content:'';position:absolute;top:0;right:0;width:3px;height:100%;background:var(--green);opacity:.5}
-.sc.gold::after{background:var(--gold)}.sc.red::after{background:var(--red)}.sc.blue::after{background:var(--blue)}
-.sl{font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
-.sv{font-family:var(--mono);font-size:21px;font-weight:700;color:var(--text)}
-.sv.g{color:var(--green)}.sv.q{color:var(--gold)}.sv.r{color:var(--red)}.sv.b{color:var(--blue)}
-
-/* BUTTONS */
-.btn{padding:8px 15px;border-radius:8px;border:none;cursor:pointer;font-family:var(--sans);
-  font-size:13px;font-weight:700;transition:all .16s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.btn-g{background:var(--green);color:#071009}.btn-g:hover{background:#7adfa0}
-.btn-r{background:var(--red);color:#fff}.btn-r:hover{background:#f06060}
-.btn-gh{background:transparent;border:1px solid var(--bdr2);color:var(--dim)}
-.btn-gh:hover{border-color:var(--green);color:var(--green)}
-.btn-sm{padding:5px 10px;font-size:11px}
-.btn-full{width:100%;justify-content:center;padding:11px}
-
-/* SEARCH */
-.srow{display:flex;gap:8px;margin-bottom:14px}
-.srow input{flex:1;background:var(--card);border:1px solid var(--bdr);border-radius:8px;
-  padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .2s}
-.srow input:focus{border-color:var(--green)}
-.srow input::placeholder{color:var(--muted)}
-
-/* TABLE */
-.tw{background:var(--card);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;overflow-x:auto}
-.th{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--bdr)}
-.th span{font-family:var(--mono);font-size:11px;color:var(--dim)}
-table{width:100%;border-collapse:collapse;min-width:540px}
-thead th{text-align:right;padding:9px 12px;font-family:var(--mono);font-size:9px;
-  color:var(--muted);letter-spacing:.1em;text-transform:uppercase;background:var(--surf);
-  border-bottom:1px solid var(--bdr);white-space:nowrap}
-tbody tr{border-bottom:1px solid rgba(94,207,136,.04);transition:background .13s}
-tbody tr:hover{background:var(--gdim)}
-tbody td{padding:9px 12px;font-family:var(--mono);font-size:11px;white-space:nowrap}
-.tid{color:var(--muted)}.tname{color:var(--text);font-weight:600}.tbal{color:var(--gold)}
-.tr0{color:var(--green)}.tr1{color:var(--gold)}.tr2{color:var(--red)}
-.bban{background:rgba(224,80,80,.13);color:var(--red);border:1px solid rgba(224,80,80,.25);
-  padding:2px 7px;border-radius:4px;font-size:9px;font-family:var(--mono)}
-.bok{background:rgba(94,207,136,.09);color:var(--green);border:1px solid rgba(94,207,136,.18);
-  padding:2px 7px;border-radius:4px;font-size:9px;font-family:var(--mono)}
-
-/* MODAL */
-#ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;
-  align-items:flex-end;justify-content:center}
-#ov.open{display:flex}
-.modal{background:var(--card);border:1px solid var(--bdr2);border-radius:16px 16px 0 0;
-  width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:22px 18px 40px;
-  animation:su .24s ease;position:relative}
-@keyframes su{from{transform:translateY(28px);opacity:0}to{transform:translateY(0);opacity:1}}
-.mcl{position:absolute;top:14px;left:14px;background:none;border:none;
-  color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
-.mcl:hover{color:var(--red)}
-.mtitle{font-family:var(--mono);font-size:14px;color:var(--green);margin-bottom:16px;
-  padding-bottom:12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px}
-.fg{margin-bottom:13px}
-.fl{display:block;font-size:10px;color:var(--muted);font-family:var(--mono);
-  letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
-.fi{width:100%;background:var(--surf);border:1px solid var(--bdr);border-radius:7px;
-  padding:8px 11px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .2s}
-.fi:focus{border-color:var(--green)}
-select.fi{appearance:none;cursor:pointer}
-.frow{display:flex;gap:10px}.frow .fg{flex:1}
-.trow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--bdr)}
-.trow span{font-size:13px;font-weight:600}
-.tog{width:38px;height:21px;border-radius:11px;background:var(--surf);border:1px solid var(--bdr);
-  cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
-.tog.on{background:var(--green)}
-.tog::after{content:'';position:absolute;top:3px;right:3px;width:13px;height:13px;
-  border-radius:50%;background:#fff;transition:transform .2s}
-.tog.on::after{transform:translateX(-17px)}
-.mact{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
-
-/* REQUESTS */
-.rlist{display:flex;flex-direction:column;gap:10px}
-.rcard{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:14px 15px}
-.rcard-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.rav{width:38px;height:38px;border-radius:50%;background:var(--gdim);border:1px solid var(--bdr2);
-  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.rname{font-weight:700;font-size:14px;flex:1}
-.rmeta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
-.ramt{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--gold);white-space:nowrap}
-.rwallet{font-family:var(--mono);font-size:10px;color:var(--dim);
-  background:var(--surf);padding:4px 8px;border-radius:5px;word-break:break-all;margin-bottom:8px}
-.ract{display:flex;gap:7px}
-
-/* TASKS */
-.tform{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:16px;margin-bottom:14px}
-.tform h3{font-family:var(--mono);font-size:11px;color:var(--green);margin-bottom:14px;
-  padding-bottom:10px;border-bottom:1px solid var(--bdr);letter-spacing:.05em}
-.tcard-list{background:var(--card);border:1px solid var(--bdr);border-radius:10px;overflow:hidden}
-.tcard-list h3{font-family:var(--mono);font-size:11px;color:var(--green);
-  padding:12px 15px;border-bottom:1px solid var(--bdr);letter-spacing:.05em}
-
-/* Task card — شكل تيليغرام */
-.tk{display:flex;align-items:center;gap:11px;padding:11px 15px;
-  border-bottom:1px solid rgba(94,207,136,.04);transition:background .13s}
-.tk:hover{background:var(--gdim)}.tk:last-child{border-bottom:none}
-.tk-ic{width:44px;height:44px;border-radius:12px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:22px;
-  background:linear-gradient(135deg,#0d5f2a,#1a9e4e)}
-.tk-ic.tg{background:linear-gradient(135deg,#0077b6,#00b4d8)}
-.tk-info{flex:1;min-width:0}
-.tk-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tk-reward{font-family:var(--mono);font-size:11px;color:var(--gold);margin-top:2px}
-.tk-url{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tk-del{background:none;border:none;color:var(--muted);cursor:pointer;
-  font-size:18px;padding:4px;flex-shrink:0;transition:color .14s}
-.tk-del:hover{color:var(--red)}
-
-/* JSON */
-.jbox{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:13px 15px;margin-top:12px}
-.jhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.jhead span{font-family:var(--mono);font-size:10px;color:var(--dim)}
-.jbox textarea{width:100%;background:var(--surf);border:1px solid var(--bdr);border-radius:6px;
-  padding:8px 10px;color:var(--green);font-family:var(--mono);font-size:10px;
-  height:100px;outline:none;resize:none;direction:ltr}
-
-/* BOTTOM NAV */
-#bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nb);
-  background:var(--surf);border-top:1px solid var(--bdr);z-index:200;
-  display:none;align-items:stretch;justify-content:space-around}
-.bni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;color:var(--muted);font-size:9px;gap:3px;font-family:var(--mono);position:relative;
-  transition:color .15s}
-.bni .bic{font-size:24px}.bni.act{color:var(--green)}
-.bni .badge{position:absolute;top:6px;right:calc(50% - 20px);background:var(--red);
-  color:#fff;font-size:9px;padding:1px 5px;border-radius:10px}
-
-/* SPINNER */
-.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--bdr2);
-  border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-.lrow{text-align:center;padding:40px;color:var(--muted);font-family:var(--mono);font-size:12px}
-
-/* TOAST */
-#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(60px);
-  background:var(--card);border:1px solid var(--bdr2);border-radius:8px;
-  padding:10px 18px;font-family:var(--mono);font-size:12px;color:var(--green);
-  z-index:9999;transition:transform .27s ease;pointer-events:none;white-space:nowrap}
-#toast.show{transform:translateX(-50%) translateY(0)}
-#toast.err{color:var(--red);border-color:rgba(224,80,80,.3)}
-
-/* EMPTY */
-.empty{text-align:center;padding:50px 20px;color:var(--muted);font-family:var(--mono)}
-.empty .big{font-size:36px;margin-bottom:10px}.empty p{font-size:11px}
-
-hr.sep{border:none;border-top:1px solid var(--bdr);margin:11px 0}
-
-/* RESPONSIVE */
-@media(max-width:680px){
-  #sidebar{display:none}
-  #bnav{display:flex}
-  #main{height:calc(100vh - var(--nb))}
-  .page{padding:14px 12px 20px}
-  .frow{flex-direction:column;gap:0}
-  table{min-width:460px}
+/* ═══════════════════════════════════════════
+   SVG ICON SYSTEM
+═══════════════════════════════════════════ */
+.icon {
+  display: inline-block;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke var(--t-base), transform var(--t-base);
+  vertical-align: middle;
 }
-@media(min-width:681px){
-  #bnav{display:none!important}
-  #toast{bottom:24px}
+.icon-sm  { width: 14px; height: 14px; }
+.icon-md  { width: 18px; height: 18px; }
+.icon-lg  { width: 22px; height: 22px; }
+.icon-xl  { width: 28px; height: 28px; }
+
+/* Hover animation on interactive parents */
+button:hover .icon, a:hover .icon, .ni:hover .icon { transform: scale(1.1); }
+.tk-del:hover .icon { stroke: var(--red); transform: scale(1.15) rotate(8deg); }
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  height: 100%;
+  font-family: var(--sans);
+  color: var(--t1);
+  background: var(--bg);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(78,203,122,.008) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(78,203,122,.008) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none; z-index: 0;
+}
+
+/* Noise grain overlay */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: .4;
+}
+
+/* ═══════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════ */
+#login {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9000;
+}
+.lbox {
+  background: var(--surf-2);
+  border: 1px solid var(--bdr-2);
+  border-radius: var(--r4);
+  padding: var(--s8) var(--s7);
+  width: 340px;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6), 0 0 40px rgba(78,203,122,.06);
+  position: relative; z-index: 1;
+}
+.lbox-logo {
+  width: 64px; height: 64px;
+  margin: 0 auto var(--s4);
+  background: linear-gradient(135deg, #1a4a28, #2d8a4e);
+  border-radius: var(--r3);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--bdr-2);
+}
+.lbox h2 {
+  font-family: var(--mono); color: var(--green);
+  font-size: 13px; letter-spacing: .12em; margin-bottom: var(--s1);
+}
+.lbox p { color: var(--t3); font-size: 11px; font-family: var(--mono); margin-bottom: var(--s6); }
+.lbox input {
+  width: 100%;
+  background: var(--surf-1); border: 1px solid var(--bdr-2);
+  border-radius: var(--r2); padding: 13px var(--s4);
+  color: var(--t1); font-family: var(--mono); font-size: 16px;
+  text-align: center; outline: none; letter-spacing: .25em;
+  margin-bottom: var(--s3); transition: border-color var(--t-base), box-shadow var(--t-base);
+}
+.lbox input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(78,203,122,.12); }
+.lerr {
+  color: var(--red); font-family: var(--mono); font-size: 11px;
+  margin-top: var(--s2); display: none; align-items: center; gap: var(--s2);
+  justify-content: center;
+}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+#app { display: flex; height: 100vh; position: relative; z-index: 1; }
+
+/* ═══════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════ */
+#sidebar {
+  width: var(--sb); flex-shrink: 0;
+  background: var(--surf-1);
+  border-left: 1px solid var(--bdr-1);
+  display: flex; flex-direction: column; height: 100vh; overflow-y: auto;
+}
+.sb-logo {
+  padding: var(--s5) var(--s4) var(--s4);
+  border-bottom: 1px solid var(--bdr-1);
+  display: flex; align-items: center; gap: var(--s3);
+}
+.sb-logo-icon {
+  width: 40px; height: 40px; border-radius: var(--r2);
+  background: linear-gradient(135deg, #1a4a28, #2d8a4e);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--bdr-2); flex-shrink: 0;
+}
+.sb-logo-text h1 {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--green); letter-spacing: .07em; text-transform: uppercase;
+}
+.sb-logo-text small { font-family: var(--mono); font-size: 9px; color: var(--t4); }
+
+nav { flex: 1; padding: var(--s2) 0; }
+.ns {
+  padding: var(--s4) var(--s3) var(--s2);
+  font-size: 9px; color: var(--t4); font-family: var(--mono);
+  letter-spacing: .18em; text-transform: uppercase; margin-top: var(--s2);
+}
+.ni {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s3) var(--s4); cursor: pointer; color: var(--t2);
+  font-size: 14px; font-weight: 500;
+  transition: all var(--t-base);
+  border-right: 2px solid transparent; margin: 1px 0;
+  position: relative;
+}
+.ni:hover { background: var(--green-g); color: var(--t1); }
+.ni.act {
+  background: var(--green-g2); color: var(--green);
+  border-right-color: var(--green);
+}
+.ni .ni-ico { width: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ni .badge {
+  margin-right: auto;
+  background: var(--red); color: #fff;
+  font-size: 9px; font-family: var(--mono);
+  padding: 1px 6px; border-radius: 20px; min-width: 18px; text-align: center;
+}
+
+.sb-foot {
+  padding: var(--s3) var(--s4);
+  border-top: 1px solid var(--bdr-1);
+  font-family: var(--mono); font-size: 9px; color: var(--t3);
+  display: flex; align-items: center; gap: var(--s2);
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  animation: pulse 2.4s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(78,203,122,.4); }
+  50% { opacity: .7; box-shadow: 0 0 0 4px rgba(78,203,122,0); }
+}
+
+/* ═══════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════ */
+#main { flex: 1; overflow-y: auto; overflow-x: hidden; height: 100vh; }
+.page { display: none; padding: var(--s6) var(--s5) 120px; }
+.page.act { display: block; }
+
+/* ═══════════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════════ */
+.topbar {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--s5); gap: var(--s3); flex-wrap: wrap;
+}
+.topbar h2 { font-family: var(--mono); font-size: 17px; color: var(--green); letter-spacing: .04em; }
+.topbar .sub { font-size: 11px; color: var(--t3); margin-top: var(--s1); font-family: var(--mono); }
+
+/* ═══════════════════════════════════════════
+   STATS GRID
+═══════════════════════════════════════════ */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); margin-bottom: var(--s5); }
+.sc {
+  background: var(--surf-2);
+  border: 1px solid var(--bdr-1);
+  border-radius: var(--r3);
+  padding: var(--s4) var(--s5);
+  position: relative; overflow: hidden;
+  transition: border-color var(--t-base), box-shadow var(--t-base);
+}
+.sc:hover { border-color: var(--bdr-2); box-shadow: var(--glow); }
+.sc::before {
+  content: ''; position: absolute;
+  top: 0; right: 0; width: 3px; height: 100%;
+  background: var(--green); opacity: .5;
+  transition: opacity var(--t-base);
+}
+.sc:hover::before { opacity: .9; }
+.sc.gold::before { background: var(--gold); }
+.sc.red::before  { background: var(--red); }
+.sc.blue::before { background: var(--blue); }
+.sc-icon {
+  position: absolute; top: 12px; left: 12px;
+  opacity: .08;
+}
+.sl {
+  font-size: 9px; color: var(--t3); font-family: var(--mono);
+  letter-spacing: .1em; text-transform: uppercase; margin-bottom: var(--s2);
+}
+.sv {
+  font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--t1);
+  transition: color var(--t-base);
+}
+.sv.g { color: var(--green); }
+.sv.q { color: var(--gold); }
+.sv.r { color: var(--red); }
+.sv.b { color: var(--blue); }
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn {
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r2); border: none; cursor: pointer;
+  font-family: var(--sans); font-size: 13px; font-weight: 700;
+  transition: all var(--t-fast);
+  display: inline-flex; align-items: center; gap: var(--s2);
+  white-space: nowrap; position: relative; overflow: hidden;
+}
+.btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background var(--t-fast);
+}
+.btn:hover::after { background: rgba(255,255,255,.06); }
+.btn:active { transform: scale(.97); }
+
+.btn-g {
+  background: var(--green); color: #061209;
+  box-shadow: 0 4px 16px rgba(78,203,122,.25);
+}
+.btn-g:hover { background: #5dd98a; box-shadow: 0 6px 24px rgba(78,203,122,.35); }
+
+.btn-r {
+  background: var(--red); color: #fff;
+  box-shadow: 0 4px 16px rgba(224,85,85,.2);
+}
+.btn-r:hover { background: #f06565; }
+
+.btn-gh {
+  background: transparent;
+  border: 1px solid var(--bdr-2);
+  color: var(--t2);
+}
+.btn-gh:hover { border-color: var(--green); color: var(--green); }
+
+.btn-sm { padding: var(--s1) var(--s3); font-size: 11px; }
+.btn-full { width: 100%; justify-content: center; padding: 12px; }
+
+/* ═══════════════════════════════════════════
+   SEARCH ROW
+═══════════════════════════════════════════ */
+.srow { display: flex; gap: var(--s2); margin-bottom: var(--s4); }
+.srow input {
+  flex: 1;
+  background: var(--surf-2); border: 1px solid var(--bdr-2);
+  border-radius: var(--r2); padding: var(--s3) var(--s3);
+  color: var(--t1); font-family: var(--mono); font-size: 13px;
+  outline: none; transition: border-color var(--t-base), box-shadow var(--t-base);
+}
+.srow input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(78,203,122,.1); }
+.srow input::placeholder { color: var(--t4); }
+
+/* ═══════════════════════════════════════════
+   TABLE
+═══════════════════════════════════════════ */
+.tw {
+  background: var(--surf-2);
+  border: 1px solid var(--bdr-1);
+  border-radius: var(--r3); overflow: hidden; overflow-x: auto;
+}
+.th {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--s3) var(--s4); border-bottom: 1px solid var(--bdr-1);
+  background: var(--surf-3);
+}
+.th span { font-family: var(--mono); font-size: 11px; color: var(--t2); display: flex; align-items: center; gap: var(--s2); }
+table { width: 100%; border-collapse: collapse; min-width: 540px; }
+thead th {
+  text-align: right; padding: var(--s2) var(--s3);
+  font-family: var(--mono); font-size: 9px; color: var(--t4);
+  letter-spacing: .12em; text-transform: uppercase;
+  background: var(--surf-3); border-bottom: 1px solid var(--bdr-1);
+  white-space: nowrap;
+}
+tbody tr { border-bottom: 1px solid var(--bdr-1); transition: background var(--t-fast); }
+tbody tr:hover { background: var(--green-g); }
+tbody tr:last-child { border-bottom: none; }
+tbody td { padding: var(--s2) var(--s3); font-family: var(--mono); font-size: 11px; white-space: nowrap; }
+.tid { color: var(--t3); }
+.tname { color: var(--t1); font-weight: 600; }
+.tbal { color: var(--gold); }
+.tr0 { color: var(--green); }
+.tr1 { color: var(--gold); }
+.tr2 { color: var(--red); }
+.bban {
+  background: var(--red-g); color: var(--red);
+  border: 1px solid rgba(224,85,85,.2);
+  padding: 2px 8px; border-radius: 4px; font-size: 9px; font-family: var(--mono);
+}
+.bok {
+  background: var(--green-g2); color: var(--green);
+  border: 1px solid var(--bdr-2);
+  padding: 2px 8px; border-radius: 4px; font-size: 9px; font-family: var(--mono);
+}
+
+/* ═══════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════ */
+#ov {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.8); backdrop-filter: blur(4px);
+  z-index: 1000; align-items: flex-end; justify-content: center;
+}
+#ov.open { display: flex; }
+.modal {
+  background: var(--surf-2);
+  border: 1px solid var(--bdr-2);
+  border-radius: var(--r4) var(--r4) 0 0;
+  width: 100%; max-width: 520px; max-height: 90vh;
+  overflow-y: auto; padding: var(--s6) var(--s5) var(--s8);
+  animation: slide-up .24s ease;
+  position: relative;
+}
+@keyframes slide-up {
+  from { transform: translateY(32px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.mcl {
+  position: absolute; top: var(--s4); left: var(--s4);
+  background: var(--surf-3); border: 1px solid var(--bdr-1);
+  border-radius: var(--r1); width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t3); cursor: pointer;
+  transition: all var(--t-fast);
+}
+.mcl:hover { border-color: var(--red); color: var(--red); background: var(--red-g); }
+.mtitle {
+  font-family: var(--mono); font-size: 14px; color: var(--green);
+  margin-bottom: var(--s4); padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--bdr-1);
+  display: flex; align-items: center; gap: var(--s2);
+}
+
+/* ═══════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════ */
+.fg { margin-bottom: var(--s3); }
+.fl {
+  display: block; font-size: 10px; color: var(--t3); font-family: var(--mono);
+  letter-spacing: .08em; text-transform: uppercase; margin-bottom: var(--s1);
+}
+.fi {
+  width: 100%; background: var(--surf-3); border: 1px solid var(--bdr-2);
+  border-radius: var(--r2); padding: var(--s2) var(--s3);
+  color: var(--t1); font-family: var(--mono); font-size: 13px;
+  outline: none; transition: border-color var(--t-base), box-shadow var(--t-base);
+}
+.fi:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(78,203,122,.1); }
+.fi::placeholder { color: var(--t4); }
+.fi.err { border-color: var(--red); box-shadow: 0 0 0 3px rgba(224,85,85,.1); }
+.fi.ok  { border-color: var(--green); }
+
+select.fi { appearance: none; cursor: pointer; }
+.frow { display: flex; gap: var(--s3); }
+.frow .fg { flex: 1; }
+.trow {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: var(--s3) 0; border-bottom: 1px solid var(--bdr-1);
+}
+.trow span { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: var(--s2); }
+.tog {
+  width: 40px; height: 22px; border-radius: 11px;
+  background: var(--surf-4); border: 1px solid var(--bdr-2);
+  cursor: pointer; position: relative;
+  transition: background var(--t-base), border-color var(--t-base);
+  flex-shrink: 0;
+}
+.tog.on { background: var(--green); border-color: transparent; }
+.tog::after {
+  content: ''; position: absolute;
+  top: 3px; right: 3px; width: 14px; height: 14px;
+  border-radius: 50%; background: #fff;
+  transition: transform var(--t-base);
+  box-shadow: 0 1px 4px rgba(0,0,0,.3);
+}
+.tog.on::after { transform: translateX(-18px); }
+.mact { display: flex; gap: var(--s2); margin-top: var(--s4); flex-wrap: wrap; }
+
+/* ═══════════════════════════════════════════
+   INLINE VALIDATION
+═══════════════════════════════════════════ */
+.field-hint {
+  font-family: var(--mono); font-size: 10px;
+  margin-top: var(--s1);
+  display: none; align-items: center; gap: var(--s1);
+  transition: all var(--t-base);
+}
+.field-hint.show-err { display: flex; color: var(--red); }
+.field-hint.show-ok  { display: flex; color: var(--green); }
+
+/* ═══════════════════════════════════════════
+   REQUESTS
+═══════════════════════════════════════════ */
+.rlist { display: flex; flex-direction: column; gap: var(--s3); }
+.rcard {
+  background: var(--surf-2); border: 1px solid var(--bdr-1);
+  border-radius: var(--r3); padding: var(--s4) var(--s4);
+  transition: border-color var(--t-base);
+}
+.rcard:hover { border-color: var(--bdr-2); }
+.rcard-top { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s2); }
+.rav {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--green-g); border: 1px solid var(--bdr-2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--green); flex-shrink: 0;
+}
+.rname { font-weight: 700; font-size: 14px; flex: 1; }
+.rmeta { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 2px; }
+.ramt { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+.rwallet {
+  font-family: var(--mono); font-size: 10px; color: var(--t2);
+  background: var(--surf-3); padding: var(--s2) var(--s3);
+  border-radius: var(--r1); word-break: break-all; margin-bottom: var(--s2);
+  border: 1px solid var(--bdr-1);
+  display: flex; align-items: flex-start; gap: var(--s2);
+}
+.ract { display: flex; gap: var(--s2); }
+
+/* ═══════════════════════════════════════════
+   TASK CARDS — Telegram/Web3 Style
+═══════════════════════════════════════════ */
+.tform {
+  background: var(--surf-2); border: 1px solid var(--bdr-1);
+  border-radius: var(--r3); padding: var(--s5); margin-bottom: var(--s4);
+}
+.tform-title {
+  font-family: var(--mono); font-size: 11px; color: var(--green);
+  margin-bottom: var(--s4); padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--bdr-1); letter-spacing: .06em;
+  display: flex; align-items: center; gap: var(--s2);
+}
+.tcard-list {
+  background: var(--surf-2); border: 1px solid var(--bdr-1);
+  border-radius: var(--r3); overflow: hidden;
+}
+.tcard-list-header {
+  font-family: var(--mono); font-size: 11px; color: var(--green);
+  padding: var(--s3) var(--s4); border-bottom: 1px solid var(--bdr-1);
+  letter-spacing: .06em; background: var(--surf-3);
+  display: flex; align-items: center; gap: var(--s2);
+}
+
+.tk {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--bdr-1);
+  transition: background var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+  cursor: pointer;
+  position: relative;
+}
+.tk:hover { background: var(--green-g); transform: translateX(-2px); box-shadow: inset 3px 0 0 var(--green); }
+.tk:last-child { border-bottom: none; }
+.tk.invalid-card { opacity: .4; cursor: not-allowed; pointer-events: none; }
+.tk.invalid-card .tk-ic { filter: grayscale(1); }
+
+.tk-ic {
+  width: 48px; height: 48px; border-radius: var(--r2);
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #0d5a28, #1a9645);
+  border: 1px solid rgba(78,203,122,.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 0 12px rgba(78,203,122,.08);
+  transition: box-shadow var(--t-base), transform var(--t-base);
+  color: var(--green);
+}
+.tk:hover .tk-ic { box-shadow: 0 6px 20px rgba(0,0,0,.4), 0 0 16px rgba(78,203,122,.15); transform: translateY(-1px); }
+.tk-ic.tg {
+  background: linear-gradient(135deg, #0d4a7a, #1469ae);
+  border-color: rgba(74,180,232,.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 0 12px rgba(74,180,232,.08);
+}
+.tk:hover .tk-ic.tg { box-shadow: 0 6px 20px rgba(0,0,0,.4), 0 0 16px rgba(74,180,232,.15); }
+
+.tk-info { flex: 1; min-width: 0; }
+.tk-name {
+  font-size: 13px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; gap: var(--s2);
+}
+.tk-badge {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .06em;
+  padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
+}
+.tk-badge.ch { background: var(--blue-g); color: var(--blue); border: 1px solid rgba(74,180,232,.2); }
+.tk-badge.url { background: var(--green-g); color: var(--green); border: 1px solid var(--bdr-2); }
+
+.tk-reward { font-family: var(--mono); font-size: 11px; color: var(--gold); margin-top: 3px; }
+
+.tk-link {
+  font-family: var(--mono); font-size: 10px; color: var(--blue);
+  margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-decoration: none; display: block;
+  transition: color var(--t-fast);
+}
+.tk-link:hover { color: #7dd4f7; text-decoration: underline; }
+.tk-link.invalid { color: var(--t4); pointer-events: none; }
+
+.tk-del {
+  background: none; border: none;
+  color: var(--t4); cursor: pointer;
+  padding: var(--s2); flex-shrink: 0;
+  transition: color var(--t-fast);
+  border-radius: var(--r1);
+  display: flex; align-items: center; justify-content: center;
+}
+.tk-del:hover { color: var(--red); background: var(--red-g); }
+
+.tk-copy {
+  background: none; border: none;
+  color: var(--t4); cursor: pointer;
+  padding: var(--s2); flex-shrink: 0;
+  transition: color var(--t-fast), background var(--t-fast);
+  border-radius: var(--r1);
+  display: flex; align-items: center; justify-content: center;
+}
+.tk-copy:hover { color: var(--blue); background: var(--blue-g); }
+.tk-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+
+/* Smart Input */
+.smart-input-wrap {
+  position: relative;
+}
+.smart-input-prefix {
+  position: absolute; top: 50%; right: 11px;
+  transform: translateY(-50%);
+  font-family: var(--mono); font-size: 12px; color: var(--t4);
+  pointer-events: none; transition: color var(--t-base);
+  display: flex; align-items: center; gap: 6px;
+}
+.smart-input-prefix .prefix-badge {
+  font-size: 9px; padding: 1px 6px; border-radius: 4px;
+  border: 1px solid var(--bdr-2); color: var(--t3);
+  transition: all var(--t-base);
+}
+.smart-input-prefix .prefix-badge.tg { color: var(--blue); border-color: rgba(74,180,232,.3); background: var(--blue-g); }
+.smart-input-prefix .prefix-badge.url { color: var(--green); border-color: var(--bdr-2); background: var(--green-g); }
+.smart-input-prefix .prefix-badge.err-badge { color: var(--red); border-color: rgba(224,85,85,.3); background: var(--red-g); }
+.fi.has-prefix { padding-right: 90px; }
+
+/* JSON Box */
+.jbox {
+  background: var(--surf-2); border: 1px solid var(--bdr-1);
+  border-radius: var(--r3); padding: var(--s4) var(--s4); margin-top: var(--s3);
+}
+.jhead {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--s2);
+}
+.jhead span { font-family: var(--mono); font-size: 10px; color: var(--t2); }
+.jbox textarea {
+  width: 100%; background: var(--surf-3); border: 1px solid var(--bdr-1);
+  border-radius: var(--r1); padding: var(--s2) var(--s3);
+  color: var(--green); font-family: var(--mono); font-size: 10px;
+  height: 100px; outline: none; resize: none; direction: ltr;
+}
+
+/* ═══════════════════════════════════════════
+   BOTTOM NAV
+═══════════════════════════════════════════ */
+#bnav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: var(--nb);
+  background: rgba(8,15,10,.92); backdrop-filter: blur(12px);
+  border-top: 1px solid var(--bdr-1);
+  z-index: 200; display: none;
+  align-items: stretch; justify-content: space-around;
+}
+.bni {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; color: var(--t3);
+  font-size: 9px; gap: 3px; font-family: var(--mono);
+  position: relative; transition: color var(--t-base);
+}
+.bni .bic { color: var(--t3); transition: color var(--t-base), transform var(--t-base); }
+.bni:hover .bic { transform: translateY(-1px); }
+.bni.act { color: var(--green); }
+.bni.act .bic { color: var(--green); }
+.bni .badge {
+  position: absolute; top: 6px; right: calc(50% - 20px);
+  background: var(--red); color: #fff; font-size: 9px;
+  padding: 1px 5px; border-radius: 10px;
+}
+
+/* ═══════════════════════════════════════════
+   LOADING SKELETON
+═══════════════════════════════════════════ */
+.skel {
+  background: linear-gradient(90deg, var(--surf-3) 25%, var(--surf-4) 50%, var(--surf-3) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: var(--r1);
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+.skel-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s3); }
+.skel-av  { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+.skel-line { height: 10px; border-radius: 4px; }
+
+/* ═══════════════════════════════════════════
+   TOAST SYSTEM
+═══════════════════════════════════════════ */
+#toast-container {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999; display: flex;
+  flex-direction: column; gap: var(--s2);
+  align-items: center; pointer-events: none;
+  width: 300px;
+}
+.toast-item {
+  background: var(--surf-3);
+  border: 1px solid var(--bdr-2);
+  border-radius: var(--r2);
+  padding: var(--s2) var(--s4);
+  font-family: var(--mono); font-size: 12px;
+  color: var(--green);
+  display: flex; align-items: center; gap: var(--s2);
+  transform: translateY(20px); opacity: 0;
+  transition: transform .28s ease, opacity .28s ease;
+  white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+}
+.toast-item.show { transform: translateY(0); opacity: 1; }
+.toast-item.err  { color: var(--red); border-color: rgba(224,85,85,.3); }
+.toast-item.info { color: var(--blue); border-color: rgba(74,180,232,.3); }
+
+/* ═══════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════ */
+.empty-state {
+  text-align: center; padding: 56px var(--s5);
+  color: var(--t3); font-family: var(--mono);
+}
+.empty-state .es-icon {
+  width: 56px; height: 56px; margin: 0 auto var(--s4);
+  background: var(--surf-3); border: 1px solid var(--bdr-1);
+  border-radius: var(--r3);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t3);
+}
+.empty-state h3 { font-size: 13px; color: var(--t2); margin-bottom: var(--s1); }
+.empty-state p  { font-size: 11px; color: var(--t4); }
+
+/* ═══════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════ */
+.spin {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid var(--bdr-2); border-top-color: var(--green);
+  border-radius: 50%; animation: sp .7s linear infinite;
+}
+@keyframes sp { to { transform: rotate(360deg); } }
+.lrow {
+  text-align: center; padding: var(--s8);
+  color: var(--t3); font-family: var(--mono); font-size: 12px;
+}
+hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 680px) {
+  #sidebar { display: none; }
+  #bnav    { display: flex; }
+  #main    { height: calc(100vh - var(--nb)); }
+  .page    { padding: var(--s4) var(--s3) var(--s5); }
+  .frow    { flex-direction: column; gap: 0; }
+  table    { min-width: 460px; }
+  #toast-container { bottom: calc(var(--nb) + 12px); }
+}
+@media (min-width: 681px) {
+  #bnav           { display: none !important; }
+  #toast-container { bottom: 24px; }
 }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- ══════════════════════════════════════════
+  SVG DEFS — Inline Icon Sprites
+══════════════════════════════════════════ -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- dashboard -->
+    <symbol id="ic-dashboard" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+      <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+      <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+      <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+    </symbol>
+    <!-- users -->
+    <symbol id="ic-users" viewBox="0 0 24 24">
+      <circle cx="9" cy="7" r="3.5"/>
+      <path d="M2 20c0-4 3.13-7 7-7s7 3 7 7"/>
+      <circle cx="17" cy="8" r="2.5" stroke-opacity=".6"/>
+      <path d="M21 20c0-3-2-5-4-5.5" stroke-opacity=".6"/>
+    </symbol>
+    <!-- withdraw -->
+    <symbol id="ic-withdraw" viewBox="0 0 24 24">
+      <rect x="2" y="6" width="20" height="14" rx="2"/>
+      <path d="M2 10h20"/>
+      <circle cx="6" cy="15" r="1.5" fill="currentColor" stroke="none"/>
+      <path d="M16 5V3M12 5V3M8 5V3"/>
+    </symbol>
+    <!-- task -->
+    <symbol id="ic-task" viewBox="0 0 24 24">
+      <path d="M9 11l3 3L22 4"/>
+      <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+    </symbol>
+    <!-- channel (telegram-style) -->
+    <symbol id="ic-channel" viewBox="0 0 24 24">
+      <path d="M22 2L11 13"/>
+      <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+    </symbol>
+    <!-- link -->
+    <symbol id="ic-link" viewBox="0 0 24 24">
+      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+    </symbol>
+    <!-- delete -->
+    <symbol id="ic-delete" viewBox="0 0 24 24">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+      <path d="M10 11v6M14 11v6"/>
+      <path d="M9 6V4h6v2"/>
+    </symbol>
+    <!-- refresh -->
+    <symbol id="ic-refresh" viewBox="0 0 24 24">
+      <polyline points="23 4 23 10 17 10"/>
+      <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+    </symbol>
+    <!-- copy -->
+    <symbol id="ic-copy" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="13" height="13" rx="2"/>
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+    </symbol>
+    <!-- close -->
+    <symbol id="ic-close" viewBox="0 0 24 24">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </symbol>
+    <!-- search -->
+    <symbol id="ic-search" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </symbol>
+    <!-- save -->
+    <symbol id="ic-save" viewBox="0 0 24 24">
+      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </symbol>
+    <!-- check -->
+    <symbol id="ic-check" viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+    <!-- ban -->
+    <symbol id="ic-ban" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+    </symbol>
+    <!-- tomato logo -->
+    <symbol id="ic-tomato" viewBox="0 0 24 24">
+      <circle cx="12" cy="14" r="8" fill="none"/>
+      <path d="M12 6c0 0 0-3 3-4M12 6c0 0 -2-2 -2-4M12 6v2"/>
+      <circle cx="12" cy="14" r="8"/>
+    </symbol>
+    <!-- wallet -->
+    <symbol id="ic-wallet" viewBox="0 0 24 24">
+      <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+      <path d="M16 3H8L6 7h12l-2-4z"/>
+      <circle cx="17" cy="14" r="1.5" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- plus -->
+    <symbol id="ic-plus" viewBox="0 0 24 24">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </symbol>
+    <!-- user single -->
+    <symbol id="ic-user" viewBox="0 0 24 24">
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </symbol>
+    <!-- edit -->
+    <symbol id="ic-edit" viewBox="0 0 24 24">
+      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </symbol>
+    <!-- location/pin -->
+    <symbol id="ic-pin" viewBox="0 0 24 24">
+      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </symbol>
+    <!-- external link -->
+    <symbol id="ic-external" viewBox="0 0 24 24">
+      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+      <polyline points="15 3 21 3 21 9"/>
+      <line x1="10" y1="14" x2="21" y2="3"/>
+    </symbol>
+    <!-- telegram plane (task icon) -->
+    <symbol id="ic-tg-plane" viewBox="0 0 24 24">
+      <path d="M22 2L11 13"/>
+      <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+    </symbol>
+    <!-- globe (url task icon) -->
+    <symbol id="ic-globe" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 3c-2.5 3-4 5.5-4 9s1.5 6 4 9"/>
+      <path d="M12 3c2.5 3 4 5.5 4 9s-1.5 6-4 9"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3.6" y1="7" x2="20.4" y2="7"/>
+      <line x1="3.6" y1="17" x2="20.4" y2="17"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- Helper macro -->
+<template id="svg-tpl"></template>
+
+<!-- ══════════════════════════════════════════
+  LOGIN
+══════════════════════════════════════════ -->
 <div id="login">
   <div class="lbox">
-    <div class="logo">🍅</div>
+    <div class="lbox-logo">
+      <svg class="icon icon-xl" style="color:var(--green)"><use href="#ic-tomato"/></svg>
+    </div>
     <h2>ADMIN PANEL</h2>
-    <p>TOMATO FARM // SECURE</p>
-    <input type="password" id="apass" placeholder="••••••••" />
-    <button class="btn btn-g btn-full" onclick="doLogin()">دخول</button>
-    <div class="lerr" id="lerr">❌ كلمة المرور خاطئة</div>
+    <p>TOMATO FARM // SECURE ACCESS</p>
+    <input type="password" id="apass" placeholder="••••••••" autocomplete="current-password" />
+    <button class="btn btn-g btn-full" onclick="doLogin()">
+      <svg class="icon icon-sm"><use href="#ic-check"/></svg>
+      دخول
+    </button>
+    <div class="lerr" id="lerr">
+      <svg class="icon icon-sm" style="color:var(--red)"><use href="#ic-ban"/></svg>
+      كلمة المرور خاطئة
+    </div>
   </div>
 </div>
 
-<!-- APP -->
+<!-- ══════════════════════════════════════════
+  APP
+══════════════════════════════════════════ -->
 <div id="app">
+
   <!-- SIDEBAR -->
   <div id="sidebar">
     <div class="sb-logo">
-      <div class="em">🍅</div>
-      <h1>Tomato Admin</h1>
-      <small>v2.0 // LIVE DB</small>
+      <div class="sb-logo-icon">
+        <svg class="icon icon-md" style="color:var(--green)"><use href="#ic-tomato"/></svg>
+      </div>
+      <div class="sb-logo-text">
+        <h1>Tomato Admin</h1>
+        <small>v2.1 // LIVE DB</small>
+      </div>
     </div>
     <nav>
       <div class="ns">الرئيسية</div>
-      <div class="ni act" id="sn-dash"     onclick="nav('dash',this)"><span class="ic">📊</span><span>لوحة التحكم</span></div>
+      <div class="ni act" id="sn-dash"     onclick="nav('dash',this)">
+        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-dashboard"/></svg></span>
+        <span>لوحة التحكم</span>
+      </div>
       <div class="ns">المستخدمون</div>
-      <div class="ni" id="sn-users"    onclick="nav('users',this)"><span class="ic">👥</span><span>المستخدمين</span></div>
-      <div class="ni" id="sn-requests" onclick="nav('requests',this)"><span class="ic">💸</span><span>طلبات السحب</span><span class="badge" id="rb">0</span></div>
+      <div class="ni" id="sn-users"    onclick="nav('users',this)">
+        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-users"/></svg></span>
+        <span>المستخدمين</span>
+      </div>
+      <div class="ni" id="sn-requests" onclick="nav('requests',this)">
+        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-withdraw"/></svg></span>
+        <span>طلبات السحب</span>
+        <span class="badge" id="rb">0</span>
+      </div>
       <div class="ns">المحتوى</div>
-      <div class="ni" id="sn-tasks"    onclick="nav('tasks',this)"><span class="ic">✅</span><span>التاسك</span></div>
+      <div class="ni" id="sn-tasks"    onclick="nav('tasks',this)">
+        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-task"/></svg></span>
+        <span>المهام</span>
+      </div>
     </nav>
-    <div class="sb-foot"><span class="dot"></span>CONNECTED</div>
+    <div class="sb-foot">
+      <span class="dot"></span>
+      CONNECTED
+    </div>
   </div>
 
   <!-- MAIN -->
@@ -278,35 +995,70 @@ hr.sep{border:none;border-top:1px solid var(--bdr);margin:11px 0}
     <!-- DASHBOARD -->
     <div class="page act" id="p-dash">
       <div class="topbar">
-        <div><h2>لوحة التحكم</h2><div class="sub" id="dtime"></div></div>
-        <button class="btn btn-gh btn-sm" onclick="loadDash()">🔄</button>
+        <div>
+          <h2>لوحة التحكم</h2>
+          <div class="sub" id="dtime"></div>
+        </div>
+        <button class="btn btn-gh btn-sm" onclick="loadDash()">
+          <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
+          تحديث
+        </button>
       </div>
       <div class="stats">
-        <div class="sc"><div class="sl">المستخدمون</div><div class="sv g" id="s-users">—</div></div>
-        <div class="sc gold"><div class="sl">الأرصدة (TON)</div><div class="sv q" id="s-bal">—</div></div>
-        <div class="sc red"><div class="sl">محظورون</div><div class="sv r" id="s-ban">—</div></div>
-        <div class="sc blue"><div class="sl">سحب معلق</div><div class="sv b" id="s-pend">—</div></div>
+        <div class="sc">
+          <div class="sc-icon"><svg class="icon icon-xl" style="width:36px;height:36px"><use href="#ic-users"/></svg></div>
+          <div class="sl">المستخدمون</div>
+          <div class="sv g" id="s-users">—</div>
+        </div>
+        <div class="sc gold">
+          <div class="sc-icon"><svg class="icon icon-xl" style="width:36px;height:36px"><use href="#ic-wallet"/></svg></div>
+          <div class="sl">الأرصدة (TON)</div>
+          <div class="sv q" id="s-bal">—</div>
+        </div>
+        <div class="sc red">
+          <div class="sc-icon"><svg class="icon icon-xl" style="width:36px;height:36px"><use href="#ic-ban"/></svg></div>
+          <div class="sl">محظورون</div>
+          <div class="sv r" id="s-ban">—</div>
+        </div>
+        <div class="sc blue">
+          <div class="sc-icon"><svg class="icon icon-xl" style="width:36px;height:36px"><use href="#ic-withdraw"/></svg></div>
+          <div class="sl">سحب معلق</div>
+          <div class="sv b" id="s-pend">—</div>
+        </div>
       </div>
       <div class="tw">
-        <div class="th"><span>📋 آخر المستخدمين</span>
-          <button class="btn btn-gh btn-sm" onclick="nav('users',document.getElementById('sn-users'))">عرض الكل</button></div>
-        <table><thead><tr><th>ID</th><th>الاسم</th><th>الرصيد</th><th>بذور</th><th>حالة</th></tr></thead>
-        <tbody id="dt"></tbody></table>
+        <div class="th">
+          <span>
+            <svg class="icon icon-sm"><use href="#ic-users"/></svg>
+            آخر المستخدمين
+          </span>
+          <button class="btn btn-gh btn-sm" onclick="nav('users',document.getElementById('sn-users'))">عرض الكل</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>الاسم</th><th>الرصيد</th><th>بذور</th><th>حالة</th></tr></thead>
+          <tbody id="dt"></tbody>
+        </table>
       </div>
     </div>
 
     <!-- USERS -->
     <div class="page" id="p-users">
-      <div class="topbar"><div><h2>المستخدمون</h2><div class="sub">بحث — تعديل — حظر</div></div></div>
+      <div class="topbar">
+        <div><h2>المستخدمون</h2><div class="sub">بحث — تعديل — حظر</div></div>
+      </div>
       <div class="srow">
         <input id="sq" placeholder="ID أو اسم مستخدم..." />
-        <button class="btn btn-g" onclick="searchUser()">🔍</button>
+        <button class="btn btn-g" onclick="searchUser()">
+          <svg class="icon icon-sm"><use href="#ic-search"/></svg>
+        </button>
         <button class="btn btn-gh" onclick="loadUsers()">الكل</button>
       </div>
       <div class="tw">
-        <div class="th"><span id="uc">المستخدمون</span></div>
-        <table><thead><tr><th>ID</th><th>الاسم</th><th>الرصيد</th><th>بذور</th><th>ماء</th><th>Risk</th><th>حالة</th><th></th></tr></thead>
-        <tbody id="ut"></tbody></table>
+        <div class="th"><span id="uc"><svg class="icon icon-sm"><use href="#ic-users"/></svg> المستخدمون</span></div>
+        <table>
+          <thead><tr><th>ID</th><th>الاسم</th><th>الرصيد</th><th>بذور</th><th>ماء</th><th>Risk</th><th>حالة</th><th></th></tr></thead>
+          <tbody id="ut"></tbody>
+        </table>
       </div>
     </div>
 
@@ -314,19 +1066,30 @@ hr.sep{border:none;border-top:1px solid var(--bdr);margin:11px 0}
     <div class="page" id="p-requests">
       <div class="topbar">
         <div><h2>طلبات السحب</h2><div class="sub">قبول أو رفض</div></div>
-        <button class="btn btn-gh btn-sm" onclick="loadRequests()">🔄</button>
+        <button class="btn btn-gh btn-sm" onclick="loadRequests()">
+          <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
+        </button>
       </div>
       <div id="rl" class="rlist">
-        <div class="empty"><div class="big">📭</div><p>لا توجد طلبات</p></div>
+        <div class="empty-state">
+          <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
+          <h3>لا توجد طلبات</h3>
+          <p>ستظهر هنا طلبات السحب المعلقة</p>
+        </div>
       </div>
     </div>
 
     <!-- TASKS -->
     <div class="page" id="p-tasks">
-      <div class="topbar"><div><h2>إدارة التاسك</h2><div class="sub">إضافة وحذف مهام — جدول tasks الرئيسي</div></div></div>
+      <div class="topbar">
+        <div><h2>إدارة المهام</h2><div class="sub">إضافة وحذف مهام</div></div>
+      </div>
 
       <div class="tform">
-        <h3>➕ مهمة جديدة</h3>
+        <div class="tform-title">
+          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
+          مهمة جديدة
+        </div>
 
         <!-- اسم + نوع -->
         <div class="frow">
@@ -337,74 +1100,105 @@ hr.sep{border:none;border-top:1px solid var(--bdr);margin:11px 0}
           <div class="fg">
             <label class="fl">نوع المهمة *</label>
             <select class="fi" id="tt" onchange="onTypeChange()">
-              <option value="channel">📢 Channel</option>
-              <option value="url">🔗 URL</option>
+              <option value="channel">قناة Telegram</option>
+              <option value="url">رابط خارجي</option>
             </select>
           </div>
         </div>
 
-        <!-- أيقونة + جائزة -->
+        <!-- جائزة فقط (أيقونة تلقائية) -->
         <div class="frow">
-          <div class="fg">
-            <label class="fl">أيقونة (Emoji)</label>
-            <input class="fi" id="ti" placeholder="📢" maxlength="4" />
-          </div>
           <div class="fg">
             <label class="fl">الجائزة (TON) *</label>
             <input class="fi" id="tr" type="number" step="0.001" placeholder="0.005" />
           </div>
         </div>
 
-        <!-- حقل القناة (channel) -->
-        <div class="fg" id="field-channel">
-          <label class="fl">يوزرنيم القناة * (بدون @)</label>
-          <input class="fi" id="tch" placeholder="my_channel" />
+        <!-- SMART INPUT — حقل ذكي واحد -->
+        <div class="fg" id="field-smart">
+          <label class="fl" id="smart-label">رابط أو يوزرنيم القناة *</label>
+          <div class="smart-input-wrap">
+            <input class="fi has-prefix" id="tsmartinput"
+              placeholder="t.me/channel أو username"
+              oninput="onSmartInput(this)"
+              onpaste="setTimeout(()=>onSmartInput(this),0)"
+            />
+            <div class="smart-input-prefix">
+              <span class="prefix-badge" id="smart-badge">AUTO</span>
+            </div>
+          </div>
+          <div class="field-hint" id="smart-hint"></div>
         </div>
 
-        <!-- حقل الرابط (url) -->
-        <div class="fg" id="field-url" style="display:none">
-          <label class="fl">الرابط الكامل *</label>
-          <input class="fi" id="tu" placeholder="https://example.com" />
-        </div>
+        <!-- hidden inputs for API compat -->
+        <input type="hidden" id="tch" />
+        <input type="hidden" id="tu"  />
 
         <div class="fg">
           <label class="fl">وصف (اختياري)</label>
-          <input class="fi" id="td" placeholder="..." />
+          <input class="fi" id="td" placeholder="وصف قصير للمهمة" />
         </div>
 
-        <button class="btn btn-g btn-full" style="margin-top:4px" onclick="addTask()">إضافة المهمة</button>
+        <button class="btn btn-g btn-full" style="margin-top:4px" onclick="addTask()">
+          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
+          إضافة المهمة
+        </button>
       </div>
 
       <div class="tcard-list">
-        <h3>📋 المهام الحالية (<span id="tc">0</span>)</h3>
+        <div class="tcard-list-header">
+          <svg class="icon icon-sm"><use href="#ic-task"/></svg>
+          المهام الحالية (<span id="tc">0</span>)
+        </div>
         <div id="tl"></div>
       </div>
 
       <div class="jbox">
         <div class="jhead">
           <span>JSON — عرض المهام</span>
-          <button class="btn btn-gh btn-sm" onclick="copyJson()">📋 نسخ</button>
+          <button class="btn btn-gh btn-sm" onclick="copyJson()">
+            <svg class="icon icon-sm"><use href="#ic-copy"/></svg>
+            نسخ
+          </button>
         </div>
         <textarea id="tj" readonly></textarea>
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /main -->
+</div><!-- /app -->
 
 <!-- BOTTOM NAV -->
 <div id="bnav">
-  <div class="bni act" id="bn-dash"     onclick="nav('dash',this,true)"><div class="bic">📊</div><div>رئيسية</div></div>
-  <div class="bni" id="bn-users"    onclick="nav('users',this,true)"><div class="bic">👥</div><div>مستخدمون</div></div>
-  <div class="bni" id="bn-requests" onclick="nav('requests',this,true)"><div class="bic">💸</div><div>سحوبات</div><span class="badge" id="rbb">0</span></div>
-  <div class="bni" id="bn-tasks"    onclick="nav('tasks',this,true)"><div class="bic">✅</div><div>تاسك</div></div>
+  <div class="bni act" id="bn-dash" onclick="nav('dash',this,true)">
+    <div class="bic"><svg class="icon icon-lg"><use href="#ic-dashboard"/></svg></div>
+    <div>رئيسية</div>
+  </div>
+  <div class="bni" id="bn-users" onclick="nav('users',this,true)">
+    <div class="bic"><svg class="icon icon-lg"><use href="#ic-users"/></svg></div>
+    <div>مستخدمون</div>
+  </div>
+  <div class="bni" id="bn-requests" onclick="nav('requests',this,true)">
+    <div class="bic"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
+    <div>سحوبات</div>
+    <span class="badge" id="rbb">0</span>
+  </div>
+  <div class="bni" id="bn-tasks" onclick="nav('tasks',this,true)">
+    <div class="bic"><svg class="icon icon-lg"><use href="#ic-task"/></svg></div>
+    <div>مهام</div>
+  </div>
 </div>
 
 <!-- USER MODAL -->
 <div id="ov">
   <div class="modal">
-    <button class="mcl" onclick="closeModal()">✕</button>
-    <div class="mtitle"><span>✏️</span><span id="mun">تعديل مستخدم</span></div>
+    <button class="mcl" onclick="closeModal()">
+      <svg class="icon icon-sm"><use href="#ic-close"/></svg>
+    </button>
+    <div class="mtitle">
+      <svg class="icon icon-md"><use href="#ic-edit"/></svg>
+      <span id="mun">تعديل مستخدم</span>
+    </div>
     <div class="frow">
       <div class="fg"><label class="fl">الرصيد (TON)</label><input class="fi" id="eb" type="number" step="0.000001" /></div>
       <div class="fg"><label class="fl">البذور</label><input class="fi" id="es" type="number" /></div>
@@ -414,30 +1208,236 @@ hr.sep{border:none;border-top:1px solid var(--bdr);margin:11px 0}
       <div class="fg"><label class="fl">Risk Score</label><input class="fi" id="er" type="number" min="0" max="100" /></div>
     </div>
     <hr class="sep">
-    <div class="trow"><span>🚫 Shadow Ban</span><div class="tog" id="et-sb" onclick="togSB()"></div></div>
-    <div class="trow"><span>⛔ Hard Ban (رفع الحظر ممكن)</span><div class="tog" id="et-hb" onclick="togHB()"></div></div>
+    <div class="trow">
+      <span>
+        <svg class="icon icon-sm" style="color:var(--gold)"><use href="#ic-ban"/></svg>
+        Shadow Ban
+      </span>
+      <div class="tog" id="et-sb" onclick="togSB()"></div>
+    </div>
+    <div class="trow">
+      <span>
+        <svg class="icon icon-sm" style="color:var(--red)"><use href="#ic-ban"/></svg>
+        Hard Ban
+      </span>
+      <div class="tog" id="et-hb" onclick="togHB()"></div>
+    </div>
     <div class="mact">
       <button class="btn btn-gh" onclick="closeModal()">إلغاء</button>
-      <button class="btn btn-r btn-sm" onclick="resetUser()">♻️ تصفير</button>
-      <button class="btn btn-g" onclick="saveUser()">💾 حفظ</button>
+      <button class="btn btn-r btn-sm" onclick="resetUser()">تصفير</button>
+      <button class="btn btn-g" onclick="saveUser()">
+        <svg class="icon icon-sm"><use href="#ic-save"/></svg>
+        حفظ
+      </button>
     </div>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
 
+<!-- ══════════════════════════════════════════
+  SCRIPT
+══════════════════════════════════════════ -->
 <script>
 // ══════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════
-const ADMIN_PASS = 'admin123';               // ← غيّر كلمة المرور
-const API_BASE = 'https://admin-pi-black-84.vercel.app/api';
-const ADMIN_KEY  = 'admin-secret-key-2025'; // ← نفس ADMIN_SECRET في admin.js
+const ADMIN_PASS = 'admin123';
+const API_BASE   = 'https://admin-pi-black-84.vercel.app/api';
+const ADMIN_KEY  = 'admin-secret-key-2025';
 
 // ══════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════
 let editId = null, isSB = false, isHB = false, tasks = [];
+
+// ══════════════════════════════════════
+//  HELPERS — Telegram Input Parser Engine
+// ══════════════════════════════════════
+
+/**
+ * parseTelegramInput — Production Parser Engine
+ * Accepts: t.me/user | https://t.me/user | @user | user | https://any.url
+ * Returns: { valid, type, channel, url, hint, badgeType }
+ */
+function parseTelegramInput(raw) {
+  // Sanitize: strip whitespace, null bytes, control chars
+  const val = (raw || '').replace(/[\x00-\x1F\x7F]/g, '').trim();
+  if (!val) return { valid: false, hint: '', badgeType: null, type: null, channel: null, url: null };
+
+  // Block spaces inside value
+  if (/\s/.test(val)) return { valid: false, hint: 'لا يُسمح بالمسافات', badgeType: null, type: null, channel: null, url: null };
+
+  // Normalize: strip leading @
+  const noAt = val.startsWith('@') ? val.slice(1) : val;
+
+  // Rule 1 — Telegram URL: https://t.me/username OR t.me/username
+  const tgUrlRe = /^(?:https?:\/\/)?t\.me\/([a-zA-Z][a-zA-Z0-9_]{3,31})\/?$/i;
+  const tgMatch = tgUrlRe.exec(noAt) || tgUrlRe.exec(val);
+  if (tgMatch) {
+    const ch = tgMatch[1].toLowerCase();
+    return {
+      valid: true, type: 'channel', badgeType: 'tg',
+      channel: ch,
+      url: `https://t.me/${ch}`,
+      hint: `تم التعرف على قناة Telegram: @${ch}`,
+    };
+  }
+
+  // Rule 2 — Plain Telegram username: letters/digits/underscore, 4-32 chars, starts with letter or digit (not underscore-only)
+  const usernameRe = /^[a-zA-Z][a-zA-Z0-9_]{3,31}$/;
+  if (usernameRe.test(noAt)) {
+    const ch = noAt.toLowerCase();
+    return {
+      valid: true, type: 'channel', badgeType: 'tg',
+      channel: ch,
+      url: `https://t.me/${ch}`,
+      hint: `قناة Telegram — سيُستخدم: t.me/${ch}`,
+    };
+  }
+
+  // Rule 3 — External HTTPS URL (must have valid host, min length)
+  const extUrlRe = /^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})(\/[^\s]*)?$/i;
+  if (extUrlRe.test(val)) {
+    return {
+      valid: true, type: 'url', badgeType: 'url',
+      channel: null,
+      url: val,
+      hint: 'رابط خارجي صالح',
+    };
+  }
+
+  // Invalid
+  return {
+    valid: false, type: null, channel: null, url: null, badgeType: null,
+    hint: 'إدخال غير صالح — أدخل يوزرنيم أو رابط صحيح',
+  };
+}
+
+/**
+ * validateTask — Guard layer before addTask()
+ */
+function validateTask(name, reward, parsed) {
+  if (!name || name.length < 2) return { ok: false, error: 'اسم المهمة مطلوب (حرفان على الأقل)' };
+  if (isNaN(reward) || reward <= 0) return { ok: false, error: 'أدخل جائزة صحيحة أكبر من صفر' };
+  if (!parsed || !parsed.valid) return { ok: false, error: 'أدخل رابط أو يوزرنيم صالح' };
+  if (parsed.type === 'channel' && !parsed.channel) return { ok: false, error: 'تعذّر استخراج اسم القناة' };
+  if (parsed.type === 'url' && !parsed.url) return { ok: false, error: 'الرابط الخارجي غير صالح' };
+  return { ok: true };
+}
+
+/**
+ * getTaskIcon — SVG icon selector (no emoji)
+ */
+function getTaskIcon(type) {
+  if (type === 'channel') return '#ic-tg-plane';
+  if (type === 'url')     return '#ic-globe';
+  return '#ic-task';
+}
+
+/**
+ * updateSmartUI — Real-time UI feedback on input
+ */
+function updateSmartUI(parsed, inputEl) {
+  const badge = document.getElementById('smart-badge');
+  const hint  = document.getElementById('smart-hint');
+  const val   = (inputEl.value || '').trim();
+
+  // Reset if empty
+  if (!val) {
+    badge.textContent = 'AUTO';
+    badge.className   = 'prefix-badge';
+    hint.className    = 'field-hint';
+    hint.textContent  = '';
+    inputEl.classList.remove('err', 'ok');
+    document.getElementById('tch').value = '';
+    document.getElementById('tu').value  = '';
+    return;
+  }
+
+  if (parsed.badgeType === 'tg') {
+    badge.textContent = 'TG';
+    badge.className   = 'prefix-badge tg';
+  } else if (parsed.badgeType === 'url') {
+    badge.textContent = 'URL';
+    badge.className   = 'prefix-badge url';
+  } else {
+    badge.textContent = 'ERR';
+    badge.className   = 'prefix-badge err-badge';
+  }
+
+  if (parsed.valid) {
+    hint.textContent = parsed.hint;
+    hint.className   = 'field-hint show-ok';
+    inputEl.classList.remove('err'); inputEl.classList.add('ok');
+    document.getElementById('tch').value = parsed.channel || '';
+    document.getElementById('tu').value  = parsed.url     || '';
+  } else {
+    hint.textContent = parsed.hint || 'إدخال غير صالح';
+    hint.className   = 'field-hint show-err';
+    inputEl.classList.remove('ok'); inputEl.classList.add('err');
+    document.getElementById('tch').value = '';
+    document.getElementById('tu').value  = '';
+  }
+}
+
+/**
+ * buildTaskCard — Pure function: task object → HTML string
+ */
+function buildTaskCard(t) {
+  const isChannel = t.task_type === 'channel';
+  const iconId    = getTaskIcon(t.task_type);
+  const href      = isChannel
+    ? (t.url || (t.channel ? `https://t.me/${t.channel}` : null))
+    : t.url;
+  const hasLink   = !!href;
+
+  const displayText = isChannel
+    ? `@${t.channel || '—'}`
+    : (t.url ? (t.url.length > 40 ? t.url.slice(0, 40) + '…' : t.url) : '—');
+
+  const badge = isChannel
+    ? `<span class="tk-badge ch"><svg class="icon icon-sm" style="width:10px;height:10px"><use href="#ic-tg-plane"/></svg> TELEGRAM</span>`
+    : `<span class="tk-badge url"><svg class="icon icon-sm" style="width:10px;height:10px"><use href="#ic-globe"/></svg> URL</span>`;
+
+  const linkEl = hasLink
+    ? `<a class="tk-link" href="${href}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${displayText}</a>`
+    : `<span class="tk-link invalid">${displayText}</span>`;
+
+  const activeStyle = t.is_active === false ? ' invalid-card' : '';
+
+  return `<div class="tk${activeStyle}" onclick="${hasLink ? `openTaskLink('${href}')` : ''}" title="${hasLink ? 'انقر لفتح الرابط' : 'رابط غير متاح'}">
+    <div class="tk-ic ${isChannel ? 'tg' : ''}">
+      <svg class="icon icon-md"><use href="${iconId}"/></svg>
+    </div>
+    <div class="tk-info">
+      <div class="tk-name">${t.name} ${badge}</div>
+      <div class="tk-reward">+${parseFloat(t.reward).toFixed(3)} TON</div>
+      ${linkEl}
+    </div>
+    <div class="tk-actions" onclick="event.stopPropagation()">
+      ${hasLink ? `<button class="tk-copy" title="نسخ الرابط" onclick="copyTaskLink('${href}', event)">
+        <svg class="icon icon-sm"><use href="#ic-copy"/></svg>
+      </button>` : ''}
+      <button class="tk-del" title="حذف" onclick="deleteTask('${t.id}')">
+        <svg class="icon icon-md"><use href="#ic-delete"/></svg>
+      </button>
+    </div>
+  </div>`;
+}
+
+function openTaskLink(href) {
+  if (href) window.open(href, '_blank', 'noopener,noreferrer');
+}
+
+function copyTaskLink(href, e) {
+  e && e.stopPropagation();
+  if (!href) return;
+  navigator.clipboard.writeText(href)
+    .then(() => toast('تم نسخ الرابط', 'ok'))
+    .catch(() => toast('فشل النسخ', 'err'));
+}
 
 // ══════════════════════════════════════
 //  API
@@ -459,11 +1459,13 @@ function doLogin() {
     document.getElementById('login').style.display = 'none';
     init();
   } else {
-    document.getElementById('lerr').style.display = 'block';
+    const el = document.getElementById('lerr');
+    el.style.display = 'flex';
     document.getElementById('apass').value = '';
+    setTimeout(() => el.style.display = 'none', 3000);
   }
 }
-document.getElementById('apass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('apass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 // ══════════════════════════════════════
 //  INIT
@@ -474,7 +1476,7 @@ function init() {
 }
 function updateTime() {
   const el = document.getElementById('dtime');
-  if(el) el.textContent = new Date().toLocaleString('ar-DZ');
+  if (el) el.textContent = new Date().toLocaleString('ar-DZ');
 }
 
 // ══════════════════════════════════════
@@ -487,12 +1489,12 @@ function nav(id, el, mobile = false) {
     document.querySelectorAll('.bni').forEach(n => n.classList.remove('act'));
     el.classList.add('act');
     const sn = document.getElementById('sn-' + id);
-    if(sn){ document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act')); sn.classList.add('act'); }
+    if (sn) { document.querySelectorAll('.ni').forEach(n => n.classList.remove('act')); sn.classList.add('act'); }
   } else {
     document.querySelectorAll('.ni').forEach(n => n.classList.remove('act'));
     el.classList.add('act');
     const bn = document.getElementById('bn-' + id);
-    if(bn){ document.querySelectorAll('.bni').forEach(n=>n.classList.remove('act')); bn.classList.add('act'); }
+    if (bn) { document.querySelectorAll('.bni').forEach(n => n.classList.remove('act')); bn.classList.add('act'); }
   }
 }
 
@@ -506,7 +1508,7 @@ async function loadDash() {
       api('stats'),
       api('get_users', { limit: 10, offset: 0 }),
     ]);
-    if(sRes.ok) {
+    if (sRes.ok) {
       const s = sRes.stats;
       document.getElementById('s-users').textContent = s.total_users;
       document.getElementById('s-bal').textContent   = parseFloat(s.total_balance).toFixed(4);
@@ -514,62 +1516,72 @@ async function loadDash() {
       document.getElementById('s-pend').textContent  = s.pending_withdrawals;
       setBadge(s.pending_withdrawals);
     }
-    if(uRes.ok) {
+    if (uRes.ok) {
       document.getElementById('dt').innerHTML = uRes.users.map(u => `
         <tr>
           <td class="tid">${u.telegram_id}</td>
-          <td class="tname">@${u.username||'—'}</td>
-          <td class="tbal">${parseFloat(u.balance||0).toFixed(4)}</td>
+          <td class="tname">@${u.username || '—'}</td>
+          <td class="tbal">${parseFloat(u.balance || 0).toFixed(4)}</td>
           <td style="color:var(--green)">${u.seeds}</td>
-          <td>${(u.shadow_banned||u.is_hard_banned)?'<span class="bban">BAN</span>':'<span class="bok">OK</span>'}</td>
+          <td>${(u.shadow_banned || u.is_hard_banned) ? '<span class="bban">BAN</span>' : '<span class="bok">OK</span>'}</td>
         </tr>`).join('') || `<tr><td colspan="5" class="lrow">لا يوجد مستخدمون</td></tr>`;
     }
-  } catch(e) { toast('❌ تحقق من رابط API', true); }
+  } catch (e) { toast('تحقق من رابط API', 'err'); }
 }
 
 // ══════════════════════════════════════
 //  USERS
 // ══════════════════════════════════════
 async function loadUsers() {
-  setUT(`<tr><td colspan="8" class="lrow"><span class="spin"></span></td></tr>`);
+  setUT(skeletonRows(8, 8));
   try {
     const r = await api('get_users', { limit: 100 });
-    if(r.ok) renderUsers(r.users, r.total);
-    else toast(r.error, true);
-  } catch(e) { toast('❌ خطأ', true); }
+    if (r.ok) renderUsers(r.users, r.total);
+    else toast(r.error, 'err');
+  } catch (e) { toast('خطأ في الاتصال', 'err'); }
 }
 
 async function searchUser() {
   const q = document.getElementById('sq').value.trim();
-  if(!q) { loadUsers(); return; }
-  setUT(`<tr><td colspan="8" class="lrow"><span class="spin"></span></td></tr>`);
+  if (!q) { loadUsers(); return; }
+  setUT(skeletonRows(3, 8));
   try {
     const r = await api('search_user', { q });
-    if(r.ok) renderUsers(r.users, r.users.length);
-    else toast(r.error, true);
-  } catch(e) { toast('❌ خطأ', true); }
+    if (r.ok) renderUsers(r.users, r.users.length);
+    else toast(r.error, 'err');
+  } catch (e) { toast('خطأ', 'err'); }
 }
-document.getElementById('sq').addEventListener('keydown', e => { if(e.key==='Enter') searchUser(); });
+document.getElementById('sq').addEventListener('keydown', e => { if (e.key === 'Enter') searchUser(); });
 
 function setUT(html) { document.getElementById('ut').innerHTML = html; }
 
 function renderUsers(users, total) {
-  document.getElementById('uc').textContent = `👥 ${total} مستخدم`;
-  if(!users.length) { setUT(`<tr><td colspan="8" class="lrow">لا توجد نتائج</td></tr>`); return; }
+  document.getElementById('uc').innerHTML = `
+    <svg class="icon icon-sm"><use href="#ic-users"/></svg>
+    ${total} مستخدم
+  `;
+  if (!users.length) {
+    setUT(`<tr><td colspan="8" class="lrow">لا توجد نتائج</td></tr>`);
+    return;
+  }
   setUT(users.map(u => {
-    const risk = parseInt(u.risk_score||0);
-    const rc = risk<40?'tr0':risk<70?'tr1':'tr2';
-    const banned = u.shadow_banned||u.is_hard_banned;
-    const ud = JSON.stringify(u).replace(/'/g,"&#39;");
+    const risk = parseInt(u.risk_score || 0);
+    const rc   = risk < 40 ? 'tr0' : risk < 70 ? 'tr1' : 'tr2';
+    const banned = u.shadow_banned || u.is_hard_banned;
+    const ud = JSON.stringify(u).replace(/'/g, "&#39;");
     return `<tr>
       <td class="tid">${u.telegram_id}</td>
-      <td class="tname">@${u.username||'—'}</td>
-      <td class="tbal">${parseFloat(u.balance||0).toFixed(4)}</td>
+      <td class="tname">@${u.username || '—'}</td>
+      <td class="tbal">${parseFloat(u.balance || 0).toFixed(4)}</td>
       <td style="color:var(--green)">${u.seeds}</td>
       <td style="color:var(--blue)">${u.water_count}</td>
       <td class="${rc}">${risk}</td>
-      <td>${banned?'<span class="bban">BAN</span>':'<span class="bok">OK</span>'}</td>
-      <td><button class="btn btn-gh btn-sm" onclick='openModal(${ud})'>✏️</button></td>
+      <td>${banned ? '<span class="bban">BAN</span>' : '<span class="bok">OK</span>'}</td>
+      <td>
+        <button class="btn btn-gh btn-sm" onclick='openModal(${ud})'>
+          <svg class="icon icon-sm"><use href="#ic-edit"/></svg>
+        </button>
+      </td>
     </tr>`;
   }).join(''));
 }
@@ -580,88 +1592,106 @@ function renderUsers(users, total) {
 function openModal(u) {
   editId = u.telegram_id;
   isSB = !!u.shadow_banned; isHB = !!u.is_hard_banned;
-  document.getElementById('mun').textContent = `✏️ @${u.username||u.telegram_id}`;
-  document.getElementById('eb').value = parseFloat(u.balance||0).toFixed(6);
-  document.getElementById('es').value = u.seeds||0;
-  document.getElementById('ew').value = u.water_count||0;
-  document.getElementById('er').value = u.risk_score||0;
-  syncTog('et-sb',isSB); syncTog('et-hb',isHB);
+  document.getElementById('mun').textContent = `@${u.username || u.telegram_id}`;
+  document.getElementById('eb').value = parseFloat(u.balance || 0).toFixed(6);
+  document.getElementById('es').value = u.seeds || 0;
+  document.getElementById('ew').value = u.water_count || 0;
+  document.getElementById('er').value = u.risk_score || 0;
+  syncTog('et-sb', isSB); syncTog('et-hb', isHB);
   document.getElementById('ov').classList.add('open');
 }
-function closeModal() { document.getElementById('ov').classList.remove('open'); editId=null; }
-document.getElementById('ov').addEventListener('click', e => { if(e.target===document.getElementById('ov')) closeModal(); });
-function syncTog(id,on){ document.getElementById(id).className='tog'+(on?' on':''); }
-function togSB(){ isSB=!isSB; syncTog('et-sb',isSB); }
-function togHB(){ isHB=!isHB; syncTog('et-hb',isHB); }
+function closeModal() { document.getElementById('ov').classList.remove('open'); editId = null; }
+document.getElementById('ov').addEventListener('click', e => { if (e.target === document.getElementById('ov')) closeModal(); });
+function syncTog(id, on) { document.getElementById(id).className = 'tog' + (on ? ' on' : ''); }
+function togSB() { isSB = !isSB; syncTog('et-sb', isSB); }
+function togHB() { isHB = !isHB; syncTog('et-hb', isHB); }
 
 async function saveUser() {
-  if(!editId) return;
+  if (!editId) return;
   try {
     const r = await api('update_user', {
-      telegram_id: editId,
-      balance:      parseFloat(document.getElementById('eb').value),
-      seeds:        parseInt(document.getElementById('es').value),
-      water_count:  parseInt(document.getElementById('ew').value),
-      risk_score:   parseInt(document.getElementById('er').value),
-      shadow_banned: isSB, is_hard_banned: isHB,
+      telegram_id:   editId,
+      balance:       parseFloat(document.getElementById('eb').value),
+      seeds:         parseInt(document.getElementById('es').value),
+      water_count:   parseInt(document.getElementById('ew').value),
+      risk_score:    parseInt(document.getElementById('er').value),
+      shadow_banned: isSB,
+      is_hard_banned: isHB,
     });
-    if(r.ok){ toast('✅ تم الحفظ'); closeModal(); }
-    else toast(r.error, true);
-  } catch(e){ toast('❌ خطأ', true); }
+    if (r.ok) { toast('تم الحفظ بنجاح', 'ok'); closeModal(); }
+    else toast(r.error, 'err');
+  } catch (e) { toast('خطأ في الاتصال', 'err'); }
 }
 
 function resetUser() {
-  document.getElementById('eb').value=0;
-  document.getElementById('es').value=3;
-  document.getElementById('ew').value=3;
-  document.getElementById('er').value=0;
-  isSB=false; isHB=false;
-  syncTog('et-sb',false); syncTog('et-hb',false);
-  toast('♻️ تصفير — اضغط حفظ للتأكيد');
+  document.getElementById('eb').value = 0;
+  document.getElementById('es').value = 3;
+  document.getElementById('ew').value = 3;
+  document.getElementById('er').value = 0;
+  isSB = false; isHB = false;
+  syncTog('et-sb', false); syncTog('et-hb', false);
+  toast('تم التصفير — اضغط حفظ للتأكيد', 'info');
 }
 
 // ══════════════════════════════════════
 //  REQUESTS
 // ══════════════════════════════════════
 async function loadRequests() {
-  document.getElementById('rl').innerHTML = `<div class="lrow"><span class="spin"></span></div>`;
+  document.getElementById('rl').innerHTML = skeletonCards(3);
   try {
     const r = await api('get_withdrawals');
-    if(!r.ok){ toast(r.error,true); return; }
-    const list = r.withdrawals||[];
+    if (!r.ok) { toast(r.error, 'err'); return; }
+    const list = r.withdrawals || [];
     setBadge(list.length);
-    if(!list.length){
-      document.getElementById('rl').innerHTML = `<div class="empty"><div class="big">📭</div><p>لا توجد طلبات معلقة</p></div>`;
+    if (!list.length) {
+      document.getElementById('rl').innerHTML = `
+        <div class="empty-state">
+          <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
+          <h3>لا توجد طلبات معلقة</h3>
+          <p>ستظهر هنا طلبات السحب عند ورودها</p>
+        </div>`;
       return;
     }
     document.getElementById('rl').innerHTML = list.map(w => `
       <div class="rcard" id="rc-${w.telegram_id}-${w.index}">
         <div class="rcard-top">
-          <div class="rav">👤</div>
-          <div class="rname">@${w.username||w.telegram_id}
-            <div class="rmeta">ID: ${w.telegram_id} &nbsp;|&nbsp; ${new Date(w.date).toLocaleString('ar-DZ')}</div>
+          <div class="rav">
+            <svg class="icon icon-md"><use href="#ic-user"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="rname">@${w.username || w.telegram_id}</div>
+            <div class="rmeta">ID: ${w.telegram_id} &nbsp;·&nbsp; ${new Date(w.date).toLocaleString('ar-DZ')}</div>
           </div>
           <div class="ramt">${w.amount} TON</div>
         </div>
-        <div class="rwallet">📍 ${w.account}</div>
+        <div class="rwallet">
+          <svg class="icon icon-sm" style="flex-shrink:0;margin-top:1px"><use href="#ic-wallet"/></svg>
+          ${w.account}
+        </div>
         <div class="ract">
-          <button class="btn btn-g btn-sm" onclick="resolveWD(${w.telegram_id},${w.index},'approved')">✅ موافقة</button>
-          <button class="btn btn-r btn-sm" onclick="resolveWD(${w.telegram_id},${w.index},'rejected')">❌ رفض</button>
+          <button class="btn btn-g btn-sm" onclick="resolveWD(${w.telegram_id},${w.index},'approved')">
+            <svg class="icon icon-sm"><use href="#ic-check"/></svg>
+            موافقة
+          </button>
+          <button class="btn btn-r btn-sm" onclick="resolveWD(${w.telegram_id},${w.index},'rejected')">
+            <svg class="icon icon-sm"><use href="#ic-close"/></svg>
+            رفض
+          </button>
         </div>
       </div>`).join('');
-  } catch(e){ toast('❌ خطأ', true); }
+  } catch (e) { toast('خطأ في تحميل الطلبات', 'err'); }
 }
 
 async function resolveWD(tid, idx, verdict) {
   try {
     const r = await api('resolve_withdrawal', { telegram_id: tid, index: idx, verdict });
-    if(r.ok){
+    if (r.ok) {
       document.getElementById(`rc-${tid}-${idx}`)?.remove();
-      toast(verdict==='approved'?'✅ تم القبول':'❌ تم الرفض', verdict==='rejected');
-      const b = parseInt(document.getElementById('rb').textContent||0);
-      setBadge(Math.max(0,b-1));
-    } else toast(r.error,true);
-  } catch(e){ toast('❌ خطأ',true); }
+      toast(verdict === 'approved' ? 'تم قبول الطلب' : 'تم رفض الطلب', verdict === 'rejected' ? 'err' : 'ok');
+      const b = parseInt(document.getElementById('rb').textContent || 0);
+      setBadge(Math.max(0, b - 1));
+    } else toast(r.error, 'err');
+  } catch (e) { toast('خطأ', 'err'); }
 }
 
 // ══════════════════════════════════════
@@ -671,122 +1701,175 @@ async function loadTasks() {
   try {
     const r = await api('get_tasks');
     if (r.ok) { tasks = r.tasks || []; renderTasks(); }
-    else toast('⚠️ ' + r.error, true);
-  } catch(e) { toast('❌ فشل تحميل المهام', true); }
+    else toast(r.error, 'err');
+  } catch (e) { toast('فشل تحميل المهام', 'err'); }
 }
 
+/* Smart Input handler */
+function onSmartInput(el) {
+  const parsed = parseTelegramInput(el.value);
+  updateSmartUI(parsed, el);
+}
+
+/* Update label based on type */
 function onTypeChange() {
   const type = document.getElementById('tt').value;
-  document.getElementById('field-channel').style.display = type === 'channel' ? '' : 'none';
-  document.getElementById('field-url').style.display     = type === 'url'     ? '' : 'none';
+  const label = document.getElementById('smart-label');
+  const input = document.getElementById('tsmartinput');
+  if (type === 'channel') {
+    label.textContent = 'رابط القناة أو يوزرنيم *';
+    input.placeholder = 'مثال: t.me/mychannel أو mychannel';
+  } else {
+    label.textContent = 'رابط خارجي *';
+    input.placeholder = 'https://example.com/...';
+  }
+  // re-validate current value
+  if (input.value) onSmartInput(input);
 }
 
 function renderTasks() {
   document.getElementById('tc').textContent = tasks.length;
   const tl = document.getElementById('tl');
   if (!tasks.length) {
-    tl.innerHTML = `<div class="lrow" style="color:var(--muted)">لا توجد مهام</div>`;
-  } else {
-    tl.innerHTML = tasks.map(t => {
-      const isChannel = t.task_type === 'channel';
-      const linkInfo  = isChannel
-        ? `@${t.channel || '—'}`
-        : (t.url || '—');
-      const typeBadge = isChannel
-        ? `<span style="color:var(--blue);font-size:9px;font-family:var(--mono)">📢 CHANNEL</span>`
-        : `<span style="color:var(--green);font-size:9px;font-family:var(--mono)">🔗 URL</span>`;
-      const activeStyle = t.is_active === false
-        ? 'opacity:.45'
-        : '';
-      return `<div class="tk" style="${activeStyle}">
-        <div class="tk-ic ${isChannel ? 'tg' : ''}">${t.icon || '⭐'}</div>
-        <div class="tk-info">
-          <div class="tk-name">${t.name} &nbsp; ${typeBadge}</div>
-          <div class="tk-reward">+${parseFloat(t.reward).toFixed(3)} TON</div>
-          <div class="tk-url">${linkInfo}</div>
-        </div>
-        <button class="tk-del" title="حذف" onclick="deleteTask('${t.id}')">🗑️</button>
+    tl.innerHTML = `
+      <div class="empty-state" style="padding:40px 20px">
+        <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-task"/></svg></div>
+        <h3>لا توجد مهام</h3>
+        <p>أضف أول مهمة باستخدام النموذج أعلاه</p>
       </div>`;
-    }).join('');
+    document.getElementById('tj').value = '[]';
+    return;
   }
+  tl.innerHTML = tasks.map(t => buildTaskCard(t)).join('');
   document.getElementById('tj').value = JSON.stringify(tasks, null, 2);
 }
 
 async function addTask() {
-  const name  = document.getElementById('tn').value.trim();
-  const icon  = document.getElementById('ti').value.trim();   // لا نستبدل — نأخذها كما هي
-  const reward = parseFloat(document.getElementById('tr').value);
-  const type  = document.getElementById('tt').value;           // 'channel' | 'url'
-  const channel = document.getElementById('tch').value.trim().replace('@','');
-  const url   = document.getElementById('tu').value.trim();
-  const desc  = document.getElementById('td').value.trim();
+  const name     = document.getElementById('tn').value.trim();
+  const reward   = parseFloat(document.getElementById('tr').value);
+  const type     = document.getElementById('tt').value;
+  const desc     = document.getElementById('td').value.trim();
+  const rawInput = document.getElementById('tsmartinput').value.trim();
 
-  // Validation
-  if (!name)          { toast('⚠️ اسم المهمة مطلوب', true); return; }
-  if (isNaN(reward))  { toast('⚠️ الجائزة مطلوبة', true); return; }
-  if (type === 'channel' && !channel) { toast('⚠️ يوزرنيم القناة مطلوب', true); return; }
-  if (type === 'url'     && !url)     { toast('⚠️ الرابط مطلوب', true); return; }
+  // ── Guard Layer ────────────────────────
+  const parsed = parseTelegramInput(rawInput);
+  const v      = validateTask(name, reward, parsed);
+  if (!v.ok) { toast(v.error, 'err'); return; }
 
-  // توليد id نظيف من الاسم
+  // Enforce correct type from parser — parser wins
+  const finalType = parsed.type === 'channel' ? 'channel' : 'url';
+
+  // Warn if selector mismatch (but don't block — parser result is authoritative)
+  if (type === 'channel' && finalType === 'url') {
+    toast('تم اكتشاف رابط خارجي — تم التحويل تلقائياً', 'info');
+  } else if (type === 'url' && finalType === 'channel') {
+    toast('تم اكتشاف قناة Telegram — تم التحويل تلقائياً', 'info');
+  }
+
   const rawId = name.toLowerCase()
     .replace(/\s+/g, '_')
-    .replace(/[^a-z0-9_أ-ي]/g, '')
-    .slice(0, 32) + '_' + Date.now().toString().slice(-5);
+    .replace(/[^a-z0-9_\u0600-\u06FF]/g, '')
+    .slice(0, 28) + '_' + Date.now().toString().slice(-5);
 
   const task = {
     id:          rawId,
-    icon:        icon || (type === 'channel' ? '📢' : '🔗'),  // افتراضي حسب النوع فقط إذا فارغة
     name,
     reward,
-    task_type:   type,
-    url:         type === 'url'     ? url     : null,
-    channel:     type === 'channel' ? channel : null,
+    task_type:   finalType,
+    url:         parsed.url,
+    channel:     finalType === 'channel' ? parsed.channel : null,
     description: desc,
     is_active:   true,
   };
 
   try {
     const r = await api('add_task', task);
-    if (!r.ok) { toast('❌ ' + (r.error || 'فشل الإضافة'), true); return; }
-  } catch(e) { toast('❌ خطأ في الاتصال', true); return; }
+    if (!r.ok) { toast(r.error || 'فشل الإضافة', 'err'); return; }
+  } catch (e) { toast('خطأ في الاتصال', 'err'); return; }
 
   tasks.push(task);
   renderTasks();
-  // تنظيف الحقول
-  ['tn','ti','tr','tch','tu','td'].forEach(id => document.getElementById(id).value = '');
-  toast('✅ تمت الإضافة في جدول tasks');
+
+  // Reset form
+  ['tn','tr','td','tch','tu'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const smartEl = document.getElementById('tsmartinput');
+  smartEl.value = '';
+  updateSmartUI({ valid: false, hint: '', badgeType: null }, smartEl);
+  toast('تمت إضافة المهمة بنجاح', 'ok');
 }
 
 async function deleteTask(id) {
-  if (!confirm('حذف المهمة؟ سيُحذف أيضاً سجل إنجازات المستخدمين لها.')) return;
+  if (!confirm('حذف المهمة؟ سيُحذف أيضاً سجل إنجازات المستخدمين.')) return;
   try {
     const r = await api('delete_task', { id });
-    if (!r.ok) { toast('❌ ' + r.error, true); return; }
-  } catch(e) { toast('❌ خطأ', true); return; }
+    if (!r.ok) { toast(r.error, 'err'); return; }
+  } catch (e) { toast('خطأ', 'err'); return; }
   tasks = tasks.filter(t => t.id !== id);
   renderTasks();
-  toast('🗑️ تم الحذف');
+  toast('تم حذف المهمة', 'info');
 }
 
 function copyJson() {
   navigator.clipboard.writeText(document.getElementById('tj').value)
-    .then(() => toast('📋 تم النسخ'));
+    .then(() => toast('تم نسخ JSON', 'ok'));
 }
 
 // ══════════════════════════════════════
 //  UTILS
 // ══════════════════════════════════════
 function setBadge(n) {
-  ['rb','rbb'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=n; });
+  ['rb','rbb'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = n;
+  });
 }
 
-let toastT;
-function toast(msg, err=false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show'+(err?' err':'');
-  clearTimeout(toastT);
-  toastT = setTimeout(()=>t.className='', 2800);
+// ── TOAST (smart queue) ────────────────
+let _toastQ = [];
+function toast(msg, type = 'ok') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast-item${type === 'err' ? ' err' : type === 'info' ? ' info' : ''}`;
+
+  // Icon
+  const iconId = type === 'err' ? '#ic-ban' : type === 'info' ? '#ic-link' : '#ic-check';
+  el.innerHTML = `<svg class="icon icon-sm" style="flex-shrink:0"><use href="${iconId}"/></svg>${msg}`;
+
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, 2800);
+}
+
+// ── SKELETON LOADERS ──────────────────
+function skeletonRows(count, cols) {
+  return Array(count).fill(0).map(() =>
+    `<tr>${Array(cols).fill(0).map((_, i) =>
+      `<td><div class="skel skel-line" style="width:${40 + Math.random()*40}%;height:10px"></div></td>`
+    ).join('')}</tr>`
+  ).join('');
+}
+
+function skeletonCards(count) {
+  return Array(count).fill(0).map(() => `
+    <div class="rcard">
+      <div class="skel-row">
+        <div class="skel skel-av"></div>
+        <div style="flex:1">
+          <div class="skel skel-line" style="width:55%;height:12px;margin-bottom:6px"></div>
+          <div class="skel skel-line" style="width:35%;height:9px"></div>
+        </div>
+        <div class="skel skel-line" style="width:80px;height:16px"></div>
+      </div>
+      <div class="skel skel-line" style="width:90%;height:10px;margin:6px 15px 10px"></div>
+    </div>
+  `).join('');
 }
 </script>
 </body>
