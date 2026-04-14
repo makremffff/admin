@@ -167,7 +167,7 @@ module.exports = async (req, res) => {
     // ══════════════════════════════════════════════════════════════
     if (action === 'get_withdrawals') {
       const rows = await sql(`
-        SELECT telegram_id, username, wd_history
+        SELECT telegram_id, username, photo_url, wd_history
         FROM users
         WHERE wd_history::jsonb::text LIKE '%pending%'
         ORDER BY updated_at DESC
@@ -181,6 +181,7 @@ module.exports = async (req, res) => {
             pending.push({
               telegram_id: u.telegram_id,
               username:    u.username,
+              photo_url:   u.photo_url || null,
               index:       idx,
               account:     w.account,
               amount:      w.amount,
