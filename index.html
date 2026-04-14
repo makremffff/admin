@@ -510,6 +510,10 @@ select.fi { appearance: none; cursor: pointer; }
   display: flex; align-items: center; justify-content: center;
   color: var(--green); flex-shrink: 0;
 }
+.rav img {
+  width: 40px; height: 40px; border-radius: 50%;
+  object-fit: cover; display: block;
+}
 .rname { font-weight: 700; font-size: 14px; flex: 1; }
 .rmeta { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 2px; }
 .ramt { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--gold); white-space: nowrap; }
@@ -1656,7 +1660,9 @@ async function loadRequests() {
       <div class="rcard" id="rc-${w.telegram_id}-${w.index}">
         <div class="rcard-top">
           <div class="rav">
-            <svg class="icon icon-md"><use href="#ic-user"/></svg>
+            ${w.photo_url
+              ? `<img src="${w.photo_url}" onerror="this.parentElement.innerHTML='<svg class=\\'icon icon-md\\'><use href=\\'#ic-user\\'/></svg>'">`
+              : `<svg class="icon icon-md"><use href="#ic-user"/></svg>`}
           </div>
           <div style="flex:1">
             <div class="rname">@${w.username || w.telegram_id}</div>
