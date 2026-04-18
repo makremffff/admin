@@ -297,52 +297,61 @@ module.exports = async (req, res) => {
     //  PROMO CODES
     // ══════════════════════════════════════════════════════════════
 
-    // Bootstrap promo_codes table
+    // Bootstrap promo table (same as promo.js)
     async function ensurePromosTable() {
       await sql(`
-        CREATE TABLE IF NOT EXISTS promo_codes (
-          code        TEXT          PRIMARY KEY,
-          reward      NUMERIC(18,6) NOT NULL DEFAULT 0,
-          max_uses    INT           NOT NULL DEFAULT 0,
-          uses_count  INT           NOT NULL DEFAULT 0,
-          expires_at  TIMESTAMPTZ,
-          description TEXT          NOT NULL DEFAULT '',
-          is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
-          created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+        CREATE TABLE IF NOT EXISTS promo (
+          code           TEXT PRIMARY KEY,
+          reward_balance NUMERIC    DEFAULT 0,
+          reward_seeds   INT        DEFAULT 0,
+          reward_water   INT        DEFAULT 0,
+          max_uses       INT        DEFAULT 100,
+          used_count     INT        DEFAULT 0,
+          expires_at     TIMESTAMP,
+          is_active      BOOLEAN    DEFAULT true
+        )
+      `);
+      await sql(`
+        CREATE TABLE IF NOT EXISTS promo_redemptions (
+          user_id     BIGINT,
+          code        TEXT,
+          redeemed_at TIMESTAMP DEFAULT now(),
+          PRIMARY KEY (user_id, code)
         )
       `);
     }
 
     if (action === 'get_promos') {
       await ensurePromosTable();
-      const promos = await sql(`SELECT * FROM promo_codes ORDER BY created_at DESC`);
+      const promos = await sql(`SELECT * FROM promo ORDER BY code ASC`);
       return res.status(200).json({ ok: true, promos });
     }
 
     if (action === 'add_promo') {
       await ensurePromosTable();
-      const { code, reward, max_uses, expires_at, description } = body;
+      const { code, reward_ton, reward_seeds, reward_water, max_uses, expires_at, description } = body;
       if (!code || code.length < 2)
         return res.status(400).json({ ok: false, error: 'كود غير صالح' });
       if (!/^[A-Z0-9_\-]+$/i.test(code))
         return res.status(400).json({ ok: false, error: 'الكود يجب أن يحتوي على أحرف إنجليزية وأرقام فقط' });
-      if (!reward || parseFloat(reward) <= 0)
-        return res.status(400).json({ ok: false, error: 'المكافأة يجب أن تكون أكبر من صفر' });
+
+      const ton   = parseFloat(reward_ton   || 0);
+      const seeds = parseInt(reward_seeds   || 0);
+      const water = parseInt(reward_water   || 0);
+
+      if (ton <= 0 && seeds <= 0 && water <= 0)
+        return res.status(400).json({ ok: false, error: 'يجب تحديد مكافأة واحدة على الأقل (TON أو بذور أو ماء)' });
 
       const cleanCode = code.toUpperCase().trim();
+      const maxU = parseInt(max_uses || 100);
 
       await sql(
-        `INSERT INTO promo_codes (code, reward, max_uses, expires_at, description)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO promo (code, reward_balance, reward_seeds, reward_water, max_uses, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT (code) DO UPDATE SET
-           reward=$2, max_uses=$3, expires_at=$4, description=$5, is_active=TRUE`,
-        [
-          cleanCode,
-          parseFloat(reward),
-          parseInt(max_uses || 0),
-          expires_at || null,
-          description || '',
-        ]
+           reward_balance=$2, reward_seeds=$3, reward_water=$4,
+           max_uses=$5, expires_at=$6, is_active=TRUE`,
+        [cleanCode, ton, seeds, water, maxU, expires_at || null]
       );
       return res.status(200).json({ ok: true });
     }
@@ -351,7 +360,9 @@ module.exports = async (req, res) => {
       await ensurePromosTable();
       const { code } = body;
       if (!code) return res.status(400).json({ ok: false, error: 'Missing code' });
-      await sql(`DELETE FROM promo_codes WHERE code = $1`, [code.toUpperCase().trim()]);
+      const c = code.toUpperCase().trim();
+      await sql(`DELETE FROM promo_redemptions WHERE code = $1`, [c]);
+      await sql(`DELETE FROM promo WHERE code = $1`, [c]);
       return res.status(200).json({ ok: true });
     }
 
@@ -359,11 +370,10 @@ module.exports = async (req, res) => {
       await ensurePromosTable();
       const { code, is_active } = body;
       if (!code) return res.status(400).json({ ok: false, error: 'Missing code' });
-      await sql(`UPDATE promo_codes SET is_active = $2 WHERE code = $1`, [code.toUpperCase().trim(), Boolean(is_active)]);
+      await sql(`UPDATE promo SET is_active = $2 WHERE code = $1`, [code.toUpperCase().trim(), Boolean(is_active)]);
       return res.status(200).json({ ok: true });
     }
 
-    // ── This endpoint is called from the GAME (not admin) to redeem a promo code
     if (action === 'redeem_promo') {
       await ensurePromosTable();
       const { code, telegram_id } = body;
@@ -373,41 +383,48 @@ module.exports = async (req, res) => {
       const cleanCode = code.toUpperCase().trim();
       const uid       = parseInt(telegram_id);
 
-      // Fetch promo
-      const promos = await sql(`SELECT * FROM promo_codes WHERE code = $1`, [cleanCode]);
-      if (!promos.length)
+      const promoRows = await sql(`SELECT * FROM promo WHERE code = $1`, [cleanCode]);
+      if (!promoRows.length)
         return res.status(404).json({ ok: false, error: 'الكود غير موجود' });
 
-      const promo = promos[0];
+      const promo = promoRows[0];
+      const now   = new Date();
 
       if (!promo.is_active)
         return res.status(400).json({ ok: false, error: 'الكود غير نشط' });
-
-      if (promo.expires_at && new Date(promo.expires_at) < new Date())
+      if (promo.expires_at && new Date(promo.expires_at) < now)
         return res.status(400).json({ ok: false, error: 'انتهت صلاحية الكود' });
-
-      if (promo.max_uses > 0 && promo.uses_count >= promo.max_uses)
+      if (promo.used_count >= promo.max_uses)
         return res.status(400).json({ ok: false, error: 'تم استنفاد الكود بالكامل' });
 
-      // Check if user already used it — uses a separate table for safety
-      await sql(`
-        CREATE TABLE IF NOT EXISTS promo_uses (
-          code        TEXT,
-          telegram_id BIGINT,
-          used_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          PRIMARY KEY (code, telegram_id)
-        )
-      `);
-      const alreadyUsed = await sql(`SELECT 1 FROM promo_uses WHERE code=$1 AND telegram_id=$2`, [cleanCode, uid]);
-      if (alreadyUsed.length)
+      const already = await sql(
+        `SELECT 1 FROM promo_redemptions WHERE user_id = $1 AND code = $2`,
+        [uid, cleanCode]
+      );
+      if (already.length)
         return res.status(400).json({ ok: false, error: 'لقد استخدمت هذا الكود من قبل' });
 
       // Apply reward
-      await sql(`UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE telegram_id = $2`, [parseFloat(promo.reward), uid]);
-      await sql(`UPDATE promo_codes SET uses_count = uses_count + 1 WHERE code = $1`, [cleanCode]);
-      await sql(`INSERT INTO promo_uses (code, telegram_id) VALUES ($1, $2)`, [cleanCode, uid]);
+      const rewardTon   = parseFloat(promo.reward_balance || 0);
+      const rewardSeeds = parseInt(promo.reward_seeds     || 0);
+      const rewardWater = parseInt(promo.reward_water     || 0);
 
-      return res.status(200).json({ ok: true, reward: parseFloat(promo.reward) });
+      const setParts = [];
+      const setVals  = [uid];
+
+      if (rewardTon   > 0) { setParts.push(`balance     = balance     + $${setVals.length + 1}`); setVals.push(rewardTon); }
+      if (rewardSeeds > 0) { setParts.push(`seeds       = seeds       + $${setVals.length + 1}`); setVals.push(rewardSeeds); }
+      if (rewardWater > 0) { setParts.push(`water_count = water_count + $${setVals.length + 1}`); setVals.push(rewardWater); }
+
+      if (setParts.length) {
+        setParts.push(`updated_at = NOW()`);
+        await sql(`UPDATE users SET ${setParts.join(', ')} WHERE telegram_id = $1`, setVals);
+      }
+
+      await sql(`UPDATE promo SET used_count = used_count + 1 WHERE code = $1`, [cleanCode]);
+      await sql(`INSERT INTO promo_redemptions (user_id, code) VALUES ($1, $2)`, [uid, cleanCode]);
+
+      return res.status(200).json({ ok: true, reward_ton: rewardTon, reward_seeds: rewardSeeds, reward_water: rewardWater });
     }
 
     return res.status(400).json({ ok: false, error: 'Unknown action: ' + action });
