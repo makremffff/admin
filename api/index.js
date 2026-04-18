@@ -55,7 +55,6 @@ module.exports = async (req, res) => {
         FROM users
       `);
 
-      // FIX: cast jsonb → text بشكل صحيح
       const pendingRows = await sql(`
         SELECT telegram_id, username, wd_history
         FROM users
@@ -96,7 +95,6 @@ module.exports = async (req, res) => {
         LIMIT $1 OFFSET $2
       `, [limit, offset]);
 
-      // FIX: Neon يرجع COUNT كـ "count" مش "cnt"
       const countRow = await sql(`SELECT COUNT(*) AS cnt FROM users`);
       const total = parseInt(countRow[0]?.cnt || countRow[0]?.count || 0);
 
@@ -144,21 +142,17 @@ module.exports = async (req, res) => {
       const fields = [];
       const vals   = [parseInt(telegram_id)];
 
-      if (balance       !== undefined) { fields.push(`balance       = $${vals.length+1}`); vals.push(parseFloat(balance)); }
-      if (seeds         !== undefined) { fields.push(`seeds         = $${vals.length+1}`); vals.push(parseInt(seeds)); }
-      if (water_count   !== undefined) { fields.push(`water_count   = $${vals.length+1}`); vals.push(parseInt(water_count)); }
-      if (risk_score    !== undefined) { fields.push(`risk_score    = $${vals.length+1}`); vals.push(parseInt(risk_score)); }
-      if (shadow_banned !== undefined) { fields.push(`shadow_banned  = $${vals.length+1}`); vals.push(Boolean(shadow_banned)); }
-      if (is_hard_banned !== undefined){ fields.push(`is_hard_banned = $${vals.length+1}`); vals.push(Boolean(is_hard_banned)); }
+      if (balance        !== undefined) { fields.push(`balance        = $${vals.length+1}`); vals.push(parseFloat(balance)); }
+      if (seeds          !== undefined) { fields.push(`seeds          = $${vals.length+1}`); vals.push(parseInt(seeds)); }
+      if (water_count    !== undefined) { fields.push(`water_count    = $${vals.length+1}`); vals.push(parseInt(water_count)); }
+      if (risk_score     !== undefined) { fields.push(`risk_score     = $${vals.length+1}`); vals.push(parseInt(risk_score)); }
+      if (shadow_banned  !== undefined) { fields.push(`shadow_banned  = $${vals.length+1}`); vals.push(Boolean(shadow_banned)); }
+      if (is_hard_banned !== undefined) { fields.push(`is_hard_banned = $${vals.length+1}`); vals.push(Boolean(is_hard_banned)); }
 
       if (!fields.length) return res.status(400).json({ ok: false, error: 'No fields to update' });
       fields.push(`updated_at = NOW()`);
 
-      await sql(
-        `UPDATE users SET ${fields.join(', ')} WHERE telegram_id = $1`,
-        vals
-      );
-
+      await sql(`UPDATE users SET ${fields.join(', ')} WHERE telegram_id = $1`, vals);
       return res.status(200).json({ ok: true });
     }
 
@@ -229,10 +223,9 @@ module.exports = async (req, res) => {
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  TASKS — يستخدم جدول tasks الرئيسي (نفس جدول اللعبة)
+    //  TASKS
     // ══════════════════════════════════════════════════════════════
     if (action === 'get_tasks') {
-      // bootstrap الجدول إذا لم يكن موجوداً
       await sql(`
         CREATE TABLE IF NOT EXISTS tasks (
           id          TEXT          PRIMARY KEY,
@@ -256,13 +249,11 @@ module.exports = async (req, res) => {
       const { id, icon, name, reward, task_type, url, channel, description } = body;
       if (!id || !name) return res.status(400).json({ ok: false, error: 'Missing id or name' });
 
-      // تحقق: channel task يحتاج channel، url task يحتاج url
       if (task_type === 'channel' && !channel)
         return res.status(400).json({ ok: false, error: 'channel task requires channel username' });
       if (task_type === 'url' && !url)
         return res.status(400).json({ ok: false, error: 'url task requires url' });
 
-      // sort_order = آخر قيمة + 1
       const maxOrder = await sql(`SELECT COALESCE(MAX(sort_order),0) AS m FROM tasks`);
       const nextOrder = parseInt(maxOrder[0]?.m || 0) + 1;
 
@@ -278,8 +269,8 @@ module.exports = async (req, res) => {
           name,
           parseFloat(reward || 0),
           task_type || 'url',
-          task_type === 'url'     ? (url || null)     : null,
-          task_type === 'channel' ? (channel || null)  : null,
+          task_type === 'url'     ? (url || null)    : null,
+          task_type === 'channel' ? (channel || null) : null,
           description || '',
           nextOrder,
         ]
@@ -290,7 +281,6 @@ module.exports = async (req, res) => {
     if (action === 'delete_task') {
       const { id } = body;
       if (!id) return res.status(400).json({ ok: false, error: 'Missing id' });
-      // أيضاً احذف إنجازات المستخدمين المرتبطة
       await sql(`DELETE FROM user_tasks WHERE task_id = $1`, [id]).catch(() => {});
       await sql(`DELETE FROM tasks WHERE id = $1`, [id]);
       return res.status(200).json({ ok: true });
@@ -301,6 +291,123 @@ module.exports = async (req, res) => {
       if (!id) return res.status(400).json({ ok: false, error: 'Missing id' });
       await sql(`UPDATE tasks SET is_active = $2 WHERE id = $1`, [id, Boolean(is_active)]);
       return res.status(200).json({ ok: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  PROMO CODES
+    // ══════════════════════════════════════════════════════════════
+
+    // Bootstrap promo_codes table
+    async function ensurePromosTable() {
+      await sql(`
+        CREATE TABLE IF NOT EXISTS promo_codes (
+          code        TEXT          PRIMARY KEY,
+          reward      NUMERIC(18,6) NOT NULL DEFAULT 0,
+          max_uses    INT           NOT NULL DEFAULT 0,
+          uses_count  INT           NOT NULL DEFAULT 0,
+          expires_at  TIMESTAMPTZ,
+          description TEXT          NOT NULL DEFAULT '',
+          is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
+          created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+        )
+      `);
+    }
+
+    if (action === 'get_promos') {
+      await ensurePromosTable();
+      const promos = await sql(`SELECT * FROM promo_codes ORDER BY created_at DESC`);
+      return res.status(200).json({ ok: true, promos });
+    }
+
+    if (action === 'add_promo') {
+      await ensurePromosTable();
+      const { code, reward, max_uses, expires_at, description } = body;
+      if (!code || code.length < 2)
+        return res.status(400).json({ ok: false, error: 'كود غير صالح' });
+      if (!/^[A-Z0-9_\-]+$/i.test(code))
+        return res.status(400).json({ ok: false, error: 'الكود يجب أن يحتوي على أحرف إنجليزية وأرقام فقط' });
+      if (!reward || parseFloat(reward) <= 0)
+        return res.status(400).json({ ok: false, error: 'المكافأة يجب أن تكون أكبر من صفر' });
+
+      const cleanCode = code.toUpperCase().trim();
+
+      await sql(
+        `INSERT INTO promo_codes (code, reward, max_uses, expires_at, description)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (code) DO UPDATE SET
+           reward=$2, max_uses=$3, expires_at=$4, description=$5, is_active=TRUE`,
+        [
+          cleanCode,
+          parseFloat(reward),
+          parseInt(max_uses || 0),
+          expires_at || null,
+          description || '',
+        ]
+      );
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'delete_promo') {
+      await ensurePromosTable();
+      const { code } = body;
+      if (!code) return res.status(400).json({ ok: false, error: 'Missing code' });
+      await sql(`DELETE FROM promo_codes WHERE code = $1`, [code.toUpperCase().trim()]);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'toggle_promo') {
+      await ensurePromosTable();
+      const { code, is_active } = body;
+      if (!code) return res.status(400).json({ ok: false, error: 'Missing code' });
+      await sql(`UPDATE promo_codes SET is_active = $2 WHERE code = $1`, [code.toUpperCase().trim(), Boolean(is_active)]);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ── This endpoint is called from the GAME (not admin) to redeem a promo code
+    if (action === 'redeem_promo') {
+      await ensurePromosTable();
+      const { code, telegram_id } = body;
+      if (!code || !telegram_id)
+        return res.status(400).json({ ok: false, error: 'Missing code or telegram_id' });
+
+      const cleanCode = code.toUpperCase().trim();
+      const uid       = parseInt(telegram_id);
+
+      // Fetch promo
+      const promos = await sql(`SELECT * FROM promo_codes WHERE code = $1`, [cleanCode]);
+      if (!promos.length)
+        return res.status(404).json({ ok: false, error: 'الكود غير موجود' });
+
+      const promo = promos[0];
+
+      if (!promo.is_active)
+        return res.status(400).json({ ok: false, error: 'الكود غير نشط' });
+
+      if (promo.expires_at && new Date(promo.expires_at) < new Date())
+        return res.status(400).json({ ok: false, error: 'انتهت صلاحية الكود' });
+
+      if (promo.max_uses > 0 && promo.uses_count >= promo.max_uses)
+        return res.status(400).json({ ok: false, error: 'تم استنفاد الكود بالكامل' });
+
+      // Check if user already used it — uses a separate table for safety
+      await sql(`
+        CREATE TABLE IF NOT EXISTS promo_uses (
+          code        TEXT,
+          telegram_id BIGINT,
+          used_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          PRIMARY KEY (code, telegram_id)
+        )
+      `);
+      const alreadyUsed = await sql(`SELECT 1 FROM promo_uses WHERE code=$1 AND telegram_id=$2`, [cleanCode, uid]);
+      if (alreadyUsed.length)
+        return res.status(400).json({ ok: false, error: 'لقد استخدمت هذا الكود من قبل' });
+
+      // Apply reward
+      await sql(`UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE telegram_id = $2`, [parseFloat(promo.reward), uid]);
+      await sql(`UPDATE promo_codes SET uses_count = uses_count + 1 WHERE code = $1`, [cleanCode]);
+      await sql(`INSERT INTO promo_uses (code, telegram_id) VALUES ($1, $2)`, [cleanCode, uid]);
+
+      return res.status(200).json({ ok: true, reward: parseFloat(promo.reward) });
     }
 
     return res.status(400).json({ ok: false, error: 'Unknown action: ' + action });
