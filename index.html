@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -1239,9 +1240,19 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
             <label class="fl">الكود *</label>
             <input class="fi" id="pcode" placeholder="WELCOME2025" style="letter-spacing:.1em; text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" />
           </div>
+        </div>
+        <div class="frow">
           <div class="fg">
-            <label class="fl">المكافأة (TON) *</label>
-            <input class="fi" id="preward" type="number" step="0.001" placeholder="0.010" />
+            <label class="fl">💎 TON</label>
+            <input class="fi" id="preward_ton" type="number" step="0.001" min="0" placeholder="0.000" />
+          </div>
+          <div class="fg">
+            <label class="fl">🌱 بذور</label>
+            <input class="fi" id="preward_seeds" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="fg">
+            <label class="fl">💧 ماء</label>
+            <input class="fi" id="preward_water" type="number" min="0" placeholder="0" />
           </div>
         </div>
         <div class="frow">
@@ -1858,7 +1869,7 @@ function promoStatus(p) {
   const now = new Date();
   if (p.expires_at && new Date(p.expires_at) < now) return 'expired';
   const maxUses = parseInt(p.max_uses || 0);
-  const uses    = parseInt(p.uses_count || 0);
+  const uses    = parseInt(p.used_count || 0);
   if (maxUses > 0 && uses >= maxUses) return 'used';
   return 'active';
 }
@@ -1883,7 +1894,7 @@ function renderPromos() {
   list.innerHTML = promos.map(p => {
     const st    = promoStatus(p);
     const stLbl = promoStatusLabel(st);
-    const uses  = parseInt(p.uses_count || 0);
+    const uses  = parseInt(p.used_count || 0);
     const max   = parseInt(p.max_uses || 0);
     const expiry = p.expires_at ? new Date(p.expires_at).toLocaleDateString('ar-DZ') : '—';
     return `<div class="pc">
@@ -1893,7 +1904,9 @@ function renderPromos() {
       <div class="pc-info">
         <div class="pc-code">${p.code}</div>
         <div class="pc-meta">
-          <span><svg class="icon icon-sm" style="width:11px;height:11px"><use href="#ic-zap"/></svg> ${parseFloat(p.reward).toFixed(3)} TON</span>
+          ${parseFloat(p.reward_balance||0)>0?`<span><svg class="icon icon-sm" style="width:11px;height:11px;color:var(--blue)"><use href="#ic-zap"/></svg> ${parseFloat(p.reward_balance).toFixed(3)} TON</span>`:''}
+          ${parseInt(p.reward_seeds||0)>0?`<span>🌱 ${parseInt(p.reward_seeds)} بذرة</span>`:''}
+          ${parseInt(p.reward_water||0)>0?`<span>💧 ${parseInt(p.reward_water)} ماء</span>`:''}
           <span><svg class="icon icon-sm" style="width:11px;height:11px"><use href="#ic-clock"/></svg> ${expiry}</span>
           ${p.description ? `<span>${p.description}</span>` : ''}
         </div>
@@ -1912,20 +1925,25 @@ function renderPromos() {
 
 async function addPromo() {
   const code    = document.getElementById('pcode').value.trim().toUpperCase();
-  const reward  = parseFloat(document.getElementById('preward').value);
+  const ton     = parseFloat(document.getElementById('preward_ton').value   || 0);
+  const seeds   = parseInt(document.getElementById('preward_seeds').value   || 0);
+  const water   = parseInt(document.getElementById('preward_water').value   || 0);
   const maxUses = parseInt(document.getElementById('pmaxuses').value || 0);
   const expiry  = document.getElementById('pexpiry').value;
   const desc    = document.getElementById('pdesc').value.trim();
 
   if (!code || code.length < 2)      { toast('أدخل كود صالح (حرفان على الأقل)', 'err'); return; }
   if (!/^[A-Z0-9_\-]+$/.test(code)) { toast('الكود يجب أن يحتوي على أحرف إنجليزية وأرقام فقط', 'err'); return; }
-  if (isNaN(reward) || reward <= 0)  { toast('أدخل مكافأة صحيحة أكبر من صفر', 'err'); return; }
+  if (ton <= 0 && seeds <= 0 && water <= 0) { toast('حدد مكافأة واحدة على الأقل (TON أو بذور أو ماء)', 'err'); return; }
 
   try {
-    const r = await api('add_promo', { code, reward, max_uses: maxUses, expires_at: expiry || null, description: desc });
+    const r = await api('add_promo', {
+      code, reward_ton: ton, reward_seeds: seeds, reward_water: water,
+      max_uses: maxUses, expires_at: expiry || null, description: desc
+    });
     if (!r.ok) { toast(r.error || 'فشل الإضافة', 'err'); return; }
     toast('تم إضافة الكود بنجاح', 'ok');
-    ['pcode','preward','pmaxuses','pexpiry','pdesc'].forEach(id => { document.getElementById(id).value = ''; });
+    ['pcode','preward_ton','preward_seeds','preward_water','pmaxuses','pexpiry','pdesc'].forEach(id => { document.getElementById(id).value = ''; });
     await loadPromos();
   } catch (e) { toast('خطأ في الاتصال', 'err'); }
 }
