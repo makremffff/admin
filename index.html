@@ -10,26 +10,22 @@
    DESIGN TOKENS — 8px Grid System
 ═══════════════════════════════════════════ */
 :root {
-  /* Surfaces */
-  --bg:      #050b07;
-  --surf-1:  #080f0a;
-  --surf-2:  #0c1510;
-  --surf-3:  #111d14;
-  --surf-4:  #162219;
+  --bg:      #030a05;
+  --surf-1:  #060e08;
+  --surf-2:  #0a1410;
+  --surf-3:  #0f1c12;
+  --surf-4:  #142018;
 
-  /* Borders */
-  --bdr-1:   rgba(80,200,120,.07);
-  --bdr-2:   rgba(80,200,120,.14);
-  --bdr-3:   rgba(80,200,120,.24);
+  --bdr-1:   rgba(78,203,122,.06);
+  --bdr-2:   rgba(78,203,122,.13);
+  --bdr-3:   rgba(78,203,122,.22);
 
-  /* Brand */
-  --green:   #4ecb7a;
-  --green-d: #3aad64;
-  --green-g: rgba(78,203,122,.06);
-  --green-g2:rgba(78,203,122,.12);
-  --glow:    0 0 20px rgba(78,203,122,.18);
+  --green:   #3ecf6e;
+  --green-d: #2db85a;
+  --green-g: rgba(62,207,110,.05);
+  --green-g2:rgba(62,207,110,.10);
+  --glow:    0 0 24px rgba(62,207,110,.14), 0 0 60px rgba(62,207,110,.06);
 
-  /* Accents */
   --gold:    #f0c040;
   --gold-g:  rgba(240,192,64,.06);
   --red:     #e05555;
@@ -37,46 +33,37 @@
   --blue:    #4ab4e8;
   --blue-g:  rgba(74,180,232,.06);
   --purple:  #9b7aff;
+  --purple-g:rgba(155,122,255,.06);
 
-  /* Text */
-  --t1: #cce8d8;
-  --t2: rgba(204,232,216,.62);
-  --t3: rgba(204,232,216,.35);
-  --t4: rgba(204,232,216,.18);
+  --t1: #c8e8d4;
+  --t2: rgba(200,232,212,.60);
+  --t3: rgba(200,232,212,.32);
+  --t4: rgba(200,232,212,.15);
 
-  /* Type */
   --mono: 'IBM Plex Mono', monospace;
   --sans: 'Tajawal', sans-serif;
 
-  /* Spacing (8px grid) */
   --s1: 4px;  --s2: 8px;   --s3: 12px;
   --s4: 16px; --s5: 20px;  --s6: 24px;
   --s7: 32px; --s8: 40px;  --s9: 48px;
 
-  /* Radii */
-  --r1: 6px; --r2: 10px; --r3: 14px; --r4: 20px;
+  --r1: 6px; --r2: 10px; --r3: 14px; --r4: 20px; --r5: 28px;
 
-  /* Nav */
   --nb: 64px;
-  --sb: 220px;
+  --sb: 230px;
 
-  /* Transitions */
-  --t-fast: .12s ease;
-  --t-base: .2s ease;
-  --t-slow: .35s ease;
+  --t-fast: .1s ease;
+  --t-base: .18s ease;
+  --t-slow: .3s ease;
 }
 
 /* ═══════════════════════════════════════════
    SVG ICON SYSTEM
 ═══════════════════════════════════════════ */
 .icon {
-  display: inline-block;
-  flex-shrink: 0;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  display: inline-block; flex-shrink: 0;
+  fill: none; stroke: currentColor;
+  stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
   transition: stroke var(--t-base), transform var(--t-base);
   vertical-align: middle;
 }
@@ -85,7 +72,6 @@
 .icon-lg  { width: 22px; height: 22px; }
 .icon-xl  { width: 28px; height: 28px; }
 
-/* Hover animation on interactive parents */
 button:hover .icon, a:hover .icon, .ni:hover .icon { transform: scale(1.1); }
 .tk-del:hover .icon { stroke: var(--red); transform: scale(1.15) rotate(8deg); }
 
@@ -94,78 +80,78 @@ button:hover .icon, a:hover .icon, .ni:hover .icon { transform: scale(1.1); }
 ═══════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body {
-  height: 100%;
-  font-family: var(--sans);
-  color: var(--t1);
-  background: var(--bg);
-  overflow: hidden;
-  -webkit-font-smoothing: antialiased;
+  height: 100%; font-family: var(--sans); color: var(--t1);
+  background: var(--bg); overflow: hidden; -webkit-font-smoothing: antialiased;
 }
 
-/* Grid background */
+/* animated mesh background */
 body::before {
   content: '';
   position: fixed; inset: 0;
   background-image:
-    linear-gradient(rgba(78,203,122,.008) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(78,203,122,.008) 1px, transparent 1px);
-  background-size: 32px 32px;
+    radial-gradient(ellipse 80% 50% at 20% 80%, rgba(62,207,110,.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(74,180,232,.03) 0%, transparent 50%),
+    linear-gradient(rgba(62,207,110,.006) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(62,207,110,.006) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 28px 28px, 28px 28px;
   pointer-events: none; z-index: 0;
 }
 
-/* Noise grain overlay */
 body::after {
   content: '';
   position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 0; opacity: .4;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: .5;
 }
 
 /* ═══════════════════════════════════════════
    LOGIN
 ═══════════════════════════════════════════ */
 #login {
-  position: fixed; inset: 0;
-  background: var(--bg);
+  position: fixed; inset: 0; background: var(--bg);
   display: flex; align-items: center; justify-content: center;
   z-index: 9000;
 }
 .lbox {
-  background: var(--surf-2);
+  background: linear-gradient(160deg, var(--surf-2), var(--surf-1));
   border: 1px solid var(--bdr-2);
-  border-radius: var(--r4);
+  border-radius: var(--r5);
   padding: var(--s8) var(--s7);
-  width: 340px;
-  text-align: center;
-  box-shadow: 0 24px 80px rgba(0,0,0,.6), 0 0 40px rgba(78,203,122,.06);
+  width: 340px; text-align: center;
+  box-shadow: 0 32px 100px rgba(0,0,0,.7), 0 0 60px rgba(62,207,110,.07), inset 0 1px 0 rgba(62,207,110,.1);
   position: relative; z-index: 1;
+  animation: lbox-in .45s cubic-bezier(.23,1,.32,1) both;
+}
+@keyframes lbox-in {
+  from { opacity:0; transform: translateY(24px) scale(.96); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
 }
 .lbox-logo {
-  width: 64px; height: 64px;
-  margin: 0 auto var(--s4);
-  background: linear-gradient(135deg, #1a4a28, #2d8a4e);
-  border-radius: var(--r3);
+  width: 68px; height: 68px; margin: 0 auto var(--s5);
+  background: linear-gradient(135deg, #153d22, #1e6e39);
+  border-radius: 20px;
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--bdr-2);
+  border: 1px solid rgba(62,207,110,.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,.4), 0 0 20px rgba(62,207,110,.12);
 }
 .lbox h2 {
   font-family: var(--mono); color: var(--green);
-  font-size: 13px; letter-spacing: .12em; margin-bottom: var(--s1);
+  font-size: 12px; letter-spacing: .16em; margin-bottom: var(--s1);
+  text-transform: uppercase;
 }
-.lbox p { color: var(--t3); font-size: 11px; font-family: var(--mono); margin-bottom: var(--s6); }
+.lbox p { color: var(--t3); font-size: 10px; font-family: var(--mono); margin-bottom: var(--s6); letter-spacing:.06em; }
 .lbox input {
   width: 100%;
   background: var(--surf-1); border: 1px solid var(--bdr-2);
-  border-radius: var(--r2); padding: 13px var(--s4);
-  color: var(--t1); font-family: var(--mono); font-size: 16px;
-  text-align: center; outline: none; letter-spacing: .25em;
+  border-radius: var(--r3); padding: 13px var(--s4);
+  color: var(--t1); font-family: var(--mono); font-size: 18px;
+  text-align: center; outline: none; letter-spacing: .3em;
   margin-bottom: var(--s3); transition: border-color var(--t-base), box-shadow var(--t-base);
 }
-.lbox input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(78,203,122,.12); }
+.lbox input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(62,207,110,.12); }
 .lerr {
   color: var(--red); font-family: var(--mono); font-size: 11px;
-  margin-top: var(--s2); display: none; align-items: center; gap: var(--s2);
-  justify-content: center;
+  margin-top: var(--s2); display: none; align-items: center; gap: var(--s2); justify-content: center;
 }
 
 /* ═══════════════════════════════════════════
@@ -189,9 +175,10 @@ body::after {
 }
 .sb-logo-icon {
   width: 40px; height: 40px; border-radius: var(--r2);
-  background: linear-gradient(135deg, #1a4a28, #2d8a4e);
+  background: linear-gradient(135deg, #142f1c, #1e5a30);
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--bdr-2); flex-shrink: 0;
+  border: 1px solid rgba(62,207,110,.18); flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
 }
 .sb-logo-text h1 {
   font-family: var(--mono); font-size: 11px;
@@ -201,16 +188,17 @@ body::after {
 
 nav { flex: 1; padding: var(--s2) 0; }
 .ns {
-  padding: var(--s4) var(--s3) var(--s2);
+  padding: var(--s4) var(--s4) var(--s2);
   font-size: 9px; color: var(--t4); font-family: var(--mono);
   letter-spacing: .18em; text-transform: uppercase; margin-top: var(--s2);
 }
 .ni {
   display: flex; align-items: center; gap: var(--s3);
-  padding: var(--s3) var(--s4); cursor: pointer; color: var(--t2);
-  font-size: 14px; font-weight: 500;
+  padding: 10px var(--s4); cursor: pointer; color: var(--t2);
+  font-size: 13.5px; font-weight: 500;
   transition: all var(--t-base);
   border-right: 2px solid transparent; margin: 1px 0;
+  border-radius: 0 0 0 0;
   position: relative;
 }
 .ni:hover { background: var(--green-g); color: var(--t1); }
@@ -225,7 +213,6 @@ nav { flex: 1; padding: var(--s2) 0; }
   font-size: 9px; font-family: var(--mono);
   padding: 1px 6px; border-radius: 20px; min-width: 18px; text-align: center;
 }
-
 .sb-foot {
   padding: var(--s3) var(--s4);
   border-top: 1px solid var(--bdr-1);
@@ -237,8 +224,8 @@ nav { flex: 1; padding: var(--s2) 0; }
   animation: pulse 2.4s infinite;
 }
 @keyframes pulse {
-  0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(78,203,122,.4); }
-  50% { opacity: .7; box-shadow: 0 0 0 4px rgba(78,203,122,0); }
+  0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(62,207,110,.4); }
+  50%      { opacity: .7; box-shadow: 0 0 0 4px rgba(62,207,110,0); }
 }
 
 /* ═══════════════════════════════════════════
@@ -246,7 +233,11 @@ nav { flex: 1; padding: var(--s2) 0; }
 ═══════════════════════════════════════════ */
 #main { flex: 1; overflow-y: auto; overflow-x: hidden; height: 100vh; }
 .page { display: none; padding: var(--s6) var(--s5) 120px; }
-.page.act { display: block; }
+.page.act { display: block; animation: pg-in .22s ease both; }
+@keyframes pg-in {
+  from { opacity:0; transform: translateY(8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
 
 /* ═══════════════════════════════════════════
    TOPBAR
@@ -256,8 +247,17 @@ nav { flex: 1; padding: var(--s2) 0; }
   justify-content: space-between;
   margin-bottom: var(--s5); gap: var(--s3); flex-wrap: wrap;
 }
-.topbar h2 { font-family: var(--mono); font-size: 17px; color: var(--green); letter-spacing: .04em; }
-.topbar .sub { font-size: 11px; color: var(--t3); margin-top: var(--s1); font-family: var(--mono); }
+.topbar h2 {
+  font-family: var(--mono); font-size: 16px; color: var(--green); letter-spacing: .04em;
+  display: flex; align-items: center; gap: var(--s2);
+}
+.topbar h2 .page-icon {
+  width: 32px; height: 32px; border-radius: var(--r2);
+  background: var(--green-g2); border: 1px solid var(--bdr-2);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--green); margin-left: var(--s2);
+}
+.topbar .sub { font-size: 11px; color: var(--t3); margin-top: 4px; font-family: var(--mono); }
 
 /* ═══════════════════════════════════════════
    STATS GRID
@@ -269,35 +269,31 @@ nav { flex: 1; padding: var(--s2) 0; }
   border-radius: var(--r3);
   padding: var(--s4) var(--s5);
   position: relative; overflow: hidden;
-  transition: border-color var(--t-base), box-shadow var(--t-base);
+  transition: border-color var(--t-base), box-shadow var(--t-base), transform var(--t-base);
 }
-.sc:hover { border-color: var(--bdr-2); box-shadow: var(--glow); }
+.sc:hover { border-color: var(--bdr-3); box-shadow: var(--glow); transform: translateY(-1px); }
 .sc::before {
   content: ''; position: absolute;
   top: 0; right: 0; width: 3px; height: 100%;
-  background: var(--green); opacity: .5;
-  transition: opacity var(--t-base);
+  background: var(--green); opacity: .45;
+  transition: opacity var(--t-base), width var(--t-base);
 }
-.sc:hover::before { opacity: .9; }
+.sc:hover::before { opacity: 1; }
 .sc.gold::before { background: var(--gold); }
 .sc.red::before  { background: var(--red); }
 .sc.blue::before { background: var(--blue); }
-.sc-icon {
-  position: absolute; top: 12px; left: 12px;
-  opacity: .08;
-}
+.sc.purple::before { background: var(--purple); }
+.sc-icon { position: absolute; top: 12px; left: 12px; opacity: .07; }
 .sl {
   font-size: 9px; color: var(--t3); font-family: var(--mono);
   letter-spacing: .1em; text-transform: uppercase; margin-bottom: var(--s2);
 }
-.sv {
-  font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--t1);
-  transition: color var(--t-base);
-}
+.sv { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--t1); }
 .sv.g { color: var(--green); }
 .sv.q { color: var(--gold); }
 .sv.r { color: var(--red); }
 .sv.b { color: var(--blue); }
+.sv.p { color: var(--purple); }
 
 /* ═══════════════════════════════════════════
    BUTTONS
@@ -312,30 +308,43 @@ nav { flex: 1; padding: var(--s2) 0; }
 }
 .btn::after {
   content: ''; position: absolute; inset: 0;
-  background: rgba(255,255,255,0);
-  transition: background var(--t-fast);
+  background: rgba(255,255,255,0); transition: background var(--t-fast);
 }
 .btn:hover::after { background: rgba(255,255,255,.06); }
 .btn:active { transform: scale(.97); }
 
 .btn-g {
-  background: var(--green); color: #061209;
-  box-shadow: 0 4px 16px rgba(78,203,122,.25);
+  background: linear-gradient(135deg, var(--green), var(--green-d));
+  color: #041008;
+  box-shadow: 0 4px 16px rgba(62,207,110,.22);
 }
-.btn-g:hover { background: #5dd98a; box-shadow: 0 6px 24px rgba(78,203,122,.35); }
+.btn-g:hover { box-shadow: 0 6px 24px rgba(62,207,110,.32); }
 
 .btn-r {
-  background: var(--red); color: #fff;
-  box-shadow: 0 4px 16px rgba(224,85,85,.2);
+  background: linear-gradient(135deg, var(--red), #c73c3c);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(224,85,85,.18);
 }
-.btn-r:hover { background: #f06565; }
+.btn-r:hover { box-shadow: 0 6px 24px rgba(224,85,85,.28); }
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold), #d4a820);
+  color: #1a0e00;
+  box-shadow: 0 4px 16px rgba(240,192,64,.22);
+}
+.btn-gold:hover { box-shadow: 0 6px 24px rgba(240,192,64,.32); }
+
+.btn-purple {
+  background: linear-gradient(135deg, var(--purple), #7a5ee0);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(155,122,255,.22);
+}
+.btn-purple:hover { box-shadow: 0 6px 24px rgba(155,122,255,.32); }
 
 .btn-gh {
-  background: transparent;
-  border: 1px solid var(--bdr-2);
-  color: var(--t2);
+  background: transparent; border: 1px solid var(--bdr-2); color: var(--t2);
 }
-.btn-gh:hover { border-color: var(--green); color: var(--green); }
+.btn-gh:hover { border-color: var(--green); color: var(--green); background: var(--green-g); }
 
 .btn-sm { padding: var(--s1) var(--s3); font-size: 11px; }
 .btn-full { width: 100%; justify-content: center; padding: 12px; }
@@ -351,15 +360,14 @@ nav { flex: 1; padding: var(--s2) 0; }
   color: var(--t1); font-family: var(--mono); font-size: 13px;
   outline: none; transition: border-color var(--t-base), box-shadow var(--t-base);
 }
-.srow input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(78,203,122,.1); }
+.srow input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(62,207,110,.1); }
 .srow input::placeholder { color: var(--t4); }
 
 /* ═══════════════════════════════════════════
    TABLE
 ═══════════════════════════════════════════ */
 .tw {
-  background: var(--surf-2);
-  border: 1px solid var(--bdr-1);
+  background: var(--surf-2); border: 1px solid var(--bdr-1);
   border-radius: var(--r3); overflow: hidden; overflow-x: auto;
 }
 .th {
@@ -382,6 +390,14 @@ tbody tr:last-child { border-bottom: none; }
 tbody td { padding: var(--s2) var(--s3); font-family: var(--mono); font-size: 11px; white-space: nowrap; }
 .tid { color: var(--t3); }
 .tname { color: var(--t1); font-weight: 600; }
+.tname a {
+  color: inherit; text-decoration: none;
+  transition: color var(--t-fast);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.tname a:hover { color: var(--blue); }
+.tname a .tg-arrow { opacity: 0; transition: opacity var(--t-fast), transform var(--t-fast); }
+.tname a:hover .tg-arrow { opacity: 1; transform: translateX(-2px); }
 .tbal { color: var(--gold); }
 .tr0 { color: var(--green); }
 .tr1 { color: var(--gold); }
@@ -402,18 +418,19 @@ tbody td { padding: var(--s2) var(--s3); font-family: var(--mono); font-size: 11
 ═══════════════════════════════════════════ */
 #ov {
   display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.8); backdrop-filter: blur(4px);
+  background: rgba(0,0,0,.82); backdrop-filter: blur(6px);
   z-index: 1000; align-items: flex-end; justify-content: center;
 }
 #ov.open { display: flex; }
 .modal {
-  background: var(--surf-2);
+  background: linear-gradient(160deg, var(--surf-2), var(--surf-1));
   border: 1px solid var(--bdr-2);
   border-radius: var(--r4) var(--r4) 0 0;
-  width: 100%; max-width: 520px; max-height: 90vh;
+  width: 100%; max-width: 520px; max-height: 92vh;
   overflow-y: auto; padding: var(--s6) var(--s5) var(--s8);
-  animation: slide-up .24s ease;
+  animation: slide-up .22s cubic-bezier(.23,1,.32,1);
   position: relative;
+  box-shadow: 0 -8px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(62,207,110,.06) inset;
 }
 @keyframes slide-up {
   from { transform: translateY(32px); opacity: 0; }
@@ -424,8 +441,7 @@ tbody td { padding: var(--s2) var(--s3); font-family: var(--mono); font-size: 11
   background: var(--surf-3); border: 1px solid var(--bdr-1);
   border-radius: var(--r1); width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
-  color: var(--t3); cursor: pointer;
-  transition: all var(--t-fast);
+  color: var(--t3); cursor: pointer; transition: all var(--t-fast);
 }
 .mcl:hover { border-color: var(--red); color: var(--red); background: var(--red-g); }
 .mtitle {
@@ -434,6 +450,15 @@ tbody td { padding: var(--s2) var(--s3); font-family: var(--mono); font-size: 11
   border-bottom: 1px solid var(--bdr-1);
   display: flex; align-items: center; gap: var(--s2);
 }
+.modal-tg-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--blue-g); border: 1px solid rgba(74,180,232,.2);
+  border-radius: var(--r2); padding: 6px 12px;
+  color: var(--blue); font-family: var(--mono); font-size: 11px;
+  text-decoration: none; margin-bottom: var(--s4);
+  transition: all var(--t-fast);
+}
+.modal-tg-link:hover { background: rgba(74,180,232,.14); border-color: rgba(74,180,232,.35); }
 
 /* ═══════════════════════════════════════════
    FORM ELEMENTS
@@ -449,11 +474,10 @@ tbody td { padding: var(--s2) var(--s3); font-family: var(--mono); font-size: 11
   color: var(--t1); font-family: var(--mono); font-size: 13px;
   outline: none; transition: border-color var(--t-base), box-shadow var(--t-base);
 }
-.fi:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(78,203,122,.1); }
+.fi:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(62,207,110,.1); }
 .fi::placeholder { color: var(--t4); }
 .fi.err { border-color: var(--red); box-shadow: 0 0 0 3px rgba(224,85,85,.1); }
 .fi.ok  { border-color: var(--green); }
-
 select.fi { appearance: none; cursor: pointer; }
 .frow { display: flex; gap: var(--s3); }
 .frow .fg { flex: 1; }
@@ -485,10 +509,8 @@ select.fi { appearance: none; cursor: pointer; }
    INLINE VALIDATION
 ═══════════════════════════════════════════ */
 .field-hint {
-  font-family: var(--mono); font-size: 10px;
-  margin-top: var(--s1);
-  display: none; align-items: center; gap: var(--s1);
-  transition: all var(--t-base);
+  font-family: var(--mono); font-size: 10px; margin-top: var(--s1);
+  display: none; align-items: center; gap: var(--s1); transition: all var(--t-base);
 }
 .field-hint.show-err { display: flex; color: var(--red); }
 .field-hint.show-ok  { display: flex; color: var(--green); }
@@ -499,10 +521,10 @@ select.fi { appearance: none; cursor: pointer; }
 .rlist { display: flex; flex-direction: column; gap: var(--s3); }
 .rcard {
   background: var(--surf-2); border: 1px solid var(--bdr-1);
-  border-radius: var(--r3); padding: var(--s4) var(--s4);
-  transition: border-color var(--t-base);
+  border-radius: var(--r3); padding: var(--s4);
+  transition: border-color var(--t-base), transform var(--t-base);
 }
-.rcard:hover { border-color: var(--bdr-2); }
+.rcard:hover { border-color: var(--bdr-2); transform: translateY(-1px); }
 .rcard-top { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s2); }
 .rav {
   width: 40px; height: 40px; border-radius: 50%;
@@ -510,11 +532,14 @@ select.fi { appearance: none; cursor: pointer; }
   display: flex; align-items: center; justify-content: center;
   color: var(--green); flex-shrink: 0;
 }
-.rav img {
-  width: 40px; height: 40px; border-radius: 50%;
-  object-fit: cover; display: block;
-}
+.rav img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: block; }
 .rname { font-weight: 700; font-size: 14px; flex: 1; }
+.rname a {
+  color: inherit; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: color var(--t-fast);
+}
+.rname a:hover { color: var(--blue); }
 .rmeta { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 2px; }
 .ramt { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--gold); white-space: nowrap; }
 .rwallet {
@@ -527,7 +552,7 @@ select.fi { appearance: none; cursor: pointer; }
 .ract { display: flex; gap: var(--s2); }
 
 /* ═══════════════════════════════════════════
-   TASK CARDS — Telegram/Web3 Style
+   TASK CARDS
 ═══════════════════════════════════════════ */
 .tform {
   background: var(--surf-2); border: 1px solid var(--bdr-1);
@@ -549,37 +574,31 @@ select.fi { appearance: none; cursor: pointer; }
   letter-spacing: .06em; background: var(--surf-3);
   display: flex; align-items: center; gap: var(--s2);
 }
-
 .tk {
   display: flex; align-items: center; gap: var(--s3);
-  padding: var(--s3) var(--s4);
-  border-bottom: 1px solid var(--bdr-1);
+  padding: var(--s3) var(--s4); border-bottom: 1px solid var(--bdr-1);
   transition: background var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
-  cursor: pointer;
-  position: relative;
+  cursor: pointer; position: relative;
 }
 .tk:hover { background: var(--green-g); transform: translateX(-2px); box-shadow: inset 3px 0 0 var(--green); }
 .tk:last-child { border-bottom: none; }
 .tk.invalid-card { opacity: .4; cursor: not-allowed; pointer-events: none; }
-.tk.invalid-card .tk-ic { filter: grayscale(1); }
-
 .tk-ic {
-  width: 48px; height: 48px; border-radius: var(--r2);
+  width: 46px; height: 46px; border-radius: var(--r2);
   flex-shrink: 0; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #0d5a28, #1a9645);
-  border: 1px solid rgba(78,203,122,.2);
-  box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 0 12px rgba(78,203,122,.08);
-  transition: box-shadow var(--t-base), transform var(--t-base);
-  color: var(--green);
+  border: 1px solid rgba(62,207,110,.18);
+  box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 0 10px rgba(62,207,110,.07);
+  transition: box-shadow var(--t-base), transform var(--t-base); color: var(--green);
 }
-.tk:hover .tk-ic { box-shadow: 0 6px 20px rgba(0,0,0,.4), 0 0 16px rgba(78,203,122,.15); transform: translateY(-1px); }
+.tk:hover .tk-ic { box-shadow: 0 6px 20px rgba(0,0,0,.4), 0 0 14px rgba(62,207,110,.14); transform: translateY(-1px); }
 .tk-ic.tg {
   background: linear-gradient(135deg, #0d4a7a, #1469ae);
-  border-color: rgba(74,180,232,.2);
-  box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 0 12px rgba(74,180,232,.08);
+  border-color: rgba(74,180,232,.18);
+  box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 0 10px rgba(74,180,232,.07);
+  color: var(--blue);
 }
-.tk:hover .tk-ic.tg { box-shadow: 0 6px 20px rgba(0,0,0,.4), 0 0 16px rgba(74,180,232,.15); }
-
+.tk:hover .tk-ic.tg { box-shadow: 0 6px 20px rgba(0,0,0,.4), 0 0 14px rgba(74,180,232,.14); }
 .tk-info { flex: 1; min-width: 0; }
 .tk-name {
   font-size: 13px; font-weight: 700;
@@ -590,46 +609,32 @@ select.fi { appearance: none; cursor: pointer; }
   font-family: var(--mono); font-size: 9px; letter-spacing: .06em;
   padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
 }
-.tk-badge.ch { background: var(--blue-g); color: var(--blue); border: 1px solid rgba(74,180,232,.2); }
+.tk-badge.ch  { background: var(--blue-g); color: var(--blue); border: 1px solid rgba(74,180,232,.2); }
 .tk-badge.url { background: var(--green-g); color: var(--green); border: 1px solid var(--bdr-2); }
-
 .tk-reward { font-family: var(--mono); font-size: 11px; color: var(--gold); margin-top: 3px; }
-
 .tk-link {
   font-family: var(--mono); font-size: 10px; color: var(--blue);
-  margin-top: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  text-decoration: none; display: block;
-  transition: color var(--t-fast);
+  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-decoration: none; display: block; transition: color var(--t-fast);
 }
 .tk-link:hover { color: #7dd4f7; text-decoration: underline; }
 .tk-link.invalid { color: var(--t4); pointer-events: none; }
-
 .tk-del {
-  background: none; border: none;
-  color: var(--t4); cursor: pointer;
-  padding: var(--s2); flex-shrink: 0;
-  transition: color var(--t-fast);
-  border-radius: var(--r1);
-  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: var(--t4); cursor: pointer;
+  padding: var(--s2); flex-shrink: 0; transition: color var(--t-fast);
+  border-radius: var(--r1); display: flex; align-items: center; justify-content: center;
 }
 .tk-del:hover { color: var(--red); background: var(--red-g); }
-
 .tk-copy {
-  background: none; border: none;
-  color: var(--t4); cursor: pointer;
-  padding: var(--s2); flex-shrink: 0;
-  transition: color var(--t-fast), background var(--t-fast);
-  border-radius: var(--r1);
-  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: var(--t4); cursor: pointer;
+  padding: var(--s2); flex-shrink: 0; transition: color var(--t-fast), background var(--t-fast);
+  border-radius: var(--r1); display: flex; align-items: center; justify-content: center;
 }
 .tk-copy:hover { color: var(--blue); background: var(--blue-g); }
 .tk-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 
 /* Smart Input */
-.smart-input-wrap {
-  position: relative;
-}
+.smart-input-wrap { position: relative; }
 .smart-input-prefix {
   position: absolute; top: 50%; right: 11px;
   transform: translateY(-50%);
@@ -639,22 +644,20 @@ select.fi { appearance: none; cursor: pointer; }
 }
 .smart-input-prefix .prefix-badge {
   font-size: 9px; padding: 1px 6px; border-radius: 4px;
-  border: 1px solid var(--bdr-2); color: var(--t3);
-  transition: all var(--t-base);
+  border: 1px solid var(--bdr-2); color: var(--t3); transition: all var(--t-base);
 }
-.smart-input-prefix .prefix-badge.tg { color: var(--blue); border-color: rgba(74,180,232,.3); background: var(--blue-g); }
-.smart-input-prefix .prefix-badge.url { color: var(--green); border-color: var(--bdr-2); background: var(--green-g); }
-.smart-input-prefix .prefix-badge.err-badge { color: var(--red); border-color: rgba(224,85,85,.3); background: var(--red-g); }
+.prefix-badge.tg      { color: var(--blue); border-color: rgba(74,180,232,.3); background: var(--blue-g); }
+.prefix-badge.url     { color: var(--green); border-color: var(--bdr-2); background: var(--green-g); }
+.prefix-badge.err-badge { color: var(--red); border-color: rgba(224,85,85,.3); background: var(--red-g); }
 .fi.has-prefix { padding-right: 90px; }
 
 /* JSON Box */
 .jbox {
   background: var(--surf-2); border: 1px solid var(--bdr-1);
-  border-radius: var(--r3); padding: var(--s4) var(--s4); margin-top: var(--s3);
+  border-radius: var(--r3); padding: var(--s4); margin-top: var(--s3);
 }
 .jhead {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: var(--s2);
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s2);
 }
 .jhead span { font-family: var(--mono); font-size: 10px; color: var(--t2); }
 .jbox textarea {
@@ -665,12 +668,60 @@ select.fi { appearance: none; cursor: pointer; }
 }
 
 /* ═══════════════════════════════════════════
+   PROMO CODES
+═══════════════════════════════════════════ */
+.promo-grid { display: flex; flex-direction: column; gap: var(--s3); }
+.pc {
+  display: flex; align-items: center; gap: var(--s3);
+  background: var(--surf-2); border: 1px solid var(--bdr-1);
+  border-radius: var(--r3); padding: var(--s3) var(--s4);
+  transition: border-color var(--t-base), transform var(--t-fast);
+  position: relative; overflow: hidden;
+}
+.pc::before {
+  content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%;
+  background: var(--purple); opacity: .5; transition: opacity var(--t-base);
+}
+.pc:hover { border-color: var(--bdr-2); transform: translateX(-2px); }
+.pc:hover::before { opacity: 1; }
+.pc-icon {
+  width: 40px; height: 40px; border-radius: var(--r2); flex-shrink: 0;
+  background: var(--purple-g); border: 1px solid rgba(155,122,255,.2);
+  display: flex; align-items: center; justify-content: center; color: var(--purple);
+}
+.pc-info { flex: 1; min-width: 0; }
+.pc-code {
+  font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--t1);
+  letter-spacing: .08em;
+}
+.pc-meta { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 3px; display: flex; gap: var(--s3); flex-wrap: wrap; }
+.pc-meta span { display: flex; align-items: center; gap: 4px; }
+.pc-uses {
+  font-family: var(--mono); font-size: 11px; color: var(--t2);
+  text-align: center; min-width: 48px;
+}
+.pc-uses strong { display: block; font-size: 16px; color: var(--green); }
+.pc-del {
+  background: none; border: none; color: var(--t4); cursor: pointer;
+  padding: var(--s2); border-radius: var(--r1); transition: all var(--t-fast);
+  display: flex; align-items: center;
+}
+.pc-del:hover { color: var(--red); background: var(--red-g); }
+.pc-status {
+  font-family: var(--mono); font-size: 9px; padding: 2px 8px;
+  border-radius: 4px; flex-shrink: 0;
+}
+.pc-status.active { background: var(--green-g2); color: var(--green); border: 1px solid var(--bdr-2); }
+.pc-status.expired { background: var(--red-g); color: var(--red); border: 1px solid rgba(224,85,85,.2); }
+.pc-status.used { background: var(--gold-g); color: var(--gold); border: 1px solid rgba(240,192,64,.2); }
+
+/* ═══════════════════════════════════════════
    BOTTOM NAV
 ═══════════════════════════════════════════ */
 #bnav {
   position: fixed; bottom: 0; left: 0; right: 0;
   height: var(--nb);
-  background: rgba(8,15,10,.92); backdrop-filter: blur(12px);
+  background: rgba(6,14,8,.94); backdrop-filter: blur(16px);
   border-top: 1px solid var(--bdr-1);
   z-index: 200; display: none;
   align-items: stretch; justify-content: space-around;
@@ -679,7 +730,7 @@ select.fi { appearance: none; cursor: pointer; }
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   cursor: pointer; color: var(--t3);
-  font-size: 9px; gap: 3px; font-family: var(--mono);
+  font-size: 8.5px; gap: 3px; font-family: var(--mono);
   position: relative; transition: color var(--t-base);
 }
 .bni .bic { color: var(--t3); transition: color var(--t-base), transform var(--t-base); }
@@ -697,12 +748,10 @@ select.fi { appearance: none; cursor: pointer; }
 ═══════════════════════════════════════════ */
 .skel {
   background: linear-gradient(90deg, var(--surf-3) 25%, var(--surf-4) 50%, var(--surf-3) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.6s infinite;
-  border-radius: var(--r1);
+  background-size: 200% 100%; animation: shimmer 1.6s infinite; border-radius: var(--r1);
 }
 @keyframes shimmer { to { background-position: -200% 0; } }
-.skel-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s3); }
+.skel-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3); }
 .skel-av  { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
 .skel-line { height: 10px; border-radius: 4px; }
 
@@ -714,21 +763,18 @@ select.fi { appearance: none; cursor: pointer; }
   transform: translateX(-50%);
   z-index: 9999; display: flex;
   flex-direction: column; gap: var(--s2);
-  align-items: center; pointer-events: none;
-  width: 300px;
+  align-items: center; pointer-events: none; width: 300px;
 }
 .toast-item {
-  background: var(--surf-3);
-  border: 1px solid var(--bdr-2);
-  border-radius: var(--r2);
-  padding: var(--s2) var(--s4);
-  font-family: var(--mono); font-size: 12px;
-  color: var(--green);
+  background: var(--surf-3); border: 1px solid var(--bdr-2);
+  border-radius: var(--r3);
+  padding: 10px var(--s4);
+  font-family: var(--mono); font-size: 12px; color: var(--green);
   display: flex; align-items: center; gap: var(--s2);
   transform: translateY(20px); opacity: 0;
-  transition: transform .28s ease, opacity .28s ease;
+  transition: transform .26s cubic-bezier(.23,1,.32,1), opacity .26s ease;
   white-space: nowrap;
-  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  box-shadow: 0 8px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
 }
 .toast-item.show { transform: translateY(0); opacity: 1; }
 .toast-item.err  { color: var(--red); border-color: rgba(224,85,85,.3); }
@@ -737,16 +783,12 @@ select.fi { appearance: none; cursor: pointer; }
 /* ═══════════════════════════════════════════
    EMPTY STATE
 ═══════════════════════════════════════════ */
-.empty-state {
-  text-align: center; padding: 56px var(--s5);
-  color: var(--t3); font-family: var(--mono);
-}
+.empty-state { text-align: center; padding: 56px var(--s5); color: var(--t3); font-family: var(--mono); }
 .empty-state .es-icon {
   width: 56px; height: 56px; margin: 0 auto var(--s4);
   background: var(--surf-3); border: 1px solid var(--bdr-1);
   border-radius: var(--r3);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--t3);
+  display: flex; align-items: center; justify-content: center; color: var(--t3);
 }
 .empty-state h3 { font-size: 13px; color: var(--t2); margin-bottom: var(--s1); }
 .empty-state p  { font-size: 11px; color: var(--t4); }
@@ -760,11 +802,17 @@ select.fi { appearance: none; cursor: pointer; }
   border-radius: 50%; animation: sp .7s linear infinite;
 }
 @keyframes sp { to { transform: rotate(360deg); } }
-.lrow {
-  text-align: center; padding: var(--s8);
-  color: var(--t3); font-family: var(--mono); font-size: 12px;
-}
+.lrow { text-align: center; padding: var(--s8); color: var(--t3); font-family: var(--mono); font-size: 12px; }
 hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; }
+
+/* section divider */
+.sdiv {
+  display: flex; align-items: center; gap: var(--s3); margin: var(--s5) 0 var(--s4);
+  font-family: var(--mono); font-size: 10px; color: var(--t3); letter-spacing: .1em; text-transform: uppercase;
+}
+.sdiv::before, .sdiv::after {
+  content: ''; flex: 1; height: 1px; background: var(--bdr-1);
+}
 
 /* ═══════════════════════════════════════════
    RESPONSIVE
@@ -779,140 +827,117 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
   #toast-container { bottom: calc(var(--nb) + 12px); }
 }
 @media (min-width: 681px) {
-  #bnav           { display: none !important; }
+  #bnav            { display: none !important; }
   #toast-container { bottom: 24px; }
 }
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════
-  SVG DEFS — Inline Icon Sprites
-══════════════════════════════════════════ -->
+<!-- SVG DEFS -->
 <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- dashboard -->
     <symbol id="ic-dashboard" viewBox="0 0 24 24">
       <rect x="3" y="3" width="7" height="7" rx="1.5"/>
       <rect x="14" y="3" width="7" height="7" rx="1.5"/>
       <rect x="3" y="14" width="7" height="7" rx="1.5"/>
       <rect x="14" y="14" width="7" height="7" rx="1.5"/>
     </symbol>
-    <!-- users -->
     <symbol id="ic-users" viewBox="0 0 24 24">
       <circle cx="9" cy="7" r="3.5"/>
       <path d="M2 20c0-4 3.13-7 7-7s7 3 7 7"/>
       <circle cx="17" cy="8" r="2.5" stroke-opacity=".6"/>
       <path d="M21 20c0-3-2-5-4-5.5" stroke-opacity=".6"/>
     </symbol>
-    <!-- withdraw -->
     <symbol id="ic-withdraw" viewBox="0 0 24 24">
       <rect x="2" y="6" width="20" height="14" rx="2"/>
       <path d="M2 10h20"/>
       <circle cx="6" cy="15" r="1.5" fill="currentColor" stroke="none"/>
       <path d="M16 5V3M12 5V3M8 5V3"/>
     </symbol>
-    <!-- task -->
     <symbol id="ic-task" viewBox="0 0 24 24">
       <path d="M9 11l3 3L22 4"/>
       <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
     </symbol>
-    <!-- channel (telegram-style) -->
-    <symbol id="ic-channel" viewBox="0 0 24 24">
-      <path d="M22 2L11 13"/>
-      <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+    <symbol id="ic-promo" viewBox="0 0 24 24">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+      <line x1="7" y1="7" x2="7.01" y2="7"/>
     </symbol>
-    <!-- link -->
+    <symbol id="ic-channel" viewBox="0 0 24 24">
+      <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+    </symbol>
     <symbol id="ic-link" viewBox="0 0 24 24">
       <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
       <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
     </symbol>
-    <!-- delete -->
     <symbol id="ic-delete" viewBox="0 0 24 24">
       <polyline points="3 6 5 6 21 6"/>
       <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-      <path d="M10 11v6M14 11v6"/>
-      <path d="M9 6V4h6v2"/>
+      <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
     </symbol>
-    <!-- refresh -->
     <symbol id="ic-refresh" viewBox="0 0 24 24">
       <polyline points="23 4 23 10 17 10"/>
       <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
     </symbol>
-    <!-- copy -->
     <symbol id="ic-copy" viewBox="0 0 24 24">
       <rect x="9" y="9" width="13" height="13" rx="2"/>
       <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
     </symbol>
-    <!-- close -->
     <symbol id="ic-close" viewBox="0 0 24 24">
       <line x1="18" y1="6" x2="6" y2="18"/>
       <line x1="6" y1="6" x2="18" y2="18"/>
     </symbol>
-    <!-- search -->
     <symbol id="ic-search" viewBox="0 0 24 24">
       <circle cx="11" cy="11" r="8"/>
       <line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </symbol>
-    <!-- save -->
     <symbol id="ic-save" viewBox="0 0 24 24">
       <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
       <polyline points="17 21 17 13 7 13 7 21"/>
       <polyline points="7 3 7 8 15 8"/>
     </symbol>
-    <!-- check -->
     <symbol id="ic-check" viewBox="0 0 24 24">
       <polyline points="20 6 9 17 4 12"/>
     </symbol>
-    <!-- ban -->
     <symbol id="ic-ban" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="9"/>
       <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
     </symbol>
-    <!-- tomato logo -->
     <symbol id="ic-tomato" viewBox="0 0 24 24">
       <circle cx="12" cy="14" r="8" fill="none"/>
       <path d="M12 6c0 0 0-3 3-4M12 6c0 0 -2-2 -2-4M12 6v2"/>
       <circle cx="12" cy="14" r="8"/>
     </symbol>
-    <!-- wallet -->
     <symbol id="ic-wallet" viewBox="0 0 24 24">
       <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
       <path d="M16 3H8L6 7h12l-2-4z"/>
       <circle cx="17" cy="14" r="1.5" fill="currentColor" stroke="none"/>
     </symbol>
-    <!-- plus -->
     <symbol id="ic-plus" viewBox="0 0 24 24">
       <line x1="12" y1="5" x2="12" y2="19"/>
       <line x1="5" y1="12" x2="19" y2="12"/>
     </symbol>
-    <!-- user single -->
     <symbol id="ic-user" viewBox="0 0 24 24">
       <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
       <circle cx="12" cy="7" r="4"/>
     </symbol>
-    <!-- edit -->
     <symbol id="ic-edit" viewBox="0 0 24 24">
       <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
       <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
     </symbol>
-    <!-- location/pin -->
     <symbol id="ic-pin" viewBox="0 0 24 24">
       <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/>
       <circle cx="12" cy="10" r="3"/>
     </symbol>
-    <!-- external link -->
     <symbol id="ic-external" viewBox="0 0 24 24">
       <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
       <polyline points="15 3 21 3 21 9"/>
       <line x1="10" y1="14" x2="21" y2="3"/>
     </symbol>
-    <!-- telegram plane (task icon) -->
     <symbol id="ic-tg-plane" viewBox="0 0 24 24">
       <path d="M22 2L11 13"/>
       <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
     </symbol>
-    <!-- globe (url task icon) -->
     <symbol id="ic-globe" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="9"/>
       <path d="M12 3c-2.5 3-4 5.5-4 9s1.5 6 4 9"/>
@@ -921,15 +946,21 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
       <line x1="3.6" y1="7" x2="20.4" y2="7"/>
       <line x1="3.6" y1="17" x2="20.4" y2="17"/>
     </symbol>
+    <symbol id="ic-telegram" viewBox="0 0 24 24">
+      <path d="M21.5 4L2.5 11.5l6 2.5 2.5 7 3-4 5 3.5 2.5-16.5z"/>
+      <line x1="8.5" y1="14" x2="13" y2="10"/>
+    </symbol>
+    <symbol id="ic-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <polyline points="12 7 12 12 15 15"/>
+    </symbol>
+    <symbol id="ic-zap" viewBox="0 0 24 24">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </symbol>
   </defs>
 </svg>
 
-<!-- Helper macro -->
-<template id="svg-tpl"></template>
-
-<!-- ══════════════════════════════════════════
-  LOGIN
-══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ LOGIN ══ -->
 <div id="login">
   <div class="lbox">
     <div class="lbox-logo">
@@ -949,9 +980,7 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-  APP
-══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ APP ══ -->
 <div id="app">
 
   <!-- SIDEBAR -->
@@ -962,17 +991,17 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
       </div>
       <div class="sb-logo-text">
         <h1>Tomato Admin</h1>
-        <small>v2.1 // LIVE DB</small>
+        <small>v2.2 // LIVE DB</small>
       </div>
     </div>
     <nav>
       <div class="ns">الرئيسية</div>
-      <div class="ni act" id="sn-dash"     onclick="nav('dash',this)">
+      <div class="ni act" id="sn-dash" onclick="nav('dash',this)">
         <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-dashboard"/></svg></span>
         <span>لوحة التحكم</span>
       </div>
       <div class="ns">المستخدمون</div>
-      <div class="ni" id="sn-users"    onclick="nav('users',this)">
+      <div class="ni" id="sn-users" onclick="nav('users',this)">
         <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-users"/></svg></span>
         <span>المستخدمين</span>
       </div>
@@ -982,9 +1011,13 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
         <span class="badge" id="rb">0</span>
       </div>
       <div class="ns">المحتوى</div>
-      <div class="ni" id="sn-tasks"    onclick="nav('tasks',this)">
+      <div class="ni" id="sn-tasks" onclick="nav('tasks',this)">
         <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-task"/></svg></span>
         <span>المهام</span>
+      </div>
+      <div class="ni" id="sn-promo" onclick="nav('promo',this)">
+        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-promo"/></svg></span>
+        <span>أكواد البرومو</span>
       </div>
     </nav>
     <div class="sb-foot">
@@ -1000,7 +1033,10 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
     <div class="page act" id="p-dash">
       <div class="topbar">
         <div>
-          <h2>لوحة التحكم</h2>
+          <h2>
+            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-dashboard"/></svg></span>
+            لوحة التحكم
+          </h2>
           <div class="sub" id="dtime"></div>
         </div>
         <button class="btn btn-gh btn-sm" onclick="loadDash()">
@@ -1048,7 +1084,13 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
     <!-- USERS -->
     <div class="page" id="p-users">
       <div class="topbar">
-        <div><h2>المستخدمون</h2><div class="sub">بحث — تعديل — حظر</div></div>
+        <div>
+          <h2>
+            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-users"/></svg></span>
+            المستخدمون
+          </h2>
+          <div class="sub">بحث — تعديل — حظر</div>
+        </div>
       </div>
       <div class="srow">
         <input id="sq" placeholder="ID أو اسم مستخدم..." />
@@ -1069,7 +1111,13 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
     <!-- REQUESTS -->
     <div class="page" id="p-requests">
       <div class="topbar">
-        <div><h2>طلبات السحب</h2><div class="sub">قبول أو رفض</div></div>
+        <div>
+          <h2>
+            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-withdraw"/></svg></span>
+            طلبات السحب
+          </h2>
+          <div class="sub">قبول أو رفض</div>
+        </div>
         <button class="btn btn-gh btn-sm" onclick="loadRequests()">
           <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
         </button>
@@ -1086,7 +1134,13 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
     <!-- TASKS -->
     <div class="page" id="p-tasks">
       <div class="topbar">
-        <div><h2>إدارة المهام</h2><div class="sub">إضافة وحذف مهام</div></div>
+        <div>
+          <h2>
+            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-task"/></svg></span>
+            إدارة المهام
+          </h2>
+          <div class="sub">إضافة وحذف مهام</div>
+        </div>
       </div>
 
       <div class="tform">
@@ -1094,8 +1148,6 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
           <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
           مهمة جديدة
         </div>
-
-        <!-- اسم + نوع -->
         <div class="frow">
           <div class="fg" style="flex:2">
             <label class="fl">اسم المهمة *</label>
@@ -1109,16 +1161,12 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
             </select>
           </div>
         </div>
-
-        <!-- جائزة فقط (أيقونة تلقائية) -->
         <div class="frow">
           <div class="fg">
             <label class="fl">الجائزة (TON) *</label>
             <input class="fi" id="tr" type="number" step="0.001" placeholder="0.005" />
           </div>
         </div>
-
-        <!-- SMART INPUT — حقل ذكي واحد -->
         <div class="fg" id="field-smart">
           <label class="fl" id="smart-label">رابط أو يوزرنيم القناة *</label>
           <div class="smart-input-wrap">
@@ -1133,16 +1181,12 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
           </div>
           <div class="field-hint" id="smart-hint"></div>
         </div>
-
-        <!-- hidden inputs for API compat -->
         <input type="hidden" id="tch" />
         <input type="hidden" id="tu"  />
-
         <div class="fg">
           <label class="fl">وصف (اختياري)</label>
           <input class="fi" id="td" placeholder="وصف قصير للمهمة" />
         </div>
-
         <button class="btn btn-g btn-full" style="margin-top:4px" onclick="addTask()">
           <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
           إضافة المهمة
@@ -1169,6 +1213,73 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
       </div>
     </div>
 
+    <!-- PROMO CODES PAGE -->
+    <div class="page" id="p-promo">
+      <div class="topbar">
+        <div>
+          <h2>
+            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-promo"/></svg></span>
+            أكواد البرومو
+          </h2>
+          <div class="sub">إنشاء وإدارة أكواد الخصم والمكافآت</div>
+        </div>
+        <button class="btn btn-gh btn-sm" onclick="loadPromos()">
+          <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
+        </button>
+      </div>
+
+      <!-- ADD FORM -->
+      <div class="tform">
+        <div class="tform-title">
+          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
+          كود جديد
+        </div>
+        <div class="frow">
+          <div class="fg" style="flex:2">
+            <label class="fl">الكود *</label>
+            <input class="fi" id="pcode" placeholder="WELCOME2025" style="letter-spacing:.1em; text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" />
+          </div>
+          <div class="fg">
+            <label class="fl">المكافأة (TON) *</label>
+            <input class="fi" id="preward" type="number" step="0.001" placeholder="0.010" />
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fg">
+            <label class="fl">الحد الأقصى للاستخدام</label>
+            <input class="fi" id="pmaxuses" type="number" placeholder="100 (0 = غير محدود)" />
+          </div>
+          <div class="fg">
+            <label class="fl">تاريخ الانتهاء (اختياري)</label>
+            <input class="fi" id="pexpiry" type="date" />
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">وصف (اختياري)</label>
+          <input class="fi" id="pdesc" placeholder="كود ترحيبي للمستخدمين الجدد" />
+        </div>
+        <button class="btn btn-purple btn-full" style="margin-top:4px" onclick="addPromo()">
+          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
+          إضافة الكود
+        </button>
+      </div>
+
+      <!-- LIST -->
+      <div class="tcard-list">
+        <div class="tcard-list-header" style="color:var(--purple)">
+          <svg class="icon icon-sm"><use href="#ic-promo"/></svg>
+          الأكواد الحالية (<span id="promo-count">0</span>)
+        </div>
+        <div id="promo-list">
+          <div class="empty-state">
+            <div class="es-icon"><svg class="icon icon-lg" style="color:var(--purple)"><use href="#ic-promo"/></svg></div>
+            <h3>لا توجد أكواد</h3>
+            <p>أضف أول كود برومو باستخدام النموذج أعلاه</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -1191,6 +1302,10 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
     <div class="bic"><svg class="icon icon-lg"><use href="#ic-task"/></svg></div>
     <div>مهام</div>
   </div>
+  <div class="bni" id="bn-promo" onclick="nav('promo',this,true)">
+    <div class="bic"><svg class="icon icon-lg"><use href="#ic-promo"/></svg></div>
+    <div>بروموكود</div>
+  </div>
 </div>
 
 <!-- USER MODAL -->
@@ -1203,6 +1318,8 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
       <svg class="icon icon-md"><use href="#ic-edit"/></svg>
       <span id="mun">تعديل مستخدم</span>
     </div>
+    <!-- Telegram link -->
+    <div id="modal-tg-wrap"></div>
     <div class="frow">
       <div class="fg"><label class="fl">الرصيد (TON)</label><input class="fi" id="eb" type="number" step="0.000001" /></div>
       <div class="fg"><label class="fl">البذور</label><input class="fi" id="es" type="number" /></div>
@@ -1237,12 +1354,9 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
   </div>
 </div>
 
-<!-- TOAST CONTAINER -->
+<!-- TOAST -->
 <div id="toast-container"></div>
 
-<!-- ══════════════════════════════════════════
-  SCRIPT
-══════════════════════════════════════════ -->
 <script>
 // ══════════════════════════════════════
 //  CONFIG
@@ -1254,74 +1368,34 @@ const ADMIN_KEY  = 'admin-secret-key-2025';
 // ══════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════
-let editId = null, isSB = false, isHB = false, tasks = [];
+let editId = null, isSB = false, isHB = false, tasks = [], promos = [];
 
 // ══════════════════════════════════════
-//  HELPERS — Telegram Input Parser Engine
+//  TELEGRAM INPUT PARSER
 // ══════════════════════════════════════
-
-/**
- * parseTelegramInput — Production Parser Engine
- * Accepts: t.me/user | https://t.me/user | @user | user | https://any.url
- * Returns: { valid, type, channel, url, hint, badgeType }
- */
 function parseTelegramInput(raw) {
-  // Sanitize: strip whitespace, null bytes, control chars
   const val = (raw || '').replace(/[\x00-\x1F\x7F]/g, '').trim();
   if (!val) return { valid: false, hint: '', badgeType: null, type: null, channel: null, url: null };
-
-  // Block spaces inside value
   if (/\s/.test(val)) return { valid: false, hint: 'لا يُسمح بالمسافات', badgeType: null, type: null, channel: null, url: null };
-
-  // Normalize: strip leading @
   const noAt = val.startsWith('@') ? val.slice(1) : val;
-
-  // Rule 1 — Telegram URL: https://t.me/username OR t.me/username
   const tgUrlRe = /^(?:https?:\/\/)?t\.me\/([a-zA-Z][a-zA-Z0-9_]{3,31})\/?$/i;
   const tgMatch = tgUrlRe.exec(noAt) || tgUrlRe.exec(val);
   if (tgMatch) {
     const ch = tgMatch[1].toLowerCase();
-    return {
-      valid: true, type: 'channel', badgeType: 'tg',
-      channel: ch,
-      url: `https://t.me/${ch}`,
-      hint: `تم التعرف على قناة Telegram: @${ch}`,
-    };
+    return { valid: true, type: 'channel', badgeType: 'tg', channel: ch, url: `https://t.me/${ch}`, hint: `تم التعرف على قناة Telegram: @${ch}` };
   }
-
-  // Rule 2 — Plain Telegram username: letters/digits/underscore, 4-32 chars, starts with letter or digit (not underscore-only)
   const usernameRe = /^[a-zA-Z][a-zA-Z0-9_]{3,31}$/;
   if (usernameRe.test(noAt)) {
     const ch = noAt.toLowerCase();
-    return {
-      valid: true, type: 'channel', badgeType: 'tg',
-      channel: ch,
-      url: `https://t.me/${ch}`,
-      hint: `قناة Telegram — سيُستخدم: t.me/${ch}`,
-    };
+    return { valid: true, type: 'channel', badgeType: 'tg', channel: ch, url: `https://t.me/${ch}`, hint: `قناة Telegram — سيُستخدم: t.me/${ch}` };
   }
-
-  // Rule 3 — External HTTPS URL (must have valid host, min length)
   const extUrlRe = /^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})(\/[^\s]*)?$/i;
   if (extUrlRe.test(val)) {
-    return {
-      valid: true, type: 'url', badgeType: 'url',
-      channel: null,
-      url: val,
-      hint: 'رابط خارجي صالح',
-    };
+    return { valid: true, type: 'url', badgeType: 'url', channel: null, url: val, hint: 'رابط خارجي صالح' };
   }
-
-  // Invalid
-  return {
-    valid: false, type: null, channel: null, url: null, badgeType: null,
-    hint: 'إدخال غير صالح — أدخل يوزرنيم أو رابط صحيح',
-  };
+  return { valid: false, type: null, channel: null, url: null, badgeType: null, hint: 'إدخال غير صالح — أدخل يوزرنيم أو رابط صحيح' };
 }
 
-/**
- * validateTask — Guard layer before addTask()
- */
 function validateTask(name, reward, parsed) {
   if (!name || name.length < 2) return { ok: false, error: 'اسم المهمة مطلوب (حرفان على الأقل)' };
   if (isNaN(reward) || reward <= 0) return { ok: false, error: 'أدخل جائزة صحيحة أكبر من صفر' };
@@ -1331,86 +1405,62 @@ function validateTask(name, reward, parsed) {
   return { ok: true };
 }
 
-/**
- * getTaskIcon — SVG icon selector (no emoji)
- */
 function getTaskIcon(type) {
   if (type === 'channel') return '#ic-tg-plane';
   if (type === 'url')     return '#ic-globe';
   return '#ic-task';
 }
 
-/**
- * updateSmartUI — Real-time UI feedback on input
- */
 function updateSmartUI(parsed, inputEl) {
   const badge = document.getElementById('smart-badge');
   const hint  = document.getElementById('smart-hint');
   const val   = (inputEl.value || '').trim();
-
-  // Reset if empty
   if (!val) {
-    badge.textContent = 'AUTO';
-    badge.className   = 'prefix-badge';
-    hint.className    = 'field-hint';
-    hint.textContent  = '';
+    badge.textContent = 'AUTO'; badge.className = 'prefix-badge';
+    hint.className = 'field-hint'; hint.textContent = '';
     inputEl.classList.remove('err', 'ok');
-    document.getElementById('tch').value = '';
-    document.getElementById('tu').value  = '';
+    document.getElementById('tch').value = ''; document.getElementById('tu').value = '';
     return;
   }
-
-  if (parsed.badgeType === 'tg') {
-    badge.textContent = 'TG';
-    badge.className   = 'prefix-badge tg';
-  } else if (parsed.badgeType === 'url') {
-    badge.textContent = 'URL';
-    badge.className   = 'prefix-badge url';
-  } else {
-    badge.textContent = 'ERR';
-    badge.className   = 'prefix-badge err-badge';
-  }
-
+  if (parsed.badgeType === 'tg')  { badge.textContent = 'TG';  badge.className = 'prefix-badge tg'; }
+  else if (parsed.badgeType === 'url') { badge.textContent = 'URL'; badge.className = 'prefix-badge url'; }
+  else { badge.textContent = 'ERR'; badge.className = 'prefix-badge err-badge'; }
   if (parsed.valid) {
-    hint.textContent = parsed.hint;
-    hint.className   = 'field-hint show-ok';
+    hint.textContent = parsed.hint; hint.className = 'field-hint show-ok';
     inputEl.classList.remove('err'); inputEl.classList.add('ok');
     document.getElementById('tch').value = parsed.channel || '';
     document.getElementById('tu').value  = parsed.url     || '';
   } else {
-    hint.textContent = parsed.hint || 'إدخال غير صالح';
-    hint.className   = 'field-hint show-err';
+    hint.textContent = parsed.hint || 'إدخال غير صالح'; hint.className = 'field-hint show-err';
     inputEl.classList.remove('ok'); inputEl.classList.add('err');
-    document.getElementById('tch').value = '';
-    document.getElementById('tu').value  = '';
+    document.getElementById('tch').value = ''; document.getElementById('tu').value = '';
   }
 }
 
-/**
- * buildTaskCard — Pure function: task object → HTML string
- */
+function onSmartInput(el) { updateSmartUI(parseTelegramInput(el.value), el); }
+
+function onTypeChange() {
+  const type  = document.getElementById('tt').value;
+  const label = document.getElementById('smart-label');
+  const input = document.getElementById('tsmartinput');
+  if (type === 'channel') { label.textContent = 'رابط القناة أو يوزرنيم *'; input.placeholder = 'مثال: t.me/mychannel أو mychannel'; }
+  else                    { label.textContent = 'رابط خارجي *';              input.placeholder = 'https://example.com/...'; }
+  if (input.value) onSmartInput(input);
+}
+
 function buildTaskCard(t) {
   const isChannel = t.task_type === 'channel';
   const iconId    = getTaskIcon(t.task_type);
-  const href      = isChannel
-    ? (t.url || (t.channel ? `https://t.me/${t.channel}` : null))
-    : t.url;
+  const href      = isChannel ? (t.url || (t.channel ? `https://t.me/${t.channel}` : null)) : t.url;
   const hasLink   = !!href;
-
-  const displayText = isChannel
-    ? `@${t.channel || '—'}`
-    : (t.url ? (t.url.length > 40 ? t.url.slice(0, 40) + '…' : t.url) : '—');
-
+  const displayText = isChannel ? `@${t.channel || '—'}` : (t.url ? (t.url.length > 40 ? t.url.slice(0, 40) + '…' : t.url) : '—');
   const badge = isChannel
     ? `<span class="tk-badge ch"><svg class="icon icon-sm" style="width:10px;height:10px"><use href="#ic-tg-plane"/></svg> TELEGRAM</span>`
     : `<span class="tk-badge url"><svg class="icon icon-sm" style="width:10px;height:10px"><use href="#ic-globe"/></svg> URL</span>`;
-
   const linkEl = hasLink
     ? `<a class="tk-link" href="${href}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${displayText}</a>`
     : `<span class="tk-link invalid">${displayText}</span>`;
-
   const activeStyle = t.is_active === false ? ' invalid-card' : '';
-
   return `<div class="tk${activeStyle}" onclick="${hasLink ? `openTaskLink('${href}')` : ''}" title="${hasLink ? 'انقر لفتح الرابط' : 'رابط غير متاح'}">
     <div class="tk-ic ${isChannel ? 'tg' : ''}">
       <svg class="icon icon-md"><use href="${iconId}"/></svg>
@@ -1431,16 +1481,11 @@ function buildTaskCard(t) {
   </div>`;
 }
 
-function openTaskLink(href) {
-  if (href) window.open(href, '_blank', 'noopener,noreferrer');
-}
-
+function openTaskLink(href) { if (href) window.open(href, '_blank', 'noopener,noreferrer'); }
 function copyTaskLink(href, e) {
   e && e.stopPropagation();
   if (!href) return;
-  navigator.clipboard.writeText(href)
-    .then(() => toast('تم نسخ الرابط', 'ok'))
-    .catch(() => toast('فشل النسخ', 'err'));
+  navigator.clipboard.writeText(href).then(() => toast('تم نسخ الرابط', 'ok')).catch(() => toast('فشل النسخ', 'err'));
 }
 
 // ══════════════════════════════════════
@@ -1476,7 +1521,7 @@ document.getElementById('apass').addEventListener('keydown', e => { if (e.key ==
 // ══════════════════════════════════════
 function init() {
   updateTime(); setInterval(updateTime, 1000);
-  loadDash(); loadTasks(); loadRequests();
+  loadDash(); loadTasks(); loadRequests(); loadPromos();
 }
 function updateTime() {
   const el = document.getElementById('dtime');
@@ -1508,10 +1553,7 @@ function nav(id, el, mobile = false) {
 async function loadDash() {
   document.getElementById('dt').innerHTML = `<tr><td colspan="5" class="lrow"><span class="spin"></span></td></tr>`;
   try {
-    const [sRes, uRes] = await Promise.all([
-      api('stats'),
-      api('get_users', { limit: 10, offset: 0 }),
-    ]);
+    const [sRes, uRes] = await Promise.all([api('stats'), api('get_users', { limit: 10, offset: 0 })]);
     if (sRes.ok) {
       const s = sRes.stats;
       document.getElementById('s-users').textContent = s.total_users;
@@ -1524,7 +1566,7 @@ async function loadDash() {
       document.getElementById('dt').innerHTML = uRes.users.map(u => `
         <tr>
           <td class="tid">${u.telegram_id}</td>
-          <td class="tname">@${u.username || '—'}</td>
+          <td class="tname">${buildTgLink(u.username, u.telegram_id)}</td>
           <td class="tbal">${parseFloat(u.balance || 0).toFixed(4)}</td>
           <td style="color:var(--green)">${u.seeds}</td>
           <td>${(u.shadow_banned || u.is_hard_banned) ? '<span class="bban">BAN</span>' : '<span class="bok">OK</span>'}</td>
@@ -1536,6 +1578,16 @@ async function loadDash() {
 // ══════════════════════════════════════
 //  USERS
 // ══════════════════════════════════════
+function buildTgLink(username, id) {
+  if (username) {
+    return `<a href="https://t.me/${username}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">
+      @${username}
+      <svg class="icon tg-arrow" style="width:12px;height:12px;color:var(--blue)"><use href="#ic-telegram"/></svg>
+    </a>`;
+  }
+  return `<span style="color:var(--t3)">${id}</span>`;
+}
+
 async function loadUsers() {
   setUT(skeletonRows(8, 8));
   try {
@@ -1575,7 +1627,7 @@ function renderUsers(users, total) {
     const ud = JSON.stringify(u).replace(/'/g, "&#39;");
     return `<tr>
       <td class="tid">${u.telegram_id}</td>
-      <td class="tname">@${u.username || '—'}</td>
+      <td class="tname">${buildTgLink(u.username, u.telegram_id)}</td>
       <td class="tbal">${parseFloat(u.balance || 0).toFixed(4)}</td>
       <td style="color:var(--green)">${u.seeds}</td>
       <td style="color:var(--blue)">${u.water_count}</td>
@@ -1597,6 +1649,17 @@ function openModal(u) {
   editId = u.telegram_id;
   isSB = !!u.shadow_banned; isHB = !!u.is_hard_banned;
   document.getElementById('mun').textContent = `@${u.username || u.telegram_id}`;
+  // Telegram link inside modal
+  const tgWrap = document.getElementById('modal-tg-wrap');
+  if (u.username) {
+    tgWrap.innerHTML = `<a class="modal-tg-link" href="https://t.me/${u.username}" target="_blank" rel="noopener noreferrer">
+      <svg class="icon icon-sm"><use href="#ic-telegram"/></svg>
+      فتح @${u.username} على تيليغرام
+      <svg class="icon icon-sm"><use href="#ic-external"/></svg>
+    </a>`;
+  } else {
+    tgWrap.innerHTML = '';
+  }
   document.getElementById('eb').value = parseFloat(u.balance || 0).toFixed(6);
   document.getElementById('es').value = u.seeds || 0;
   document.getElementById('ew').value = u.water_count || 0;
@@ -1665,7 +1728,14 @@ async function loadRequests() {
               : `<svg class="icon icon-md"><use href="#ic-user"/></svg>`}
           </div>
           <div style="flex:1">
-            <div class="rname">@${w.username || w.telegram_id}</div>
+            <div class="rname">
+              ${w.username
+                ? `<a href="https://t.me/${w.username}" target="_blank" rel="noopener noreferrer">
+                    <svg class="icon icon-sm"><use href="#ic-telegram"/></svg>
+                    @${w.username}
+                  </a>`
+                : `<span>ID: ${w.telegram_id}</span>`}
+            </div>
             <div class="rmeta">ID: ${w.telegram_id} &nbsp;·&nbsp; ${new Date(w.date).toLocaleString('ar-DZ')}</div>
           </div>
           <div class="ramt">${w.amount} TON</div>
@@ -1711,38 +1781,15 @@ async function loadTasks() {
   } catch (e) { toast('فشل تحميل المهام', 'err'); }
 }
 
-/* Smart Input handler */
-function onSmartInput(el) {
-  const parsed = parseTelegramInput(el.value);
-  updateSmartUI(parsed, el);
-}
-
-/* Update label based on type */
-function onTypeChange() {
-  const type = document.getElementById('tt').value;
-  const label = document.getElementById('smart-label');
-  const input = document.getElementById('tsmartinput');
-  if (type === 'channel') {
-    label.textContent = 'رابط القناة أو يوزرنيم *';
-    input.placeholder = 'مثال: t.me/mychannel أو mychannel';
-  } else {
-    label.textContent = 'رابط خارجي *';
-    input.placeholder = 'https://example.com/...';
-  }
-  // re-validate current value
-  if (input.value) onSmartInput(input);
-}
-
 function renderTasks() {
   document.getElementById('tc').textContent = tasks.length;
   const tl = document.getElementById('tl');
   if (!tasks.length) {
-    tl.innerHTML = `
-      <div class="empty-state" style="padding:40px 20px">
-        <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-task"/></svg></div>
-        <h3>لا توجد مهام</h3>
-        <p>أضف أول مهمة باستخدام النموذج أعلاه</p>
-      </div>`;
+    tl.innerHTML = `<div class="empty-state" style="padding:40px 20px">
+      <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-task"/></svg></div>
+      <h3>لا توجد مهام</h3>
+      <p>أضف أول مهمة باستخدام النموذج أعلاه</p>
+    </div>`;
     document.getElementById('tj').value = '[]';
     return;
   }
@@ -1756,51 +1803,21 @@ async function addTask() {
   const type     = document.getElementById('tt').value;
   const desc     = document.getElementById('td').value.trim();
   const rawInput = document.getElementById('tsmartinput').value.trim();
-
-  // ── Guard Layer ────────────────────────
-  const parsed = parseTelegramInput(rawInput);
-  const v      = validateTask(name, reward, parsed);
+  const parsed   = parseTelegramInput(rawInput);
+  const v        = validateTask(name, reward, parsed);
   if (!v.ok) { toast(v.error, 'err'); return; }
-
-  // Enforce correct type from parser — parser wins
   const finalType = parsed.type === 'channel' ? 'channel' : 'url';
-
-  // Warn if selector mismatch (but don't block — parser result is authoritative)
-  if (type === 'channel' && finalType === 'url') {
-    toast('تم اكتشاف رابط خارجي — تم التحويل تلقائياً', 'info');
-  } else if (type === 'url' && finalType === 'channel') {
-    toast('تم اكتشاف قناة Telegram — تم التحويل تلقائياً', 'info');
-  }
-
-  const rawId = name.toLowerCase()
-    .replace(/\s+/g, '_')
-    .replace(/[^a-z0-9_\u0600-\u06FF]/g, '')
-    .slice(0, 28) + '_' + Date.now().toString().slice(-5);
-
-  const task = {
-    id:          rawId,
-    name,
-    reward,
-    task_type:   finalType,
-    url:         parsed.url,
-    channel:     finalType === 'channel' ? parsed.channel : null,
-    description: desc,
-    is_active:   true,
-  };
-
+  if (type === 'channel' && finalType === 'url')     toast('تم اكتشاف رابط خارجي — تم التحويل تلقائياً', 'info');
+  else if (type === 'url' && finalType === 'channel') toast('تم اكتشاف قناة Telegram — تم التحويل تلقائياً', 'info');
+  const rawId = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\u0600-\u06FF]/g, '').slice(0, 28) + '_' + Date.now().toString().slice(-5);
+  const task = { id: rawId, name, reward, task_type: finalType, url: parsed.url, channel: finalType === 'channel' ? parsed.channel : null, description: desc, is_active: true };
   try {
     const r = await api('add_task', task);
     if (!r.ok) { toast(r.error || 'فشل الإضافة', 'err'); return; }
   } catch (e) { toast('خطأ في الاتصال', 'err'); return; }
-
   tasks.push(task);
   renderTasks();
-
-  // Reset form
-  ['tn','tr','td','tch','tu'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
+  ['tn','tr','td'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const smartEl = document.getElementById('tsmartinput');
   smartEl.value = '';
   updateSmartUI({ valid: false, hint: '', badgeType: null }, smartEl);
@@ -1824,6 +1841,105 @@ function copyJson() {
 }
 
 // ══════════════════════════════════════
+//  PROMO CODES
+// ══════════════════════════════════════
+async function loadPromos() {
+  try {
+    const r = await api('get_promos');
+    if (r.ok) { promos = r.promos || []; renderPromos(); }
+    else if (r.error && r.error.includes('Unknown')) {
+      // جدول غير موجود بعد — ابدأ فارغ
+      promos = []; renderPromos();
+    } else toast(r.error, 'err');
+  } catch (e) { toast('فشل تحميل الأكواد', 'err'); }
+}
+
+function promoStatus(p) {
+  const now = new Date();
+  if (p.expires_at && new Date(p.expires_at) < now) return 'expired';
+  const maxUses = parseInt(p.max_uses || 0);
+  const uses    = parseInt(p.uses_count || 0);
+  if (maxUses > 0 && uses >= maxUses) return 'used';
+  return 'active';
+}
+
+function promoStatusLabel(s) {
+  if (s === 'expired') return 'منتهي';
+  if (s === 'used')    return 'مستنفد';
+  return 'نشط';
+}
+
+function renderPromos() {
+  document.getElementById('promo-count').textContent = promos.length;
+  const list = document.getElementById('promo-list');
+  if (!promos.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="es-icon"><svg class="icon icon-lg" style="color:var(--purple)"><use href="#ic-promo"/></svg></div>
+      <h3>لا توجد أكواد</h3>
+      <p>أضف أول كود برومو باستخدام النموذج أعلاه</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = promos.map(p => {
+    const st    = promoStatus(p);
+    const stLbl = promoStatusLabel(st);
+    const uses  = parseInt(p.uses_count || 0);
+    const max   = parseInt(p.max_uses || 0);
+    const expiry = p.expires_at ? new Date(p.expires_at).toLocaleDateString('ar-DZ') : '—';
+    return `<div class="pc">
+      <div class="pc-icon">
+        <svg class="icon icon-md"><use href="#ic-promo"/></svg>
+      </div>
+      <div class="pc-info">
+        <div class="pc-code">${p.code}</div>
+        <div class="pc-meta">
+          <span><svg class="icon icon-sm" style="width:11px;height:11px"><use href="#ic-zap"/></svg> ${parseFloat(p.reward).toFixed(3)} TON</span>
+          <span><svg class="icon icon-sm" style="width:11px;height:11px"><use href="#ic-clock"/></svg> ${expiry}</span>
+          ${p.description ? `<span>${p.description}</span>` : ''}
+        </div>
+      </div>
+      <div class="pc-uses">
+        <strong>${uses}</strong>
+        ${max > 0 ? `/ ${max}` : '∞'}
+      </div>
+      <span class="pc-status ${st}">${stLbl}</span>
+      <button class="pc-del" onclick="deletePromo('${p.code}')" title="حذف الكود">
+        <svg class="icon icon-md"><use href="#ic-delete"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function addPromo() {
+  const code    = document.getElementById('pcode').value.trim().toUpperCase();
+  const reward  = parseFloat(document.getElementById('preward').value);
+  const maxUses = parseInt(document.getElementById('pmaxuses').value || 0);
+  const expiry  = document.getElementById('pexpiry').value;
+  const desc    = document.getElementById('pdesc').value.trim();
+
+  if (!code || code.length < 2)      { toast('أدخل كود صالح (حرفان على الأقل)', 'err'); return; }
+  if (!/^[A-Z0-9_\-]+$/.test(code)) { toast('الكود يجب أن يحتوي على أحرف إنجليزية وأرقام فقط', 'err'); return; }
+  if (isNaN(reward) || reward <= 0)  { toast('أدخل مكافأة صحيحة أكبر من صفر', 'err'); return; }
+
+  try {
+    const r = await api('add_promo', { code, reward, max_uses: maxUses, expires_at: expiry || null, description: desc });
+    if (!r.ok) { toast(r.error || 'فشل الإضافة', 'err'); return; }
+    toast('تم إضافة الكود بنجاح', 'ok');
+    ['pcode','preward','pmaxuses','pexpiry','pdesc'].forEach(id => { document.getElementById(id).value = ''; });
+    await loadPromos();
+  } catch (e) { toast('خطأ في الاتصال', 'err'); }
+}
+
+async function deletePromo(code) {
+  if (!confirm(`حذف الكود "${code}"؟`)) return;
+  try {
+    const r = await api('delete_promo', { code });
+    if (r.ok) { promos = promos.filter(p => p.code !== code); renderPromos(); toast('تم حذف الكود', 'info'); }
+    else toast(r.error, 'err');
+  } catch (e) { toast('خطأ', 'err'); }
+}
+
+// ══════════════════════════════════════
 //  UTILS
 // ══════════════════════════════════════
 function setBadge(n) {
@@ -1833,30 +1949,21 @@ function setBadge(n) {
   });
 }
 
-// ── TOAST (smart queue) ────────────────
 let _toastQ = [];
 function toast(msg, type = 'ok') {
   const container = document.getElementById('toast-container');
   const el = document.createElement('div');
   el.className = `toast-item${type === 'err' ? ' err' : type === 'info' ? ' info' : ''}`;
-
-  // Icon
   const iconId = type === 'err' ? '#ic-ban' : type === 'info' ? '#ic-link' : '#ic-check';
   el.innerHTML = `<svg class="icon icon-sm" style="flex-shrink:0"><use href="${iconId}"/></svg>${msg}`;
-
   container.appendChild(el);
   requestAnimationFrame(() => el.classList.add('show'));
-
-  setTimeout(() => {
-    el.classList.remove('show');
-    setTimeout(() => el.remove(), 300);
-  }, 2800);
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2800);
 }
 
-// ── SKELETON LOADERS ──────────────────
 function skeletonRows(count, cols) {
   return Array(count).fill(0).map(() =>
-    `<tr>${Array(cols).fill(0).map((_, i) =>
+    `<tr>${Array(cols).fill(0).map(() =>
       `<td><div class="skel skel-line" style="width:${40 + Math.random()*40}%;height:10px"></div></td>`
     ).join('')}</tr>`
   ).join('');
