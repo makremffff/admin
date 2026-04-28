@@ -831,6 +831,51 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
   #bnav            { display: none !important; }
   #toast-container { bottom: 24px; }
 }
+
+/* ═══════════════════════════════════════════
+   SPIN PANEL
+═══════════════════════════════════════════ */
+:root {
+  --gold-g: rgba(240,192,64,.06);
+  --gold-g2: rgba(240,192,64,.13);
+}
+.spin-tab {
+  transition: all var(--t-base);
+}
+.spin-tab.act-tab {
+  background: linear-gradient(135deg, var(--gold), #d4a820) !important;
+  color: #1a0e00 !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 16px rgba(240,192,64,.28);
+}
+.spin-ch-card {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  background: var(--surf-3); border: 1px solid rgba(240,192,64,.12);
+  border-radius: var(--r3); margin-bottom: var(--s2);
+  transition: border-color var(--t-base), background var(--t-fast);
+}
+.spin-ch-card:hover { border-color: rgba(240,192,64,.28); background: var(--gold-g); }
+.spin-ch-icon {
+  width: 36px; height: 36px; border-radius: var(--r2); flex-shrink: 0;
+  background: var(--gold-g2); border: 1px solid rgba(240,192,64,.22);
+  display: flex; align-items: center; justify-content: center; color: var(--gold);
+}
+.spin-ch-name {
+  flex: 1; font-family: var(--mono); font-size: 13px; color: var(--t1); font-weight: 600;
+}
+.spin-ch-at { color: var(--gold); margin-left: 2px; }
+.spin-ch-date { font-size: 9px; color: var(--t4); font-family: var(--mono); }
+.spin-ch-del {
+  background: transparent; border: 1px solid rgba(224,85,85,.2);
+  border-radius: var(--r2); padding: 5px 9px; color: var(--red);
+  cursor: pointer; transition: all var(--t-fast); display: flex; align-items: center;
+}
+.spin-ch-del:hover { background: var(--red-g); border-color: var(--red); }
+
+#spin-tab-channels, #spin-tab-players, #spin-tab-withdrawals {
+  animation: pg-in .2s ease both;
+}
 </style>
 </head>
 <body>
@@ -1020,36 +1065,20 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
         <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-promo"/></svg></span>
         <span>أكواد البرومو</span>
       </div>
-      <!-- ── TON Spin ── -->
-      <div class="ns" style="color:var(--gold);opacity:.9">🎰 TON SPIN</div>
-      <div class="ni" id="sn-spin-wd" onclick="nav('spin-wd',this)">
-        <span class="ni-ico"><svg class="icon icon-md" style="color:var(--gold)"><use href="#ic-withdraw"/></svg></span>
-        <span>سحوبات Spin</span>
-        <span class="badge" id="rb-spin" style="background:var(--gold);color:#1a0e00">0</span>
-      </div>
-      <div class="ni" id="sn-spin-cha" onclick="nav('spin-cha',this)">
-        <span class="ni-ico"><svg class="icon icon-md" style="color:var(--gold)"><use href="#ic-channel"/></svg></span>
-        <span>قنوات Spin</span>
-      </div>
-      <!-- ── زر الانتقال لأدمن Spin ── -->
-      <div style="padding: var(--s2) var(--s4) var(--s3)">
-        <a href="https://ton-spin-admin.vercel.app" target="_blank"
-          style="
-            display:flex; align-items:center; gap:var(--s2);
-            padding:9px var(--s4); border-radius:var(--r2);
-            background:linear-gradient(135deg,rgba(240,192,64,.15),rgba(240,192,64,.06));
-            border:1px solid rgba(240,192,64,.28); color:var(--gold);
-            font-size:12px; font-family:var(--mono); text-decoration:none;
-            transition:all var(--t-base); letter-spacing:.04em;
-          "
-          onmouseover="this.style.background='linear-gradient(135deg,rgba(240,192,64,.25),rgba(240,192,64,.12))';this.style.borderColor='rgba(240,192,64,.5)'"
-          onmouseout="this.style.background='linear-gradient(135deg,rgba(240,192,64,.15),rgba(240,192,64,.06))';this.style.borderColor='rgba(240,192,64,.28)'"
-        >
-          <svg class="icon icon-sm" style="color:var(--gold)"><use href="#ic-external"/></svg>
-          أدمن TON Spin
-        </a>
+      <div class="ns">TON Spin</div>
+      <div class="ni" id="sn-spin" onclick="nav('spin',this)" style="border-right-color: transparent;">
+        <span class="ni-ico">
+          <svg class="icon icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+            <circle cx="12" cy="12" r="3" fill="currentColor" opacity=".2"/>
+          </svg>
+        </span>
+        <span style="color:var(--gold)">Spin Panel</span>
+        <span style="margin-right:auto;background:linear-gradient(135deg,var(--gold),#d4a820);color:#1a0e00;font-size:8px;font-family:var(--mono);padding:1px 7px;border-radius:20px;font-weight:700;letter-spacing:.04em">NEW</span>
       </div>
     </nav>
+    <div class="sb-foot">
       <span class="dot"></span>
       CONNECTED
     </div>
@@ -1319,88 +1348,127 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         TON SPIN — سحوبات
-    ══════════════════════════════════════ -->
-    <div class="page" id="p-spin-wd">
+    <!-- SPIN PANEL -->
+    <div class="page" id="p-spin">
       <div class="topbar">
         <div>
           <h2 style="color:var(--gold)">
-            <span class="page-icon" style="background:rgba(240,192,64,.1);border-color:rgba(240,192,64,.25)">
-              <svg class="icon icon-md" style="color:var(--gold)"><use href="#ic-withdraw"/></svg>
+            <span class="page-icon" style="background:var(--gold-g);border-color:rgba(240,192,64,.22)">
+              <svg class="icon icon-md" style="color:var(--gold)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+                <circle cx="12" cy="12" r="3" fill="currentColor" opacity=".2"/>
+              </svg>
             </span>
-            طلبات سحب — TON Spin
+            TON Spin Panel
           </h2>
-          <div class="sub">قبول أو رفض طلبات سحب لاعبي TON Spin</div>
+          <div class="sub">إدارة قنوات الانضمام — اللاعبون — السحوبات</div>
         </div>
-        <button class="btn btn-gh btn-sm" onclick="loadSpinWithdrawals()">
+        <button class="btn btn-gh btn-sm" onclick="loadSpinPanel()">
           <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
-        </button>
-      </div>
-      <div id="spin-rl" class="rlist">
-        <div class="empty-state">
-          <div class="es-icon" style="color:var(--gold)"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
-          <h3>لا توجد طلبات</h3>
-          <p>ستظهر هنا طلبات السحب المعلقة من لاعبي TON Spin</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════
-         TON SPIN — قنوات cha
-    ══════════════════════════════════════ -->
-    <div class="page" id="p-spin-cha">
-      <div class="topbar">
-        <div>
-          <h2 style="color:var(--gold)">
-            <span class="page-icon" style="background:rgba(240,192,64,.1);border-color:rgba(240,192,64,.25)">
-              <svg class="icon icon-md" style="color:var(--gold)"><use href="#ic-channel"/></svg>
-            </span>
-            قنوات TON Spin
-          </h2>
-          <div class="sub">إضافة وحذف القنوات المطلوبة للانضمام في جدول cha</div>
-        </div>
-        <button class="btn btn-gh btn-sm" onclick="loadChaChannels()">
-          <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
+          تحديث
         </button>
       </div>
 
-      <!-- نموذج الإضافة -->
-      <div class="tform" style="border-color:rgba(240,192,64,.18)">
-        <div class="tform-title" style="color:var(--gold)">
-          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
-          إضافة قناة جديدة
+      <!-- SPIN STATS -->
+      <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:var(--s4)">
+        <div class="sc gold">
+          <div class="sl">اللاعبون</div>
+          <div class="sv q" id="sp-total">—</div>
         </div>
-        <div class="frow">
-          <div class="fg" style="flex:2">
-            <label class="fl">يوزرنيم القناة *</label>
-            <input class="fi" id="cha-username" placeholder="@channel أو channel"
-              oninput="this.value=this.value.replace(/^@/,'').toLowerCase()" />
-          </div>
-          <div class="fg" style="flex:2">
-            <label class="fl">الاسم المعروض (اختياري)</label>
-            <input class="fi" id="cha-display" placeholder="اسم القناة" />
-          </div>
+        <div class="sc">
+          <div class="sl">إجمالي الأرصدة (TON)</div>
+          <div class="sv g" id="sp-bal">—</div>
         </div>
-        <button class="btn btn-gold btn-full" style="margin-top:4px" onclick="addChaChannel()">
-          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
-          إضافة القناة
+        <div class="sc">
+          <div class="sl">إجمالي السبينات</div>
+          <div class="sv" id="sp-spins" style="color:var(--purple)">—</div>
+        </div>
+        <div class="sc">
+          <div class="sl">تحقق القنوات</div>
+          <div class="sv g" id="sp-verified">—</div>
+        </div>
+        <div class="sc red">
+          <div class="sl">سحب معلق</div>
+          <div class="sv r" id="sp-pend">—</div>
+        </div>
+        <div class="sc red">
+          <div class="sl">محظورون</div>
+          <div class="sv r" id="sp-ban">—</div>
+        </div>
+      </div>
+
+      <!-- SPIN SUB TABS -->
+      <div style="display:flex;gap:var(--s2);margin-bottom:var(--s4);flex-wrap:wrap">
+        <button class="btn btn-gold btn-sm spin-tab act-tab" id="stab-channels" onclick="showSpinTab('channels')">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+          القنوات
+        </button>
+        <button class="btn btn-gh btn-sm spin-tab" id="stab-players" onclick="showSpinTab('players')">
+          <svg class="icon icon-sm"><use href="#ic-users"/></svg>
+          اللاعبون
+        </button>
+        <button class="btn btn-gh btn-sm spin-tab" id="stab-withdrawals" onclick="showSpinTab('withdrawals')">
+          <svg class="icon icon-sm"><use href="#ic-withdraw"/></svg>
+          السحوبات
+          <span class="badge" id="sp-wd-badge" style="display:none">0</span>
         </button>
       </div>
 
-      <!-- قائمة القنوات -->
-      <div class="tcard-list" style="border-color:rgba(240,192,64,.12)">
-        <div class="tcard-list-header" style="color:var(--gold)">
-          <svg class="icon icon-sm"><use href="#ic-channel"/></svg>
-          القنوات الحالية (<span id="cha-count">0</span>)
-        </div>
-        <div id="cha-list">
-          <div class="empty-state">
-            <div class="es-icon" style="color:var(--gold)"><svg class="icon icon-lg"><use href="#ic-channel"/></svg></div>
-            <h3>لا توجد قنوات</h3>
-            <p>أضف أول قناة باستخدام النموذج أعلاه</p>
+      <!-- TAB: CHANNELS -->
+      <div id="spin-tab-channels">
+        <div class="tform" style="margin-bottom:var(--s4)">
+          <div class="tform-title">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+            إضافة قناة Telegram
+          </div>
+          <div class="frow">
+            <div class="fg" style="flex:3">
+              <label class="fl">اسم القناة (بدون @)</label>
+              <input class="fi" id="spin-ch-input" placeholder="mychannel أو @mychannel" />
+            </div>
+            <div class="fg" style="flex:1;align-self:flex-end">
+              <button class="btn btn-gold btn-full" onclick="addSpinChannel()">
+                <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
+                إضافة
+              </button>
+            </div>
           </div>
         </div>
+        <div class="tcard-list">
+          <div class="tcard-list-header" style="color:var(--gold)">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+            قنوات الانضمام المطلوبة (<span id="spin-ch-count">0</span>)
+          </div>
+          <div id="spin-ch-list">
+            <div class="empty-state">
+              <h3>لا توجد قنوات</h3>
+              <p>أضف قناة أعلاه لتُظهر في شاشة الانضمام</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: PLAYERS -->
+      <div id="spin-tab-players" style="display:none">
+        <div class="srow">
+          <input id="spin-sq" placeholder="ID أو اسم مستخدم..." />
+          <button class="btn btn-g" onclick="searchSpinPlayer()">
+            <svg class="icon icon-sm"><use href="#ic-search"/></svg>
+          </button>
+          <button class="btn btn-gh" onclick="loadSpinPlayers()">الكل</button>
+        </div>
+        <div class="tw">
+          <div class="th"><span id="spin-pc"><svg class="icon icon-sm"><use href="#ic-users"/></svg> اللاعبون</span></div>
+          <table>
+            <thead><tr><th>ID</th><th>الاسم</th><th>الرصيد</th><th>Spins</th><th>إجمالي</th><th>قنوات</th><th>حالة</th><th></th></tr></thead>
+            <tbody id="spin-pt"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: WITHDRAWALS -->
+      <div id="spin-tab-withdrawals" style="display:none">
+        <div id="spin-wl" class="rlist"></div>
       </div>
     </div>
 
@@ -1430,16 +1498,19 @@ hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; 
     <div class="bic"><svg class="icon icon-lg"><use href="#ic-promo"/></svg></div>
     <div>بروموكود</div>
   </div>
-  <div class="bni" id="bn-spin-wd" onclick="nav('spin-wd',this,true)">
-    <div class="bic"><svg class="icon icon-lg" style="color:var(--gold)"><use href="#ic-withdraw"/></svg></div>
-    <div style="color:var(--gold)">Spin سحب</div>
-    <span class="badge" id="rbb-spin" style="background:var(--gold);color:#1a0e00">0</span>
-  </div>
-  <div class="bni" id="bn-spin-cha" onclick="nav('spin-cha',this,true)">
-    <div class="bic"><svg class="icon icon-lg" style="color:var(--gold)"><use href="#ic-channel"/></svg></div>
-    <div style="color:var(--gold)">Spin قنوات</div>
+  <div class="bni" id="bn-spin" onclick="nav('spin',this,true)">
+    <div class="bic" style="color:var(--gold)">
+      <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+        <circle cx="12" cy="12" r="3" fill="currentColor" opacity=".25"/>
+      </svg>
+    </div>
+    <div style="color:var(--gold)">Spin</div>
   </div>
 </div>
+
+<!-- USER MODAL -->
 <div id="ov">
   <div class="modal">
     <button class="mcl" onclick="closeModal()">
@@ -1652,7 +1723,7 @@ document.getElementById('apass').addEventListener('keydown', e => { if (e.key ==
 // ══════════════════════════════════════
 function init() {
   updateTime(); setInterval(updateTime, 1000);
-  loadDash(); loadTasks(); loadRequests(); loadPromos();
+  loadDash(); loadTasks(); loadRequests(); loadPromos(); loadSpinPanel();
 }
 function updateTime() {
   const el = document.getElementById('dtime');
@@ -1676,9 +1747,6 @@ function nav(id, el, mobile = false) {
     const bn = document.getElementById('bn-' + id);
     if (bn) { document.querySelectorAll('.bni').forEach(n => n.classList.remove('act')); bn.classList.add('act'); }
   }
-  // تحميل بيانات الصفحة عند الانتقال إليها
-  if (id === 'spin-wd')  loadSpinWithdrawals();
-  if (id === 'spin-cha') loadChaChannels();
 }
 
 // ══════════════════════════════════════
@@ -2081,160 +2149,8 @@ async function deletePromo(code) {
 }
 
 // ══════════════════════════════════════
-//  TON SPIN — سحوبات
+//  UTILS
 // ══════════════════════════════════════
-async function loadSpinWithdrawals() {
-  const rl = document.getElementById('spin-rl');
-  rl.innerHTML = skeletonCards(3);
-  try {
-    const r = await api('get_spin_withdrawals');
-    if (!r.ok) { toast(r.error || 'فشل التحميل', 'err'); return; }
-    const list = r.withdrawals || [];
-
-    // تحديث badge
-    ['rb-spin','rbb-spin'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = list.length;
-    });
-
-    if (!list.length) {
-      rl.innerHTML = `<div class="empty-state">
-        <div class="es-icon" style="color:var(--gold)"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
-        <h3>لا توجد طلبات</h3>
-        <p>ستظهر هنا طلبات السحب المعلقة من لاعبي TON Spin</p>
-      </div>`;
-      return;
-    }
-
-    rl.innerHTML = list.map((w, i) => `
-      <div class="rcard" id="spin-wcard-${i}">
-        <div class="rcard-top">
-          <div class="rav">
-            ${w.photo_url
-              ? `<img src="${w.photo_url}" onerror="this.outerHTML='<svg class=\\'icon icon-md\\'><use href=\\'#ic-user\\'/></svg>'">`
-              : `<svg class="icon icon-md"><use href="#ic-user"/></svg>`}
-          </div>
-          <div style="flex:1">
-            <div class="rname">
-              <a href="https://t.me/${w.username || ''}" target="_blank">
-                ${w.username || 'User #' + w.telegram_id}
-                <svg class="icon icon-sm"><use href="#ic-external"/></svg>
-              </a>
-            </div>
-            <div class="rmeta">ID: ${w.telegram_id} · ${w.date ? new Date(w.date).toLocaleString('ar-DZ') : '—'}</div>
-          </div>
-          <div class="ramt" style="color:var(--gold)">${parseFloat(w.amount||0).toFixed(3)} TON</div>
-        </div>
-        <div class="rwallet">
-          <svg class="icon icon-sm" style="flex-shrink:0"><use href="#ic-wallet"/></svg>
-          ${w.address || '—'}
-        </div>
-        <div class="ract">
-          <button class="btn btn-g btn-sm" onclick="resolveSpinWd(${w.telegram_id},${w.index},'approved',${i})">
-            <svg class="icon icon-sm"><use href="#ic-check"/></svg>
-            قبول
-          </button>
-          <button class="btn btn-r btn-sm" onclick="resolveSpinWd(${w.telegram_id},${w.index},'rejected',${i})">
-            <svg class="icon icon-sm"><use href="#ic-ban"/></svg>
-            رفض
-          </button>
-        </div>
-      </div>
-    `).join('');
-  } catch (e) { toast('خطأ في الاتصال', 'err'); }
-}
-
-async function resolveSpinWd(telegram_id, index, verdict, cardIdx) {
-  const label = verdict === 'approved' ? 'قبول' : 'رفض';
-  if (!confirm(`تأكيد ${label} هذا الطلب؟`)) return;
-  try {
-    const r = await api('resolve_spin_withdrawal', { telegram_id, index, verdict });
-    if (!r.ok) { toast(r.error || 'فشل', 'err'); return; }
-    toast(`تم ${label} الطلب بنجاح`, verdict === 'approved' ? 'ok' : 'info');
-    document.getElementById('spin-wcard-' + cardIdx)?.remove();
-    // تحديث badge
-    ['rb-spin','rbb-spin'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = Math.max(0, parseInt(el.textContent || 0) - 1);
-    });
-  } catch (e) { toast('خطأ في الاتصال', 'err'); }
-}
-
-// ══════════════════════════════════════
-//  TON SPIN — قنوات cha
-// ══════════════════════════════════════
-let chaChannels = [];
-
-async function loadChaChannels() {
-  const list = document.getElementById('cha-list');
-  list.innerHTML = `<div class="lrow"><div class="spin"></div></div>`;
-  try {
-    const r = await api('get_cha_channels');
-    if (!r.ok) { toast(r.error || 'فشل التحميل', 'err'); return; }
-    chaChannels = r.channels || [];
-    renderChaChannels();
-  } catch (e) { toast('خطأ في الاتصال', 'err'); }
-}
-
-function renderChaChannels() {
-  document.getElementById('cha-count').textContent = chaChannels.length;
-  const list = document.getElementById('cha-list');
-  if (!chaChannels.length) {
-    list.innerHTML = `<div class="empty-state">
-      <div class="es-icon" style="color:var(--gold)"><svg class="icon icon-lg"><use href="#ic-channel"/></svg></div>
-      <h3>لا توجد قنوات</h3>
-      <p>أضف أول قناة باستخدام النموذج أعلاه</p>
-    </div>`;
-    return;
-  }
-  list.innerHTML = chaChannels.map(ch => `
-    <div class="tk">
-      <div class="tk-ic tg">
-        <svg class="icon icon-md" style="color:var(--blue)"><use href="#ic-tg-plane"/></svg>
-      </div>
-      <div class="tk-info">
-        <div class="tk-name">
-          ${ch.display_name || '@' + ch.username}
-          <span class="tk-badge ch">SPIN</span>
-        </div>
-        <a class="tk-link" href="https://t.me/${ch.username}" target="_blank">@${ch.username}</a>
-      </div>
-      <div class="tk-actions">
-        <button class="tk-del" onclick="deleteChaChannel('${ch.username}')" title="حذف">
-          <svg class="icon icon-md"><use href="#ic-delete"/></svg>
-        </button>
-      </div>
-    </div>
-  `).join('');
-}
-
-async function addChaChannel() {
-  const username     = document.getElementById('cha-username').value.trim().replace(/^@/, '').toLowerCase();
-  const display_name = document.getElementById('cha-display').value.trim();
-  if (!username || username.length < 3) { toast('أدخل يوزرنيم صالح', 'err'); return; }
-  if (!/^[a-z][a-z0-9_]{2,31}$/i.test(username)) { toast('يوزرنيم غير صالح', 'err'); return; }
-  try {
-    const r = await api('add_cha_channel', { username, display_name: display_name || null });
-    if (!r.ok) { toast(r.error || 'فشل الإضافة', 'err'); return; }
-    toast('تمت إضافة القناة بنجاح', 'ok');
-    document.getElementById('cha-username').value = '';
-    document.getElementById('cha-display').value  = '';
-    await loadChaChannels();
-  } catch (e) { toast('خطأ في الاتصال', 'err'); }
-}
-
-async function deleteChaChannel(username) {
-  if (!confirm(`حذف القناة @${username} من Spin؟`)) return;
-  try {
-    const r = await api('delete_cha_channel', { username });
-    if (!r.ok) { toast(r.error || 'فشل الحذف', 'err'); return; }
-    chaChannels = chaChannels.filter(ch => ch.username !== username);
-    renderChaChannels();
-    toast('تم حذف القناة', 'info');
-  } catch (e) { toast('خطأ', 'err'); }
-}
-
-
 function setBadge(n) {
   ['rb','rbb'].forEach(id => {
     const el = document.getElementById(id);
@@ -2277,6 +2193,267 @@ function skeletonCards(count) {
     </div>
   `).join('');
 }
+// ══════════════════════════════════════
+//  SPIN PANEL
+// ══════════════════════════════════════
+let spinChannels = [], spinWithdrawals = [];
+
+function showSpinTab(tab) {
+  ['channels','players','withdrawals'].forEach(t => {
+    const el = document.getElementById('spin-tab-' + t);
+    const btn = document.getElementById('stab-' + t);
+    if (el)  el.style.display  = t === tab ? '' : 'none';
+    if (btn) {
+      btn.classList.toggle('act-tab', t === tab);
+      btn.classList.toggle('btn-gold', t === tab);
+      btn.classList.toggle('btn-gh', t !== tab);
+    }
+  });
+  if (tab === 'players')     loadSpinPlayers();
+  if (tab === 'withdrawals') loadSpinWithdrawals();
+}
+
+async function loadSpinPanel() {
+  // stats
+  try {
+    const r = await api('spin_stats');
+    if (r.ok) {
+      const s = r.stats;
+      document.getElementById('sp-total').textContent    = s.total_players;
+      document.getElementById('sp-bal').textContent      = s.total_balance;
+      document.getElementById('sp-spins').textContent    = s.total_spins;
+      document.getElementById('sp-verified').textContent = s.channels_verified;
+      document.getElementById('sp-ban').textContent      = s.banned_count;
+      document.getElementById('sp-pend').textContent     = s.pending_withdrawals;
+      const badge = document.getElementById('sp-wd-badge');
+      if (badge) { badge.textContent = s.pending_withdrawals; badge.style.display = s.pending_withdrawals > 0 ? '' : 'none'; }
+    }
+  } catch(e) { toast('خطأ في تحميل إحصائيات Spin', 'err'); }
+  // channels
+  await loadSpinChannels();
+}
+
+// ── CHANNELS ──────────────────────────
+async function loadSpinChannels() {
+  try {
+    const r = await api('spin_get_channels');
+    if (r.ok) { spinChannels = r.channels || []; renderSpinChannels(); }
+    else toast(r.error || 'فشل تحميل القنوات', 'err');
+  } catch(e) { toast('خطأ في الاتصال', 'err'); }
+}
+
+function renderSpinChannels() {
+  document.getElementById('spin-ch-count').textContent = spinChannels.length;
+  const list = document.getElementById('spin-ch-list');
+  if (!spinChannels.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="es-icon" style="color:var(--gold)">
+        <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+      </div>
+      <h3>لا توجد قنوات</h3>
+      <p>أضف قناة أعلاه لتظهر في شاشة الانضمام</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = spinChannels.map(ch => {
+    const d = ch.created_at ? new Date(ch.created_at).toLocaleDateString('ar-DZ') : '';
+    return `<div class="spin-ch-card">
+      <div class="spin-ch-icon">
+        <svg class="icon icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+      </div>
+      <div>
+        <div class="spin-ch-name"><span class="spin-ch-at">@</span>${ch.username}</div>
+        <div class="spin-ch-date">${d}</div>
+      </div>
+      <div style="margin-right:auto">
+        <a href="https://t.me/${ch.username}" target="_blank" rel="noopener" class="btn btn-gh btn-sm" style="text-decoration:none">
+          <svg class="icon icon-sm"><use href="#ic-external"/></svg>
+        </a>
+      </div>
+      <button class="spin-ch-del" onclick="deleteSpinChannel(${ch.id}, '${ch.username}')" title="حذف">
+        <svg class="icon icon-sm"><use href="#ic-delete"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function addSpinChannel() {
+  const raw = document.getElementById('spin-ch-input').value.trim();
+  if (!raw) { toast('أدخل اسم القناة', 'err'); return; }
+  try {
+    const r = await api('spin_add_channel', { username: raw });
+    if (!r.ok) { toast(r.error || 'فشل الإضافة', 'err'); return; }
+    document.getElementById('spin-ch-input').value = '';
+    toast('تمت إضافة القناة', 'ok');
+    await loadSpinChannels();
+  } catch(e) { toast('خطأ في الاتصال', 'err'); }
+}
+
+async function deleteSpinChannel(id, name) {
+  if (!confirm(`حذف @${name} من قنوات الانضمام؟`)) return;
+  try {
+    const r = await api('spin_delete_channel', { id });
+    if (!r.ok) { toast(r.error, 'err'); return; }
+    toast('تم حذف القناة', 'info');
+    await loadSpinChannels();
+  } catch(e) { toast('خطأ', 'err'); }
+}
+
+// ── PLAYERS ───────────────────────────
+async function loadSpinPlayers() {
+  document.getElementById('spin-pt').innerHTML = skeletonRows(6, 8);
+  try {
+    const r = await api('spin_get_players', { limit: 100 });
+    if (r.ok) renderSpinPlayers(r.players, r.total);
+    else toast(r.error, 'err');
+  } catch(e) { toast('خطأ', 'err'); }
+}
+
+async function searchSpinPlayer() {
+  const q = document.getElementById('spin-sq').value.trim();
+  if (!q) { loadSpinPlayers(); return; }
+  document.getElementById('spin-pt').innerHTML = skeletonRows(3, 8);
+  try {
+    const r = await api('spin_search_player', { q });
+    if (r.ok) renderSpinPlayers(r.players, r.players.length);
+    else toast(r.error, 'err');
+  } catch(e) { toast('خطأ', 'err'); }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const sq = document.getElementById('spin-sq');
+  if (sq) sq.addEventListener('keydown', e => { if (e.key === 'Enter') searchSpinPlayer(); });
+});
+
+function renderSpinPlayers(players, total) {
+  document.getElementById('spin-pc').innerHTML = `<svg class="icon icon-sm"><use href="#ic-users"/></svg> ${total} لاعب`;
+  if (!players || !players.length) {
+    document.getElementById('spin-pt').innerHTML = `<tr><td colspan="8" class="lrow">لا توجد نتائج</td></tr>`;
+    return;
+  }
+  document.getElementById('spin-pt').innerHTML = players.map(u => {
+    const name = u.first_name || u.username || '—';
+    const banned = u.shadow_banned || u.is_hard_banned;
+    const chOk   = u.channels_ok;
+    return `<tr>
+      <td class="tid">${u.telegram_id}</td>
+      <td class="tname">${u.username ? buildTgLink(u.username, u.telegram_id) : `<span style="color:var(--t3)">${name}</span>`}</td>
+      <td class="tbal">${parseFloat(u.balance||0).toFixed(4)}</td>
+      <td style="color:var(--purple)">${u.spins||0}</td>
+      <td style="color:var(--t2)">${u.total_spins||0}</td>
+      <td>${chOk ? '<span class="bok">✓</span>' : '<span style="color:var(--t4)">—</span>'}</td>
+      <td>${banned ? '<span class="bban">BAN</span>' : '<span class="bok">OK</span>'}</td>
+      <td>
+        <button class="btn btn-gh btn-sm" onclick='openSpinPlayerModal(${JSON.stringify(u).replace(/'/g,"&#39;")})'>
+          <svg class="icon icon-sm"><use href="#ic-edit"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── SPIN PLAYER MODAL (reuse existing modal) ──
+function openSpinPlayerModal(u) {
+  editId = u.telegram_id;
+  isSB = !!u.shadow_banned; isHB = !!u.is_hard_banned;
+  document.getElementById('mun').textContent = `@${u.username || u.telegram_id}`;
+  const tgWrap = document.getElementById('modal-tg-wrap');
+  tgWrap.innerHTML = u.username ? `<a class="modal-tg-link" href="https://t.me/${u.username}" target="_blank" rel="noopener noreferrer">
+    <svg class="icon icon-sm"><use href="#ic-telegram"/></svg> فتح @${u.username} <svg class="icon icon-sm"><use href="#ic-external"/></svg>
+  </a>` : '';
+  document.getElementById('eb').value = parseFloat(u.balance||0).toFixed(6);
+  document.getElementById('es').value = u.spins || 0;
+  document.getElementById('ew').value = u.total_spins || 0;
+  document.getElementById('er').value = 0;
+  // relabel fields for spin context
+  document.querySelectorAll('.modal .fl')[1].textContent = 'Spins المتاحة';
+  document.querySelectorAll('.modal .fl')[2].textContent = 'إجمالي Spins';
+  syncTog('et-sb', isSB); syncTog('et-hb', isHB);
+  document.getElementById('ov').classList.add('open');
+  // override save for spin players
+  document.querySelector('#ov .btn-g').onclick = saveSpinPlayer;
+}
+
+async function saveSpinPlayer() {
+  if (!editId) return;
+  try {
+    const r = await api('spin_update_player', {
+      telegram_id:    editId,
+      balance:        parseFloat(document.getElementById('eb').value),
+      spins:          parseInt(document.getElementById('es').value),
+      shadow_banned:  isSB,
+      is_hard_banned: isHB,
+    });
+    if (!r.ok) { toast(r.error || 'فشل الحفظ', 'err'); return; }
+    closeModal();
+    toast('تم الحفظ', 'ok');
+    loadSpinPlayers();
+    // reset save button
+    document.querySelector('#ov .btn-g').onclick = saveUser;
+  } catch(e) { toast('خطأ', 'err'); }
+}
+
+// ── SPIN WITHDRAWALS ──────────────────
+async function loadSpinWithdrawals() {
+  document.getElementById('spin-wl').innerHTML = skeletonCards(3);
+  try {
+    const r = await api('spin_get_withdrawals');
+    if (r.ok) { spinWithdrawals = r.withdrawals || []; renderSpinWithdrawals(); }
+    else toast(r.error, 'err');
+  } catch(e) { toast('خطأ', 'err'); }
+}
+
+function renderSpinWithdrawals() {
+  const el = document.getElementById('spin-wl');
+  if (!spinWithdrawals.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
+      <h3>لا توجد سحوبات معلقة</h3>
+      <p>ستظهر هنا طلبات سحب TON من اللاعبين</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = spinWithdrawals.map((w, i) => {
+    const addr = w.address || '—';
+    const shortAddr = addr.length > 16 ? addr.slice(0,8) + '...' + addr.slice(-6) : addr;
+    const dt = w.date ? new Date(w.date).toLocaleString('ar-DZ') : '—';
+    return `<div class="rcard">
+      <div class="skel-row" style="display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4)">
+        <div class="rav" style="background:linear-gradient(135deg,#FFD96630,#E0A01830);color:var(--gold);border:1px solid rgba(240,192,64,.25);border-radius:var(--r2);width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mono);font-size:11px;font-weight:700">
+          TON
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="rname">${w.username || w.telegram_id}</div>
+          <div class="rmeta">
+            <span style="color:var(--t3);font-size:9px;font-family:var(--mono)">${shortAddr}</span>
+          </div>
+        </div>
+        <div class="ramt" style="color:var(--gold)">${parseFloat(w.amount||0).toFixed(4)} TON</div>
+      </div>
+      <div class="rdet" style="padding:0 var(--s4) var(--s3)">
+        <span class="rdate">${dt}</span>
+        <div style="display:flex;gap:var(--s2)">
+          <button class="btn btn-g btn-sm" onclick="resolveSpinWD(${w.telegram_id},${w.index},'completed')">
+            <svg class="icon icon-sm"><use href="#ic-check"/></svg> موافقة
+          </button>
+          <button class="btn btn-r btn-sm" onclick="resolveSpinWD(${w.telegram_id},${w.index},'rejected')">
+            <svg class="icon icon-sm"><use href="#ic-ban"/></svg> رفض
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function resolveSpinWD(tid, index, verdict) {
+  const label = verdict === 'completed' ? 'الموافقة' : 'الرفض';
+  if (!confirm(`تأكيد ${label} للسحب؟`)) return;
+  try {
+    const r = await api('spin_resolve_withdrawal', { telegram_id: tid, index, verdict });
+    if (!r.ok) { toast(r.error || 'فشل', 'err'); return; }
+    toast(verdict === 'completed' ? 'تم القبول ✓' : 'تم الرفض', 'ok');
+    await loadSpinWithdrawals();
+    await loadSpinPanel();
+  } catch(e) { toast('خطأ', 'err'); }
+}
 </script>
-</body>
 </html>
