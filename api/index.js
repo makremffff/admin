@@ -427,6 +427,142 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, reward_ton: rewardTon, reward_seeds: rewardSeeds, reward_water: rewardWater });
     }
 
+    // ══════════════════════════════════════════════════════════════
+    //  TON SPIN — GET_SPIN_WITHDRAWALS
+    //  يجلب طلبات السحب المعلقة من جدول players في داتابيز TON Spin
+    // ══════════════════════════════════════════════════════════════
+    if (action === 'get_spin_withdrawals') {
+      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
+      const spinDb  = neon(SPIN_DB);
+
+      const rows = await spinDb(`
+        SELECT telegram_id, username, first_name, photo_url, wd_history
+        FROM players
+        WHERE wd_history::jsonb::text LIKE '%pending%'
+        ORDER BY updated_at DESC
+      `);
+
+      const pending = [];
+      rows.forEach(u => {
+        const hist = Array.isArray(u.wd_history) ? u.wd_history : [];
+        hist.forEach((w, idx) => {
+          if (w.status === 'pending') {
+            pending.push({
+              telegram_id: u.telegram_id,
+              username:    u.username   || u.first_name || 'User',
+              photo_url:   u.photo_url  || null,
+              index:       idx,
+              address:     w.address,
+              amount:      w.amount,
+              date:        w.date,
+            });
+          }
+        });
+      });
+
+      return res.status(200).json({ ok: true, withdrawals: pending });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  TON SPIN — RESOLVE_SPIN_WITHDRAWAL
+    //  قبول أو رفض طلب سحب في TON Spin
+    // ══════════════════════════════════════════════════════════════
+    if (action === 'resolve_spin_withdrawal') {
+      const { telegram_id, index, verdict } = body;
+      if (!telegram_id || index === undefined || !verdict)
+        return res.status(400).json({ ok: false, error: 'Missing fields' });
+      if (!['approved', 'rejected'].includes(verdict))
+        return res.status(400).json({ ok: false, error: 'Invalid verdict' });
+
+      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
+      const spinDb  = neon(SPIN_DB);
+
+      const rows = await spinDb(
+        `SELECT wd_history, balance FROM players WHERE telegram_id = $1`,
+        [parseInt(telegram_id)]
+      );
+      if (!rows.length) return res.status(404).json({ ok: false, error: 'Player not found' });
+
+      const player  = rows[0];
+      const history = Array.isArray(player.wd_history) ? [...player.wd_history] : [];
+      const entry   = history[parseInt(index)];
+      if (!entry || entry.status !== 'pending')
+        return res.status(400).json({ ok: false, error: 'Entry not found or already resolved' });
+
+      history[parseInt(index)] = { ...entry, status: verdict, resolved_at: new Date().toISOString() };
+
+      // لو رفض → رجّع الرصيد للمستخدم
+      if (verdict === 'rejected') {
+        await spinDb(
+          `UPDATE players SET wd_history = $2, balance = balance + $3, updated_at = NOW() WHERE telegram_id = $1`,
+          [parseInt(telegram_id), JSON.stringify(history), parseFloat(entry.amount || 0)]
+        );
+      } else {
+        await spinDb(
+          `UPDATE players SET wd_history = $2, updated_at = NOW() WHERE telegram_id = $1`,
+          [parseInt(telegram_id), JSON.stringify(history)]
+        );
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  TON SPIN — GET_CHA_CHANNELS
+    //  يجلب قنوات جدول cha الخاص بـ TON Spin
+    // ══════════════════════════════════════════════════════════════
+    if (action === 'get_cha_channels') {
+      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
+      const spinDb  = neon(SPIN_DB);
+
+      await spinDb(`
+        CREATE TABLE IF NOT EXISTS cha (
+          id           SERIAL      PRIMARY KEY,
+          username     TEXT        NOT NULL UNIQUE,
+          display_name TEXT,
+          created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      const channels = await spinDb(`SELECT * FROM cha ORDER BY id ASC`);
+      return res.status(200).json({ ok: true, channels });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  TON SPIN — ADD_CHA_CHANNEL
+    //  إضافة قناة لجدول cha
+    // ══════════════════════════════════════════════════════════════
+    if (action === 'add_cha_channel') {
+      const { username, display_name } = body;
+      if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
+
+      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
+      const spinDb  = neon(SPIN_DB);
+
+      const cleanUsername = username.replace(/^@/, '').toLowerCase().trim();
+      await spinDb(
+        `INSERT INTO cha (username, display_name)
+         VALUES ($1, $2)
+         ON CONFLICT (username) DO UPDATE SET display_name = $2`,
+        [cleanUsername, display_name || null]
+      );
+      return res.status(200).json({ ok: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  TON SPIN — DELETE_CHA_CHANNEL
+    //  حذف قناة من جدول cha
+    // ══════════════════════════════════════════════════════════════
+    if (action === 'delete_cha_channel') {
+      const { username } = body;
+      if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
+
+      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
+      const spinDb  = neon(SPIN_DB);
+
+      await spinDb(`DELETE FROM cha WHERE username = $1`, [username.replace(/^@/, '').toLowerCase().trim()]);
+      return res.status(200).json({ ok: true });
+    }
+
     return res.status(400).json({ ok: false, error: 'Unknown action: ' + action });
 
   } catch (err) {
