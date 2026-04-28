@@ -26,6 +26,58 @@ function isAuthorized(req) {
   return req.headers['x-admin-key'] === ADMIN_SECRET;
 }
 
+// ── Table bootstrap helpers ───────────────────────────────────────
+async function ensureChaTable() {
+  await sql(`
+    CREATE TABLE IF NOT EXISTS cha (
+      id         SERIAL      PRIMARY KEY,
+      username   TEXT        NOT NULL UNIQUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+}
+
+async function ensureTasksTable() {
+  await sql(`
+    CREATE TABLE IF NOT EXISTS tasks (
+      id          TEXT          PRIMARY KEY,
+      icon        TEXT          NOT NULL DEFAULT '⭐',
+      name        TEXT          NOT NULL,
+      reward      NUMERIC(18,6) NOT NULL DEFAULT 0,
+      task_type   TEXT          NOT NULL DEFAULT 'url',
+      url         TEXT,
+      channel     TEXT,
+      description TEXT          NOT NULL DEFAULT '',
+      is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
+      sort_order  INT           NOT NULL DEFAULT 0,
+      created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+    )
+  `);
+}
+
+async function ensurePromosTable() {
+  await sql(`
+    CREATE TABLE IF NOT EXISTS promo (
+      code           TEXT PRIMARY KEY,
+      reward_balance NUMERIC    DEFAULT 0,
+      reward_seeds   INT        DEFAULT 0,
+      reward_water   INT        DEFAULT 0,
+      max_uses       INT        DEFAULT 100,
+      used_count     INT        DEFAULT 0,
+      expires_at     TIMESTAMP,
+      is_active      BOOLEAN    DEFAULT true
+    )
+  `);
+  await sql(`
+    CREATE TABLE IF NOT EXISTS promo_redemptions (
+      user_id     BIGINT,
+      code        TEXT,
+      redeemed_at TIMESTAMP DEFAULT now(),
+      PRIMARY KEY (user_id, code)
+    )
+  `);
+}
+
 // ════════════════════════════════════════════════════════════════
 //  MAIN HANDLER
 // ════════════════════════════════════════════════════════════════
@@ -226,21 +278,7 @@ module.exports = async (req, res) => {
     //  TASKS
     // ══════════════════════════════════════════════════════════════
     if (action === 'get_tasks') {
-      await sql(`
-        CREATE TABLE IF NOT EXISTS tasks (
-          id          TEXT          PRIMARY KEY,
-          icon        TEXT          NOT NULL DEFAULT '⭐',
-          name        TEXT          NOT NULL,
-          reward      NUMERIC(18,6) NOT NULL DEFAULT 0,
-          task_type   TEXT          NOT NULL DEFAULT 'url',
-          url         TEXT,
-          channel     TEXT,
-          description TEXT          NOT NULL DEFAULT '',
-          is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
-          sort_order  INT           NOT NULL DEFAULT 0,
-          created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-        )
-      `);
+      await ensureTasksTable();
       const tasks = await sql(`SELECT * FROM tasks ORDER BY sort_order ASC, created_at ASC`);
       return res.status(200).json({ ok: true, tasks });
     }
@@ -296,30 +334,6 @@ module.exports = async (req, res) => {
     // ══════════════════════════════════════════════════════════════
     //  PROMO CODES
     // ══════════════════════════════════════════════════════════════
-
-    // Bootstrap promo table (same as promo.js)
-    async function ensurePromosTable() {
-      await sql(`
-        CREATE TABLE IF NOT EXISTS promo (
-          code           TEXT PRIMARY KEY,
-          reward_balance NUMERIC    DEFAULT 0,
-          reward_seeds   INT        DEFAULT 0,
-          reward_water   INT        DEFAULT 0,
-          max_uses       INT        DEFAULT 100,
-          used_count     INT        DEFAULT 0,
-          expires_at     TIMESTAMP,
-          is_active      BOOLEAN    DEFAULT true
-        )
-      `);
-      await sql(`
-        CREATE TABLE IF NOT EXISTS promo_redemptions (
-          user_id     BIGINT,
-          code        TEXT,
-          redeemed_at TIMESTAMP DEFAULT now(),
-          PRIMARY KEY (user_id, code)
-        )
-      `);
-    }
 
     if (action === 'get_promos') {
       await ensurePromosTable();
@@ -428,20 +442,133 @@ module.exports = async (req, res) => {
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  TON SPIN — GET_SPIN_WITHDRAWALS
-    //  يجلب طلبات السحب المعلقة من جدول players في داتابيز TON Spin
+    //  SPIN PANEL — CHANNELS (جدول cha)
     // ══════════════════════════════════════════════════════════════
-    if (action === 'get_spin_withdrawals') {
-      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
-      const spinDb  = neon(SPIN_DB);
 
-      const rows = await spinDb(`
-        SELECT telegram_id, username, first_name, photo_url, wd_history
+    if (action === 'spin_get_channels') {
+      await ensureChaTable();
+      const rows = await sql(`SELECT id, username, created_at FROM cha ORDER BY id ASC`);
+      return res.status(200).json({ ok: true, channels: rows });
+    }
+
+    if (action === 'spin_add_channel') {
+      const { username } = body;
+      if (!username || username.trim().length < 2)
+        return res.status(400).json({ ok: false, error: 'اسم القناة غير صالح' });
+      const clean = username.replace(/^@/, '').trim().toLowerCase();
+      await ensureChaTable();
+      await sql(
+        `INSERT INTO cha (username) VALUES ($1) ON CONFLICT (username) DO NOTHING`,
+        [clean]
+      );
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'spin_delete_channel') {
+      const { id } = body;
+      if (!id) return res.status(400).json({ ok: false, error: 'Missing id' });
+      await sql(`DELETE FROM cha WHERE id = $1`, [parseInt(id)]);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  SPIN PANEL — PLAYERS STATS
+    // ══════════════════════════════════════════════════════════════
+
+    if (action === 'spin_stats') {
+      const [totals] = await sql(`
+        SELECT
+          COUNT(*)                                       AS total_players,
+          COALESCE(SUM(balance), 0)                      AS total_balance,
+          COALESCE(SUM(total_spins), 0)                  AS total_spins,
+          COUNT(*) FILTER (WHERE channels_ok = TRUE)     AS channels_verified,
+          COUNT(*) FILTER (WHERE shadow_banned = TRUE)   AS banned_count
         FROM players
-        WHERE wd_history::jsonb::text LIKE '%pending%'
-        ORDER BY updated_at DESC
       `);
 
+      const pendingRows = await sql(`
+        SELECT wd_history FROM players
+        WHERE wd_history::text LIKE '%pending%'
+      `);
+      let pendingCount = 0;
+      pendingRows.forEach(u => {
+        const h = Array.isArray(u.wd_history) ? u.wd_history : [];
+        pendingCount += h.filter(w => w.status === 'pending').length;
+      });
+
+      return res.status(200).json({
+        ok: true,
+        stats: {
+          total_players:    parseInt(totals.total_players    || 0),
+          total_balance:    parseFloat(totals.total_balance  || 0).toFixed(4),
+          total_spins:      parseInt(totals.total_spins      || 0),
+          channels_verified:parseInt(totals.channels_verified|| 0),
+          banned_count:     parseInt(totals.banned_count     || 0),
+          pending_withdrawals: pendingCount,
+        }
+      });
+    }
+
+    if (action === 'spin_get_players') {
+      const limit  = parseInt(body.limit  || 50);
+      const offset = parseInt(body.offset || 0);
+      const players = await sql(`
+        SELECT telegram_id, username, first_name, balance, spins,
+               total_spins, channels_ok, shadow_banned, is_hard_banned,
+               referral_friends, created_at
+        FROM players
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2
+      `, [limit, offset]);
+      const countRow = await sql(`SELECT COUNT(*) AS cnt FROM players`);
+      return res.status(200).json({ ok: true, players, total: parseInt(countRow[0]?.cnt || 0) });
+    }
+
+    if (action === 'spin_search_player') {
+      const q = String(body.q || '').trim();
+      if (!q) return res.status(400).json({ ok: false, error: 'Missing q' });
+      let players;
+      if (/^\d+$/.test(q)) {
+        players = await sql(
+          `SELECT telegram_id, username, first_name, balance, spins,
+                  total_spins, channels_ok, shadow_banned, is_hard_banned,
+                  referral_friends, wd_history, created_at
+           FROM players WHERE telegram_id = $1`,
+          [parseInt(q)]
+        );
+      } else {
+        players = await sql(
+          `SELECT telegram_id, username, first_name, balance, spins,
+                  total_spins, channels_ok, shadow_banned, is_hard_banned,
+                  referral_friends, wd_history, created_at
+           FROM players WHERE username ILIKE $1 LIMIT 20`,
+          [`%${q}%`]
+        );
+      }
+      return res.status(200).json({ ok: true, players });
+    }
+
+    if (action === 'spin_update_player') {
+      const { telegram_id, balance, spins, shadow_banned, is_hard_banned } = body;
+      if (!telegram_id) return res.status(400).json({ ok: false, error: 'Missing telegram_id' });
+      const fields = [], vals = [parseInt(telegram_id)];
+      if (balance       !== undefined) { fields.push(`balance       = $${vals.length+1}`); vals.push(parseFloat(balance)); }
+      if (spins         !== undefined) { fields.push(`spins         = $${vals.length+1}`); vals.push(parseInt(spins)); }
+      if (shadow_banned !== undefined) { fields.push(`shadow_banned = $${vals.length+1}`); vals.push(Boolean(shadow_banned)); }
+      if (is_hard_banned!== undefined) { fields.push(`is_hard_banned= $${vals.length+1}`); vals.push(Boolean(is_hard_banned)); }
+      if (!fields.length) return res.status(400).json({ ok: false, error: 'No fields' });
+      fields.push(`updated_at = NOW()`);
+      await sql(`UPDATE players SET ${fields.join(', ')} WHERE telegram_id = $1`, vals);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'spin_get_withdrawals') {
+      const rows = await sql(`
+        SELECT telegram_id, username, first_name, photo_url, wd_history
+        FROM players
+        WHERE wd_history::text LIKE '%pending%'
+        ORDER BY updated_at DESC
+      `);
       const pending = [];
       rows.forEach(u => {
         const hist = Array.isArray(u.wd_history) ? u.wd_history : [];
@@ -449,8 +576,8 @@ module.exports = async (req, res) => {
           if (w.status === 'pending') {
             pending.push({
               telegram_id: u.telegram_id,
-              username:    u.username   || u.first_name || 'User',
-              photo_url:   u.photo_url  || null,
+              username:    u.username || u.first_name || '—',
+              photo_url:   u.photo_url || null,
               index:       idx,
               address:     w.address,
               amount:      w.amount,
@@ -459,107 +586,22 @@ module.exports = async (req, res) => {
           }
         });
       });
-
       return res.status(200).json({ ok: true, withdrawals: pending });
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  TON SPIN — RESOLVE_SPIN_WITHDRAWAL
-    //  قبول أو رفض طلب سحب في TON Spin
-    // ══════════════════════════════════════════════════════════════
-    if (action === 'resolve_spin_withdrawal') {
+    if (action === 'spin_resolve_withdrawal') {
       const { telegram_id, index, verdict } = body;
       if (!telegram_id || index === undefined || !verdict)
         return res.status(400).json({ ok: false, error: 'Missing fields' });
-      if (!['approved', 'rejected'].includes(verdict))
-        return res.status(400).json({ ok: false, error: 'Invalid verdict' });
-
-      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
-      const spinDb  = neon(SPIN_DB);
-
-      const rows = await spinDb(
-        `SELECT wd_history, balance FROM players WHERE telegram_id = $1`,
-        [parseInt(telegram_id)]
-      );
+      const allowed = ['completed', 'approved', 'rejected'];
+      if (!allowed.includes(verdict)) return res.status(400).json({ ok: false, error: 'Invalid verdict' });
+      const rows = await sql(`SELECT wd_history FROM players WHERE telegram_id = $1`, [parseInt(telegram_id)]);
       if (!rows.length) return res.status(404).json({ ok: false, error: 'Player not found' });
-
-      const player  = rows[0];
-      const history = Array.isArray(player.wd_history) ? [...player.wd_history] : [];
-      const entry   = history[parseInt(index)];
-      if (!entry || entry.status !== 'pending')
-        return res.status(400).json({ ok: false, error: 'Entry not found or already resolved' });
-
-      history[parseInt(index)] = { ...entry, status: verdict, resolved_at: new Date().toISOString() };
-
-      // لو رفض → رجّع الرصيد للمستخدم
-      if (verdict === 'rejected') {
-        await spinDb(
-          `UPDATE players SET wd_history = $2, balance = balance + $3, updated_at = NOW() WHERE telegram_id = $1`,
-          [parseInt(telegram_id), JSON.stringify(history), parseFloat(entry.amount || 0)]
-        );
-      } else {
-        await spinDb(
-          `UPDATE players SET wd_history = $2, updated_at = NOW() WHERE telegram_id = $1`,
-          [parseInt(telegram_id), JSON.stringify(history)]
-        );
-      }
-
-      return res.status(200).json({ ok: true });
-    }
-
-    // ══════════════════════════════════════════════════════════════
-    //  TON SPIN — GET_CHA_CHANNELS
-    //  يجلب قنوات جدول cha الخاص بـ TON Spin
-    // ══════════════════════════════════════════════════════════════
-    if (action === 'get_cha_channels') {
-      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
-      const spinDb  = neon(SPIN_DB);
-
-      await spinDb(`
-        CREATE TABLE IF NOT EXISTS cha (
-          id           SERIAL      PRIMARY KEY,
-          username     TEXT        NOT NULL UNIQUE,
-          display_name TEXT,
-          created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-      `);
-      const channels = await spinDb(`SELECT * FROM cha ORDER BY id ASC`);
-      return res.status(200).json({ ok: true, channels });
-    }
-
-    // ══════════════════════════════════════════════════════════════
-    //  TON SPIN — ADD_CHA_CHANNEL
-    //  إضافة قناة لجدول cha
-    // ══════════════════════════════════════════════════════════════
-    if (action === 'add_cha_channel') {
-      const { username, display_name } = body;
-      if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
-
-      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
-      const spinDb  = neon(SPIN_DB);
-
-      const cleanUsername = username.replace(/^@/, '').toLowerCase().trim();
-      await spinDb(
-        `INSERT INTO cha (username, display_name)
-         VALUES ($1, $2)
-         ON CONFLICT (username) DO UPDATE SET display_name = $2`,
-        [cleanUsername, display_name || null]
-      );
-      return res.status(200).json({ ok: true });
-    }
-
-    // ══════════════════════════════════════════════════════════════
-    //  TON SPIN — DELETE_CHA_CHANNEL
-    //  حذف قناة من جدول cha
-    // ══════════════════════════════════════════════════════════════
-    if (action === 'delete_cha_channel') {
-      const { username } = body;
-      if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
-
-      const SPIN_DB = process.env.SPIN_DATABASE_URL || process.env.DATABASE_URL;
-      const spinDb  = neon(SPIN_DB);
-
-      await spinDb(`DELETE FROM cha WHERE username = $1`, [username.replace(/^@/, '').toLowerCase().trim()]);
+      const history = Array.isArray(rows[0].wd_history) ? rows[0].wd_history : [];
+      if (!history[index]) return res.status(404).json({ ok: false, error: 'Entry not found' });
+      history[index].status = verdict;
+      history[index].resolved_at = new Date().toISOString();
+      await sql(`UPDATE players SET wd_history = $2, updated_at = NOW() WHERE telegram_id = $1`, [parseInt(telegram_id), JSON.stringify(history)]);
       return res.status(200).json({ ok: true });
     }
 
