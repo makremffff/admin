@@ -1233,23 +1233,51 @@
 
 <script>
 // ══════════════════════════════════════════
-// CONFIG — غير هذا لرابط API الفعلي
+// CONFIG
+// admin-index.js يجب أن يكون على نفس الدومين
+// أو عدّل API_BASE لرابط Vercel deployment
 // ══════════════════════════════════════════
-const API_BASE    = '/api'; // أو 'https://your-app.vercel.app/api'
-const ADMIN_TOKEN = localStorage.getItem('admin_token') || prompt('🔐 أدخل ADMIN_SECRET:') || '';
-if (ADMIN_TOKEN) localStorage.setItem('admin_token', ADMIN_TOKEN);
+const API_BASE = (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1'
+) ? '' : '';  // اتركه فارغاً إذا admin-panel.html على نفس السيرفر
+
+const ADMIN_TOKEN = (function() {
+  let t = localStorage.getItem('admin_token');
+  if (!t) {
+    t = prompt('🔐 أدخل ADMIN_SECRET:') || '';
+    if (t) localStorage.setItem('admin_token', t);
+  }
+  return t;
+})();
 
 function apiHeaders() {
-  return { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_TOKEN };
+  return {
+    'Content-Type': 'application/json',
+    'x-admin-secret': ADMIN_TOKEN,
+  };
 }
 
 async function apiFetch(path, opts = {}) {
   try {
-    const res = await fetch(API_BASE + path, { headers: apiHeaders(), ...opts });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const url = API_BASE + path;
+    const res = await fetch(url, {
+      headers: { ...apiHeaders(), ...(opts.headers || {}) },
+      ...opts,
+    });
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      throw new Error(`Non-JSON response: HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    if (!res.ok) {
+      console.warn('API error:', res.status, data);
+      return null;
+    }
+    return data;
   } catch (e) {
-    console.warn('API error:', e.message);
+    console.warn('apiFetch error:', e.message);
+    toast('خطأ في الاتصال بالسيرفر', 'error');
     return null;
   }
 }
@@ -1298,13 +1326,13 @@ function showPage(id) {
 async function loadDashboard() {
   const data = await apiFetch('/admin/stats');
   if (data) {
-    setText('stat-total',      fmt(data.total_users      ?? data.users ?? '—'));
+    setText('stat-total',      fmt(data.total_users      ?? '—'));
     setText('stat-online',     fmt(data.online           ?? '—'));
-    setText('stat-banned',     fmt(data.banned           ?? '—'));
+    setText('stat-banned',     fmt((data.banned ?? 0) + (data.shadow_banned ?? 0)));
     setText('stat-pending-wd', fmt(data.pending_withdrawals ?? '—'));
     setText('stat-ads',        fmt(data.ads_today        ?? '—'));
     setText('stat-refs',       fmt(data.total_referrals  ?? '—'));
-    setText('badge-users',     fmt(data.total_users ?? data.users ?? ''));
+    setText('badge-users',     fmt(data.total_users ?? ''));
     setText('badge-online',    fmt(data.online ?? ''));
     setText('badge-wd',        fmt(data.pending_withdrawals ?? ''));
   }
@@ -1417,7 +1445,7 @@ function userActions(u) {
 // ONLINE USERS
 // ══════════════════════════════════════════
 async function loadOnline() {
-  const data = await apiFetch('/admin/users?online=true&limit=50');
+  const data = await apiFetch('/admin/online');
   const users = data?.users || [];
   setText('online-count', users.length);
   setText('badge-online', users.length);
@@ -1444,9 +1472,9 @@ async function loadOnline() {
 // WITHDRAWALS
 // ══════════════════════════════════════════
 async function loadWithdrawals() {
-  const statusMap = { pending:'pending', approved:'approved', rejected:'rejected', all:'' };
-  const s = statusMap[wdFilter] || '';
-  const data = await apiFetch('/admin/withdrawals' + (s ? `?status=${s}` : ''));
+  const statusMap = { pending:'pending', approved:'completed', rejected:'rejected', all:'all' };
+  const s = statusMap[wdFilter] || 'pending';
+  const data = await apiFetch('/admin/withdrawals?status=' + s);
   allWds = data?.withdrawals || [];
   setText('badge-wd', allWds.filter(w=>w.status==='pending').length);
   renderWithdrawals();
@@ -1551,7 +1579,7 @@ function openUserModal(u) {
 }
 
 async function openUserModalById(tgId) {
-  const data = await apiFetch(`/admin/user/${tgId}`);
+  const data = await apiFetch('/admin/user/' + tgId);
   if (data?.user) openUserModal(data.user);
 }
 
@@ -1591,7 +1619,7 @@ function openWdModal(wdId) {
 // ACTIONS
 // ══════════════════════════════════════════
 async function banUser(tgId, ban) {
-  const data = await apiFetch(`/admin/ban`, {
+  const data = await apiFetch('/admin/ban', {
     method: 'POST',
     body: JSON.stringify({ tg_id: tgId, ban, reason: ban ? 'admin_action' : null }),
   });
@@ -1602,7 +1630,7 @@ async function banUser(tgId, ban) {
 }
 
 async function deleteUser(tgId) {
-  const data = await apiFetch(`/admin/user/${tgId}`, { method: 'DELETE' });
+  const data = await apiFetch('/admin/user/' + tgId, { method: 'DELETE' });
   if (data?.ok) { toast(`حُذف المستخدم #${tgId}`, 'success'); refreshData(); }
   else toast('فشل الحذف', 'error');
 }
@@ -1618,7 +1646,7 @@ async function doUpdateBalance() {
     body: JSON.stringify({ tg_id: uid, action, amount, note }),
   });
   if (data?.ok) {
-    toast('تم تعديل الرصيد بنجاح ✓', 'success');
+    toast(`تم تعديل الرصيد ✓ — نقاط جديدة: ${fmt(data.new_points)}`, 'success');
     closeModal('modal-balance');
     refreshData();
   } else toast('فشل التعديل', 'error');
@@ -1663,7 +1691,7 @@ async function saveSettings() {
   };
   const data = await apiFetch('/admin/config', { method: 'POST', body: JSON.stringify(payload) });
   if (data?.ok) toast('تم حفظ الإعدادات ✓', 'success');
-  else toast('الإعدادات لم تُحفظ — الـ endpoint غير موجود بعد', 'error');
+  else toast('فشل حفظ الإعدادات', 'error');
 }
 
 function resetSettings() { toast('تم إعادة تعيين الإعدادات للقيم الافتراضية', 'success'); }
