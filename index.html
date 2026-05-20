@@ -2,9 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>لوحة التحكم — Tomato Farm</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=DynaPuff:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:        #0a0c0f;
@@ -22,6 +22,7 @@
     --muted:     #7d8590;
     --glow:      rgba(232,93,4,0.15);
     --radius:    12px;
+    --sidebar-w: 240px;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -35,9 +36,33 @@
     overflow-x: hidden;
   }
 
+  /* ── NUM FONT ── */
+  .num {
+    font-family: 'DynaPuff', 'Cairo', sans-serif;
+    font-weight: 600;
+    letter-spacing: -.01em;
+  }
+
+  /* ── SIDEBAR OVERLAY ── */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease;
+  }
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
   /* ── SIDEBAR ── */
   .sidebar {
-    width: 240px;
+    width: var(--sidebar-w);
     min-height: 100vh;
     background: var(--surface);
     border-left: 1px solid var(--border);
@@ -48,11 +73,12 @@
     top: 0;
     bottom: 0;
     z-index: 100;
-    transition: transform .3s ease;
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    will-change: transform;
   }
 
   .sidebar-logo {
-    padding: 24px 20px;
+    padding: 22px 18px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -64,29 +90,47 @@
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
     box-shadow: 0 0 20px var(--glow);
+    flex-shrink: 0;
   }
+  .logo-icon svg { width: 22px; height: 22px; }
 
   .logo-text { font-size: 15px; font-weight: 700; line-height: 1.3; }
   .logo-sub  { font-size: 11px; color: var(--muted); font-weight: 400; }
 
-  .nav { flex: 1; padding: 16px 0; }
+  /* close btn inside sidebar – mobile */
+  .sidebar-close-btn {
+    display: none;
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted);
+    transition: all .2s;
+  }
+  .sidebar-close-btn svg { width: 16px; height: 16px; }
+  .sidebar-close-btn:hover { color: var(--red); border-color: var(--red); }
+
+  .nav { flex: 1; padding: 14px 0; overflow-y: auto; }
 
   .nav-section-label {
     font-size: 10px;
     font-weight: 700;
     color: var(--muted);
     letter-spacing: .08em;
-    padding: 8px 20px 4px;
+    padding: 8px 18px 4px;
     text-transform: uppercase;
   }
 
   .nav-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 11px 20px;
+    gap: 11px;
+    padding: 11px 18px;
     cursor: pointer;
     border-radius: 8px;
     margin: 2px 8px;
@@ -95,6 +139,7 @@
     color: var(--muted);
     transition: all .2s;
     position: relative;
+    user-select: none;
   }
 
   .nav-item:hover { background: var(--card); color: var(--text); }
@@ -105,7 +150,7 @@
     border-right: 3px solid var(--accent);
   }
 
-  .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
 
   .nav-badge {
     margin-right: auto;
@@ -117,10 +162,11 @@
     border-radius: 20px;
     min-width: 20px;
     text-align: center;
+    font-family: 'DynaPuff', sans-serif;
   }
 
   .sidebar-footer {
-    padding: 16px 20px;
+    padding: 14px 18px;
     border-top: 1px solid var(--border);
     font-size: 12px;
     color: var(--muted);
@@ -135,35 +181,55 @@
     font-size: 11px; font-weight: 600;
     margin-bottom: 6px;
   }
+  .admin-badge svg { width: 12px; height: 12px; }
 
   /* ── MAIN ── */
   .main {
-    margin-right: 240px;
+    margin-right: var(--sidebar-w);
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    min-width: 0;
   }
 
+  /* ── TOPBAR ── */
   .topbar {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 0 28px;
-    height: 60px;
+    padding: 0 24px;
+    height: 58px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
     position: sticky;
     top: 0;
     z-index: 50;
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
-  .page-title { font-size: 16px; font-weight: 700; }
-  .page-sub   { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .menu-btn {
+    display: none;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text);
+    flex-shrink: 0;
+    transition: all .2s;
+  }
+  .menu-btn svg { width: 18px; height: 18px; }
+  .menu-btn:hover { border-color: var(--accent); color: var(--accent2); }
 
-  .topbar-actions { display: flex; align-items: center; gap: 12px; }
+  .page-title { font-size: 15px; font-weight: 700; }
+  .page-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
 
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+  /* ── BUTTONS ── */
   .btn {
     display: inline-flex; align-items: center; gap: 7px;
     padding: 8px 16px;
@@ -172,6 +238,7 @@
     font-size: 13px; font-weight: 600;
     cursor: pointer; border: none;
     transition: all .2s;
+    white-space: nowrap;
   }
 
   .btn-primary {
@@ -195,10 +262,10 @@
   .btn-success:hover { background: rgba(46,160,67,.25); }
 
   .btn-sm { padding: 5px 11px; font-size: 12px; }
-  .btn svg { width: 15px; height: 15px; }
+  .btn svg { width: 14px; height: 14px; }
 
   /* ── CONTENT ── */
-  .content { padding: 28px; flex: 1; }
+  .content { padding: 24px; flex: 1; }
 
   /* ── PAGE SECTIONS ── */
   .page { display: none; }
@@ -209,8 +276,8 @@
   /* ── STATS GRID ── */
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
     margin-bottom: 24px;
   }
 
@@ -218,7 +285,7 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px;
+    padding: 18px;
     position: relative;
     overflow: hidden;
     transition: border-color .2s, transform .2s;
@@ -243,20 +310,20 @@
   .stat-card.purple::before { background: var(--purple); }
 
   .stat-icon {
-    width: 40px; height: 40px;
+    width: 38px; height: 38px;
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 14px;
-    font-size: 20px;
   }
-  .stat-card.orange .stat-icon { background: rgba(232,93,4,.15); }
-  .stat-card.green  .stat-icon { background: rgba(46,160,67,.15); }
-  .stat-card.red    .stat-icon { background: rgba(248,81,73,.15); }
-  .stat-card.blue   .stat-icon { background: rgba(56,139,253,.15); }
-  .stat-card.gold   .stat-icon { background: rgba(255,214,10,.15); }
-  .stat-card.purple .stat-icon { background: rgba(188,140,255,.15); }
+  .stat-icon svg { width: 20px; height: 20px; }
+  .stat-card.orange .stat-icon { background: rgba(232,93,4,.15); color: var(--accent2); }
+  .stat-card.green  .stat-icon { background: rgba(46,160,67,.15); color: var(--green); }
+  .stat-card.red    .stat-icon { background: rgba(248,81,73,.15); color: var(--red); }
+  .stat-card.blue   .stat-icon { background: rgba(56,139,253,.15); color: var(--blue); }
+  .stat-card.gold   .stat-icon { background: rgba(255,214,10,.15); color: var(--gold); }
+  .stat-card.purple .stat-icon { background: rgba(188,140,255,.15); color: var(--purple); }
 
-  .stat-value { font-size: 28px; font-weight: 900; margin-bottom: 4px; }
+  .stat-value { font-family: 'DynaPuff', sans-serif; font-size: 26px; font-weight: 600; margin-bottom: 4px; }
   .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
   .stat-delta {
     font-size: 11px; font-weight: 600; margin-top: 8px;
@@ -279,13 +346,13 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 0 14px;
+    padding: 0 12px;
     gap: 10px;
-    min-width: 260px;
+    min-width: 220px;
     transition: border-color .2s;
   }
   .search-wrap:focus-within { border-color: var(--accent); }
-  .search-wrap svg { color: var(--muted); flex-shrink: 0; width:16px; height:16px; }
+  .search-wrap svg { color: var(--muted); flex-shrink: 0; width:15px; height:15px; }
   .search-wrap input {
     flex: 1;
     background: none; border: none; outline: none;
@@ -308,7 +375,7 @@
 
   thead tr { background: rgba(255,255,255,.03); border-bottom: 1px solid var(--border); }
   thead th {
-    padding: 12px 16px;
+    padding: 11px 14px;
     font-size: 11px; font-weight: 700;
     color: var(--muted); text-align: right;
     white-space: nowrap; letter-spacing: .04em; text-transform: uppercase;
@@ -322,14 +389,14 @@
   tbody tr:hover { background: rgba(232,93,4,.04); cursor: pointer; }
 
   tbody td {
-    padding: 13px 16px;
+    padding: 12px 14px;
     font-size: 13px; vertical-align: middle;
   }
 
   .user-cell { display: flex; align-items: center; gap: 10px; }
 
   .avatar {
-    width: 34px; height: 34px; border-radius: 50%;
+    width: 32px; height: 32px; border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 13px; color: #fff;
@@ -338,14 +405,15 @@
   .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
   .user-name { font-weight: 600; font-size: 13px; }
-  .user-id   { font-size: 11px; color: var(--muted); direction: ltr; }
+  .user-id   { font-size: 11px; color: var(--muted); direction: ltr; font-family: 'DynaPuff', sans-serif; }
 
   /* ── BADGES ── */
   .badge {
     display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 9px; border-radius: 20px;
+    padding: 3px 8px; border-radius: 20px;
     font-size: 11px; font-weight: 700;
   }
+  .badge svg { width: 10px; height: 10px; }
   .badge-green  { background: rgba(46,160,67,.15);  color: var(--green); }
   .badge-red    { background: rgba(248,81,73,.15);  color: var(--red); }
   .badge-orange { background: rgba(232,93,4,.15);   color: var(--accent2); }
@@ -354,7 +422,7 @@
   .badge-gold   { background: rgba(255,214,10,.12); color: var(--gold); }
   .badge-purple { background: rgba(188,140,255,.15); color: var(--purple); }
 
-  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
   .dot-green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
   .dot-red    { background: var(--red); }
   .dot-orange { background: var(--accent2); }
@@ -381,10 +449,11 @@
     position: fixed; inset: 0;
     background: rgba(0,0,0,.75);
     backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     z-index: 1000;
     display: none;
     align-items: center; justify-content: center;
-    padding: 20px;
+    padding: 16px;
   }
   .modal-overlay.open { display: flex; animation: fadeIn .2s ease; }
 
@@ -392,7 +461,7 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 28px;
+    padding: 24px;
     width: 100%;
     max-width: 480px;
     max-height: 90vh;
@@ -401,22 +470,23 @@
   }
 
   .modal-title {
-    font-size: 16px; font-weight: 700;
-    margin-bottom: 20px;
+    font-size: 15px; font-weight: 700;
+    margin-bottom: 18px;
     display: flex; align-items: center; gap: 10px;
   }
+  .modal-title svg { width: 18px; height: 18px; flex-shrink: 0; }
 
   .modal-close {
-    position: absolute; top: 16px; left: 16px;
+    position: absolute; top: 14px; left: 14px;
     width: 28px; height: 28px; border-radius: 50%;
     background: var(--border); border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     color: var(--muted); transition: all .2s;
   }
   .modal-close:hover { background: var(--red); color: #fff; }
-  .modal-close svg { width: 14px; height: 14px; }
+  .modal-close svg { width: 13px; height: 13px; }
 
-  .form-group { margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
   .form-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block; }
 
   .form-input, .form-select, .form-textarea {
@@ -427,7 +497,7 @@
     color: var(--text);
     font-family: 'Cairo', sans-serif;
     font-size: 13px;
-    padding: 10px 14px;
+    padding: 10px 12px;
     outline: none;
     transition: border-color .2s;
   }
@@ -435,63 +505,61 @@
   .form-textarea { resize: vertical; min-height: 80px; }
   .form-select option { background: var(--card); }
 
-  .modal-actions { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
 
   /* ── USER DETAIL MODAL ── */
   .user-detail-header {
-    display: flex; align-items: center; gap: 16px;
-    padding: 16px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px;
     background: var(--surface);
     border-radius: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
   .user-detail-avatar {
-    width: 56px; height: 56px; border-radius: 50%;
+    width: 52px; height: 52px; border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px; font-weight: 700; color: #fff;
-    flex-shrink: 0;
+    font-size: 20px; font-weight: 700; color: #fff;
+    flex-shrink: 0; overflow: hidden;
   }
-  .user-detail-name { font-size: 16px; font-weight: 700; }
+  .user-detail-name { font-size: 15px; font-weight: 700; }
   .user-detail-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
 
   .detail-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-bottom: 14px;
   }
   .detail-item {
     background: var(--surface);
     border-radius: 8px;
-    padding: 12px 14px;
+    padding: 11px 12px;
   }
   .detail-item-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
-  .detail-item-value { font-size: 14px; font-weight: 700; }
+  .detail-item-value { font-size: 14px; font-weight: 700; font-family: 'DynaPuff', sans-serif; }
 
   .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 
   /* ── WITHDRAWAL CARDS ── */
-  .withdrawals-grid {
-    display: grid;
-    gap: 12px;
-  }
+  .withdrawals-grid { display: grid; gap: 12px; }
 
   .withdrawal-card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 18px 20px;
-    display: flex; align-items: center; gap: 16px;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 14px;
     transition: border-color .2s;
+    flex-wrap: wrap;
   }
   .withdrawal-card:hover { border-color: var(--accent); }
 
   .wd-avatar {
-    width: 44px; height: 44px; border-radius: 50%;
+    width: 42px; height: 42px; border-radius: 50%;
     background: linear-gradient(135deg, #f48c06, #e85d04);
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0;
+    font-weight: 700; font-size: 15px; color: #fff; flex-shrink: 0;
     overflow: hidden;
   }
   .wd-avatar img { width:100%; height:100%; object-fit:cover; }
@@ -501,8 +569,8 @@
   .wd-address { font-size: 11px; color: var(--muted); direction: ltr; font-family: monospace; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
   .wd-meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
 
-  .wd-amount { font-size: 16px; font-weight: 900; color: var(--gold); }
-  .wd-pts    { font-size: 12px; color: var(--muted); }
+  .wd-amount { font-size: 15px; font-weight: 700; color: var(--gold); font-family: 'DynaPuff', sans-serif; }
+  .wd-pts    { font-size: 12px; color: var(--muted); font-family: 'DynaPuff', sans-serif; }
   .wd-date   { font-size: 11px; color: var(--muted); }
 
   .wd-actions { display: flex; gap: 8px; align-items: center; }
@@ -510,8 +578,8 @@
   /* ── SETTINGS ── */
   .settings-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 18px;
   }
 
   .settings-card {
@@ -522,7 +590,7 @@
   }
 
   .settings-card-header {
-    padding: 16px 20px;
+    padding: 14px 18px;
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; gap: 10px;
     background: rgba(255,255,255,.02);
@@ -531,15 +599,17 @@
   .settings-card-icon {
     width: 32px; height: 32px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
+    flex-shrink: 0;
   }
+  .settings-card-icon svg { width: 16px; height: 16px; }
 
-  .settings-card-body { padding: 20px; }
+  .settings-card-body { padding: 18px; }
 
   .setting-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 0;
+    padding: 11px 0;
     border-bottom: 1px solid var(--border);
+    gap: 12px;
   }
   .setting-row:last-child { border-bottom: none; }
 
@@ -552,17 +622,18 @@
     border: 1px solid var(--border);
     border-radius: 7px;
     color: var(--text);
-    font-family: 'Cairo', sans-serif;
-    font-size: 13px; font-weight: 700;
+    font-family: 'DynaPuff', sans-serif;
+    font-size: 13px; font-weight: 600;
     padding: 7px 10px;
     outline: none;
     text-align: center;
     transition: border-color .2s;
+    flex-shrink: 0;
   }
   .setting-input-sm:focus { border-color: var(--accent); }
 
   /* ── TOGGLE ── */
-  .toggle { position: relative; width: 42px; height: 24px; cursor: pointer; }
+  .toggle { position: relative; width: 42px; height: 24px; cursor: pointer; flex-shrink: 0; }
   .toggle input { opacity: 0; width: 0; height: 0; }
   .toggle-slider {
     position: absolute; inset: 0;
@@ -584,7 +655,7 @@
   /* ── FILTER TABS ── */
   .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
   .filter-tab {
-    padding: 6px 14px;
+    padding: 6px 13px;
     border-radius: 7px;
     font-size: 12px; font-weight: 600;
     cursor: pointer;
@@ -604,6 +675,7 @@
     box-shadow: 0 0 0 0 rgba(46,160,67,.6);
     animation: pulse 1.4s infinite;
     display: inline-block;
+    flex-shrink: 0;
   }
   @keyframes pulse {
     0%   { box-shadow: 0 0 0 0   rgba(46,160,67,.6); }
@@ -612,22 +684,23 @@
   }
 
   /* ── TOAST ── */
-  .toast-container { position:fixed; bottom:24px; left:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+  .toast-container { position:fixed; bottom:20px; left:16px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
   .toast {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 12px 18px;
+    padding: 11px 16px;
     font-size: 13px; font-weight: 600;
     display: flex; align-items: center; gap: 10px;
-    min-width: 220px;
+    min-width: 200px;
     animation: slideUp .3s ease;
     box-shadow: 0 8px 32px rgba(0,0,0,.4);
   }
   @keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
   .toast.success { border-color: rgba(46,160,67,.4); }
   .toast.error   { border-color: rgba(248,81,73,.4); }
-  .toast-icon { font-size: 16px; }
+  .toast-icon { width: 18px; height: 18px; flex-shrink: 0; }
+  .toast-icon svg { width: 18px; height: 18px; }
 
   /* ── EMPTY STATE ── */
   .empty-state {
@@ -646,98 +719,6 @@
   }
   .progress-fill { height: 100%; border-radius: 100px; transition: width .5s ease; }
 
-  /* ── SIDEBAR OVERLAY ── */
-  .sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.6);
-    backdrop-filter: blur(4px);
-    z-index: 99;
-    opacity: 0;
-    transition: opacity .3s ease;
-  }
-  .sidebar-overlay.open {
-    display: block;
-    opacity: 1;
-  }
-
-  /* ── HAMBURGER BTN ── */
-  .menu-btn {
-    display: none;
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    align-items: center; justify-content: center;
-    cursor: pointer; color: var(--text);
-    flex-shrink: 0;
-    transition: all .2s;
-    order: -1;
-  }
-  .menu-btn:hover { border-color: var(--accent); color: var(--accent2); }
-  .menu-btn svg { width: 18px; height: 18px; }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 768px) {
-    /* sidebar */
-    .sidebar {
-      transform: translateX(110%);
-      box-shadow: -8px 0 32px rgba(0,0,0,.5);
-    }
-    .sidebar.open { transform: translateX(0); }
-
-    /* main */
-    .main { margin-right: 0; }
-
-    /* topbar */
-    .topbar { padding: 0 14px; gap: 8px; }
-    .menu-btn { display: flex; }
-    .topbar-actions { gap: 8px; }
-    .live-badge { display: none; }
-
-    /* content */
-    .content { padding: 14px; }
-
-    /* stats */
-    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .stat-value { font-size: 22px; }
-    .stat-card  { padding: 14px; }
-
-    /* tables — horizontal scroll */
-    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { min-width: 520px; }
-
-    /* search wrap */
-    .search-wrap { min-width: 0; flex: 1; }
-
-    /* section header */
-    .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .section-header > * { width: 100%; }
-
-    /* withdrawal card */
-    .withdrawal-card { flex-wrap: wrap; gap: 10px; }
-    .wd-address { max-width: 100%; }
-
-    /* settings */
-    .settings-grid { grid-template-columns: 1fr; }
-
-    /* modal */
-    .modal { padding: 18px; border-radius: 14px; }
-  }
-
-  @media (max-width: 400px) {
-    .stats-grid { grid-template-columns: 1fr; }
-    .filter-tabs { flex-wrap: wrap; }
-    .topbar-actions .btn span { display: none; }
-  }
-
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
   /* ── LIVE BADGE ── */
   .live-badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -746,6 +727,88 @@
     color: var(--green);
     padding: 4px 10px; border-radius: 20px;
     font-size: 11px; font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* ── CONFIRM ICON BOX ── */
+  .confirm-icon-box {
+    width: 64px; height: 64px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .confirm-icon-box svg { width: 32px; height: 32px; }
+  .confirm-icon-box.danger  { background: rgba(248,81,73,.12); color: var(--red); border: 1px solid rgba(248,81,73,.2); }
+  .confirm-icon-box.success { background: rgba(46,160,67,.12); color: var(--green); border: 1px solid rgba(46,160,67,.2); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ════════════════════════════════════════
+     RESPONSIVE — MOBILE
+  ════════════════════════════════════════ */
+  @media (max-width: 768px) {
+
+    /* sidebar: slide out right */
+    .sidebar {
+      transform: translateX(110%);
+      box-shadow: -10px 0 40px rgba(0,0,0,.6);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-close-btn { display: flex; }
+
+    /* no margin on main */
+    .main { margin-right: 0; }
+
+    /* topbar */
+    .topbar { padding: 0 12px; height: 54px; }
+    .menu-btn { display: flex; }
+    .live-badge { display: none; }
+    .page-title { font-size: 14px; }
+    .page-sub   { display: none; }
+
+    /* content */
+    .content { padding: 12px; }
+
+    /* stats grid → 2 cols */
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .stat-card  { padding: 14px 12px; }
+    .stat-value { font-size: 22px; }
+    .stat-label { font-size: 11px; }
+    .stat-icon  { width: 34px; height: 34px; margin-bottom: 10px; }
+
+    /* tables scroll horizontally */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
+    table { min-width: 500px; }
+
+    /* search */
+    .search-wrap { min-width: 0; flex: 1; }
+
+    /* section header stacks */
+    .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+    /* settings single col */
+    .settings-grid { grid-template-columns: 1fr; }
+
+    /* setting row wrap */
+    .setting-row { gap: 8px; }
+    .setting-input-sm { width: 80px; }
+
+    /* modal full width */
+    .modal { padding: 18px 16px; border-radius: 14px; }
+    .modal-actions { flex-direction: column-reverse; }
+    .modal-actions .btn { width: 100%; justify-content: center; }
+
+    /* withdrawal */
+    .wd-address { max-width: 100%; }
+  }
+
+  @media (max-width: 420px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .filter-tabs .filter-tab { font-size: 11px; padding: 5px 10px; }
   }
 </style>
 </head>
@@ -756,8 +819,21 @@
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
+
+  <!-- close btn (mobile) -->
+  <button class="sidebar-close-btn" onclick="toggleSidebar()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+
   <div class="sidebar-logo">
-    <div class="logo-icon">🍅</div>
+    <div class="logo-icon">
+      <!-- Tomato / leaf SVG -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2c0 0-1 3-4 4" /><path d="M12 2c0 0 1 3 4 4"/>
+        <circle cx="12" cy="14" r="7" fill="rgba(255,255,255,.15)" stroke="#fff"/>
+        <path d="M12 7v2"/>
+      </svg>
+    </div>
     <div>
       <div class="logo-text">Tomato Farm</div>
       <div class="logo-sub">لوحة التحكم</div>
@@ -771,19 +847,19 @@
       نظرة عامة
     </div>
     <div class="nav-item" onclick="showPage('users')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="11" r="3"/><path d="M23 21v-1a3 3 0 0 0-2-2.83"/></svg>
       المستخدمون
       <span class="nav-badge" id="badge-users">…</span>
     </div>
     <div class="nav-item" onclick="showPage('online')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a13 13 0 0 0 0 17M20.5 3.5a13 13 0 0 1 0 17"/></svg>
       المتصلون الآن
       <span class="nav-badge" id="badge-online" style="background:var(--green)">…</span>
     </div>
 
     <div class="nav-section-label" style="margin-top:8px">المالية</div>
     <div class="nav-item" onclick="showPage('withdrawals')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="7" cy="15" r="1" fill="currentColor"/><path d="M11 15h6"/></svg>
       طلبات السحب
       <span class="nav-badge" id="badge-wd" style="background:var(--gold);color:#000">…</span>
     </div>
@@ -797,10 +873,10 @@
 
   <div class="sidebar-footer">
     <div class="admin-badge">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       أدمن
     </div>
-    <div style="font-size:11px;color:var(--muted)">v5.0 Zero Trust</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">v5.0 Zero Trust</div>
   </div>
 </aside>
 
@@ -809,10 +885,10 @@
 
   <!-- TOPBAR -->
   <header class="topbar">
-    <button class="menu-btn" onclick="toggleSidebar()" aria-label="القائمة">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <button class="menu-btn" onclick="toggleSidebar()" aria-label="فتح القائمة">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-    <div id="topbar-info">
+    <div id="topbar-info" style="flex:1;min-width:0">
       <div class="page-title">نظرة عامة</div>
       <div class="page-sub">مرحباً بك في لوحة التحكم</div>
     </div>
@@ -831,45 +907,70 @@
   <!-- CONTENT -->
   <div class="content">
 
-    <!-- ═══════════════════════════════════════ PAGE: DASHBOARD -->
+    <!-- ══════════════════════════ PAGE: DASHBOARD -->
     <div class="page active" id="page-dashboard">
       <div class="stats-grid">
+
         <div class="stat-card orange">
-          <div class="stat-icon">👥</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>
+          </div>
           <div class="stat-value" id="stat-total">—</div>
           <div class="stat-label">إجمالي المستخدمين</div>
-          <div class="stat-delta up">↑ يتم التحميل...</div>
+          <div class="stat-delta up">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
+            يتم التحميل...
+          </div>
         </div>
+
         <div class="stat-card green">
-          <div class="stat-icon"><span class="online-pulse" style="width:10px;height:10px"></span></div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/></svg>
+          </div>
           <div class="stat-value" id="stat-online">—</div>
-          <div class="stat-label">متصلون الآن (آخر 5 دقائق)</div>
+          <div class="stat-label">متصلون الآن</div>
           <div class="stat-delta up">نشاط حي</div>
         </div>
+
         <div class="stat-card red">
-          <div class="stat-icon">🚫</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          </div>
           <div class="stat-value" id="stat-banned">—</div>
           <div class="stat-label">محظورون</div>
-          <div class="stat-delta down">حظر + شادو بان</div>
+          <div class="stat-delta down">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+            حظر + شادو بان
+          </div>
         </div>
+
         <div class="stat-card gold">
-          <div class="stat-icon">💎</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
           <div class="stat-value" id="stat-pending-wd">—</div>
           <div class="stat-label">سحوبات معلقة</div>
           <div class="stat-delta" style="color:var(--gold)">بانتظار المراجعة</div>
         </div>
+
         <div class="stat-card blue">
-          <div class="stat-icon">📢</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
           <div class="stat-value" id="stat-ads">—</div>
           <div class="stat-label">إعلانات شوهدت اليوم</div>
           <div class="stat-delta up">إجمالي اليوم</div>
         </div>
+
         <div class="stat-card purple">
-          <div class="stat-icon">🔗</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
           <div class="stat-value" id="stat-refs">—</div>
           <div class="stat-label">إجمالي الإحالات</div>
           <div class="stat-delta up">كل الأوقات</div>
         </div>
+
       </div>
 
       <!-- Recent users -->
@@ -894,7 +995,7 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════ PAGE: USERS -->
+    <!-- ══════════════════════════ PAGE: USERS -->
     <div class="page" id="page-users">
       <div class="section-header">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -933,16 +1034,16 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════ PAGE: ONLINE -->
+    <!-- ══════════════════════════ PAGE: ONLINE -->
     <div class="page" id="page-online">
       <div class="section-header">
         <div>
           <div class="section-title">المستخدمون المتصلون</div>
           <div style="font-size:12px;color:var(--muted);margin-top:3px">نشاط آخر 5 دقائق</div>
         </div>
-        <div class="live-badge">
+        <div class="live-badge" style="display:inline-flex">
           <span class="online-pulse"></span>
-          <span id="online-count">…</span> متصل
+          <span id="online-count">…</span>&nbsp;متصل
         </div>
       </div>
 
@@ -962,7 +1063,7 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════ PAGE: WITHDRAWALS -->
+    <!-- ══════════════════════════ PAGE: WITHDRAWALS -->
     <div class="page" id="page-withdrawals">
       <div class="section-header">
         <div class="section-title">طلبات السحب</div>
@@ -979,14 +1080,16 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════ PAGE: SETTINGS -->
+    <!-- ══════════════════════════ PAGE: SETTINGS -->
     <div class="page" id="page-settings">
       <div class="settings-grid">
 
         <!-- الإعلانات -->
         <div class="settings-card">
           <div class="settings-card-header">
-            <div class="settings-card-icon" style="background:rgba(232,93,4,.15)">📢</div>
+            <div class="settings-card-icon" style="background:rgba(232,93,4,.15);color:var(--accent2)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 8.5C22 12 19 15 15.5 15L14 21H10l1-6H7L5 21H1l2-6C1.5 14.5 2 12 2 8.5 2 4 5 1 9 1h6c4 0 7 3 7 7.5z"/></svg>
+            </div>
             <div>
               <div style="font-weight:700;font-size:14px">الإعلانات اليومية</div>
               <div style="font-size:11px;color:var(--muted)">حد الإعلانات والمكافآت</div>
@@ -994,31 +1097,19 @@
           </div>
           <div class="settings-card-body">
             <div class="setting-row">
-              <div>
-                <div class="setting-label">الحد اليومي للإعلانات</div>
-                <div class="setting-desc">أقصى عدد إعلانات يومياً</div>
-              </div>
+              <div><div class="setting-label">الحد اليومي</div><div class="setting-desc">أقصى إعلانات يومياً</div></div>
               <input class="setting-input-sm" type="number" value="22" id="cfg-daily-limit">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">نقاط لكل إعلان</div>
-                <div class="setting-desc">المكافأة الأساسية</div>
-              </div>
+              <div><div class="setting-label">نقاط لكل إعلان</div><div class="setting-desc">المكافأة الأساسية</div></div>
               <input class="setting-input-sm" type="number" value="50" id="cfg-pts-ad">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">مكافأة 10 إعلانات</div>
-                <div class="setting-desc">بونص المشاهدة المكثفة</div>
-              </div>
+              <div><div class="setting-label">مكافأة 10 إعلانات</div><div class="setting-desc">بونص المشاهدة المكثفة</div></div>
               <input class="setting-input-sm" type="number" value="200" id="cfg-bonus-10">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">مكافأة 25 إعلان</div>
-                <div class="setting-desc">بونص اليوم الكامل</div>
-              </div>
+              <div><div class="setting-label">مكافأة 25 إعلان</div><div class="setting-desc">بونص اليوم الكامل</div></div>
               <input class="setting-input-sm" type="number" value="300" id="cfg-bonus-25">
             </div>
           </div>
@@ -1027,7 +1118,9 @@
         <!-- الإحالات -->
         <div class="settings-card">
           <div class="settings-card-header">
-            <div class="settings-card-icon" style="background:rgba(56,139,253,.15)">🔗</div>
+            <div class="settings-card-icon" style="background:rgba(56,139,253,.15);color:var(--blue)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </div>
             <div>
               <div style="font-weight:700;font-size:14px">نظام الإحالات</div>
               <div style="font-size:11px;color:var(--muted)">جوائز دعوة الأصدقاء</div>
@@ -1035,31 +1128,19 @@
           </div>
           <div class="settings-card-body">
             <div class="setting-row">
-              <div>
-                <div class="setting-label">نقاط لكل إحالة</div>
-                <div class="setting-desc">مكافأة الداعي</div>
-              </div>
+              <div><div class="setting-label">نقاط لكل إحالة</div><div class="setting-desc">مكافأة الداعي</div></div>
               <input class="setting-input-sm" type="number" value="100" id="cfg-ref-pts">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">مكافأة 3 إحالات يومية</div>
-                <div class="setting-desc">بونص النشاط اليومي</div>
-              </div>
+              <div><div class="setting-label">مكافأة 3 إحالات يومية</div><div class="setting-desc">بونص النشاط اليومي</div></div>
               <input class="setting-input-sm" type="number" value="1000" id="cfg-ref-3">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">حد الإعلانات للإحالة النشطة</div>
-                <div class="setting-desc">شرط الإحالة الصالحة</div>
-              </div>
+              <div><div class="setting-label">حد إعلانات الإحالة</div><div class="setting-desc">شرط الإحالة الصالحة</div></div>
               <input class="setting-input-sm" type="number" value="3" id="cfg-ref-min-ads">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">حد النقاط للإحالة النشطة</div>
-                <div class="setting-desc">أو هذه النقاط</div>
-              </div>
+              <div><div class="setting-label">حد نقاط الإحالة</div><div class="setting-desc">أو هذه النقاط</div></div>
               <input class="setting-input-sm" type="number" value="100" id="cfg-ref-min-pts">
             </div>
           </div>
@@ -1068,7 +1149,9 @@
         <!-- السحب -->
         <div class="settings-card">
           <div class="settings-card-header">
-            <div class="settings-card-icon" style="background:rgba(255,214,10,.12)">💰</div>
+            <div class="settings-card-icon" style="background:rgba(255,214,10,.12);color:var(--gold)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="7" cy="15" r="1" fill="currentColor"/><path d="M11 15h6"/></svg>
+            </div>
             <div>
               <div style="font-weight:700;font-size:14px">شروط السحب</div>
               <div style="font-size:11px;color:var(--muted)">الحد الأدنى للسحب</div>
@@ -1076,33 +1159,26 @@
           </div>
           <div class="settings-card-body">
             <div class="setting-row">
-              <div>
-                <div class="setting-label">أول سحبة (نقاط)</div>
-                <div class="setting-desc">للمستخدم الجديد</div>
-              </div>
+              <div><div class="setting-label">أول سحبة (نقاط)</div><div class="setting-desc">للمستخدم الجديد</div></div>
               <input class="setting-input-sm" type="number" value="3000" id="cfg-wd-first">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">سحب عادي (نقاط)</div>
-                <div class="setting-desc">بعد أول سحبة</div>
-              </div>
+              <div><div class="setting-label">سحب عادي (نقاط)</div><div class="setting-desc">بعد أول سحبة</div></div>
               <input class="setting-input-sm" type="number" value="20000" id="cfg-wd-normal">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">مستوى السحب العادي</div>
-                <div class="setting-desc">المستوى المطلوب</div>
-              </div>
+              <div><div class="setting-label">مستوى السحب العادي</div><div class="setting-desc">المستوى المطلوب</div></div>
               <input class="setting-input-sm" type="number" value="5" id="cfg-wd-level">
             </div>
           </div>
         </div>
 
-        <!-- مهمة Adsgram -->
+        <!-- Adsgram -->
         <div class="settings-card">
           <div class="settings-card-header">
-            <div class="settings-card-icon" style="background:rgba(188,140,255,.15)">🎯</div>
+            <div class="settings-card-icon" style="background:rgba(188,140,255,.15);color:var(--purple)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
             <div>
               <div style="font-weight:700;font-size:14px">مهمة Adsgram</div>
               <div style="font-size:11px;color:var(--muted)">إعدادات مهمة الإعلان الخاص</div>
@@ -1110,24 +1186,15 @@
           </div>
           <div class="settings-card-body">
             <div class="setting-row">
-              <div>
-                <div class="setting-label">نقاط المهمة</div>
-                <div class="setting-desc">مكافأة إتمام المهمة</div>
-              </div>
+              <div><div class="setting-label">نقاط المهمة</div><div class="setting-desc">مكافأة إتمام المهمة</div></div>
               <input class="setting-input-sm" type="number" value="50" id="cfg-adsgram-pts">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">كود البلوك</div>
-                <div class="setting-desc">Block ID على Adsgram</div>
-              </div>
-              <input class="form-input" type="text" value="task-30166" id="cfg-adsgram-block" style="max-width:160px">
+              <div><div class="setting-label">كود البلوك</div><div class="setting-desc">Block ID على Adsgram</div></div>
+              <input class="form-input" type="text" value="task-30166" id="cfg-adsgram-block" style="max-width:150px">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">تفعيل المهمة</div>
-                <div class="setting-desc">إظهار/إخفاء للمستخدمين</div>
-              </div>
+              <div><div class="setting-label">تفعيل المهمة</div><div class="setting-desc">إظهار/إخفاء للمستخدمين</div></div>
               <label class="toggle">
                 <input type="checkbox" checked id="cfg-adsgram-enabled">
                 <span class="toggle-slider"></span>
@@ -1136,10 +1203,12 @@
           </div>
         </div>
 
-        <!-- مهمة تيليجرام -->
+        <!-- Telegram -->
         <div class="settings-card">
           <div class="settings-card-header">
-            <div class="settings-card-icon" style="background:rgba(56,139,253,.15)">✈️</div>
+            <div class="settings-card-icon" style="background:rgba(56,139,253,.15);color:var(--blue)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
             <div>
               <div style="font-weight:700;font-size:14px">مهمة تيليجرام</div>
               <div style="font-size:11px;color:var(--muted)">مكافأة الاشتراك في القناة</div>
@@ -1147,18 +1216,12 @@
           </div>
           <div class="settings-card-body">
             <div class="setting-row">
-              <div>
-                <div class="setting-label">نقاط مهمة تيليجرام</div>
-                <div class="setting-desc">مكافأة الاشتراك</div>
-              </div>
+              <div><div class="setting-label">نقاط مهمة تيليجرام</div><div class="setting-desc">مكافأة الاشتراك</div></div>
               <input class="setting-input-sm" type="number" value="200" id="cfg-tg-pts">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">رابط القناة</div>
-                <div class="setting-desc">عنوان القناة الرسمية</div>
-              </div>
-              <input class="form-input" type="text" value="https://t.me/botbababab" id="cfg-channel-url" style="max-width:200px;font-size:11px;direction:ltr">
+              <div><div class="setting-label">رابط القناة</div><div class="setting-desc">عنوان القناة الرسمية</div></div>
+              <input class="form-input" type="text" value="https://t.me/botbababab" id="cfg-channel-url" style="max-width:180px;font-size:11px;direction:ltr">
             </div>
           </div>
         </div>
@@ -1166,7 +1229,9 @@
         <!-- الأمان -->
         <div class="settings-card">
           <div class="settings-card-header">
-            <div class="settings-card-icon" style="background:rgba(248,81,73,.12)">🛡️</div>
+            <div class="settings-card-icon" style="background:rgba(248,81,73,.12);color:var(--red)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
             <div>
               <div style="font-weight:700;font-size:14px">الأمان والحظر</div>
               <div style="font-size:11px;color:var(--muted)">معايير Zero Trust</div>
@@ -1174,31 +1239,19 @@
           </div>
           <div class="settings-card-body">
             <div class="setting-row">
-              <div>
-                <div class="setting-label">حد IP واحد</div>
-                <div class="setting-desc">أقصى حسابات لكل IP</div>
-              </div>
+              <div><div class="setting-label">حد IP واحد</div><div class="setting-desc">أقصى حسابات لكل IP</div></div>
               <input class="setting-input-sm" type="number" value="3" id="cfg-max-ip">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">حد البصمة الواحدة</div>
-                <div class="setting-desc">أقصى حسابات لكل جهاز</div>
-              </div>
+              <div><div class="setting-label">حد البصمة الواحدة</div><div class="setting-desc">أقصى حسابات لكل جهاز</div></div>
               <input class="setting-input-sm" type="number" value="2" id="cfg-max-fp">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">نقاط الحظر التلقائي</div>
-                <div class="setting-desc">حد Risk Score للبان</div>
-              </div>
+              <div><div class="setting-label">نقاط الحظر التلقائي</div><div class="setting-desc">حد Risk Score للبان</div></div>
               <input class="setting-input-sm" type="number" value="100" id="cfg-risk-ban">
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-label">Shadow Ban عند</div>
-                <div class="setting-desc">حد Risk Score للشادو</div>
-              </div>
+              <div><div class="setting-label">Shadow Ban عند</div><div class="setting-desc">حد Risk Score للشادو</div></div>
               <input class="setting-input-sm" type="number" value="60" id="cfg-risk-shadow">
             </div>
           </div>
@@ -1206,10 +1259,10 @@
 
       </div>
 
-      <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
         <button class="btn btn-ghost" onclick="resetSettings()">إعادة تعيين</button>
         <button class="btn btn-primary" onclick="saveSettings()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
           حفظ الإعدادات
         </button>
       </div>
@@ -1227,7 +1280,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <div class="modal-title">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       تفاصيل المستخدم
     </div>
     <div id="user-detail-content">—</div>
@@ -1242,11 +1295,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <div class="modal-title">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       تعديل رصيد مستخدم
     </div>
     <div class="form-group">
-      <label class="form-label">Telegram ID أو اسم المستخدم</label>
+      <label class="form-label">Telegram ID</label>
       <input class="form-input" type="text" id="bal-user-id" placeholder="مثال: 123456789">
     </div>
     <div class="form-group">
@@ -1274,8 +1327,10 @@
 
 <!-- Confirm Modal -->
 <div class="modal-overlay" id="modal-confirm">
-  <div class="modal" style="max-width:380px;text-align:center">
-    <div style="font-size:40px;margin-bottom:16px" id="confirm-icon">⚠️</div>
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div class="confirm-icon-box danger" id="confirm-icon-box">
+      <svg id="confirm-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
     <div class="modal-title" style="justify-content:center" id="confirm-title">تأكيد الإجراء</div>
     <div style="color:var(--muted);font-size:13px;margin-bottom:24px" id="confirm-msg">هل أنت متأكد؟</div>
     <div class="modal-actions" style="justify-content:center">
@@ -1292,7 +1347,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <div class="modal-title">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
       مراجعة طلب السحب
     </div>
     <div id="wd-detail-content">—</div>
@@ -1307,7 +1362,10 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-wd')">إلغاء</button>
       <button class="btn btn-danger" onclick="resolveWithdrawal('rejected')">رفض</button>
-      <button class="btn btn-success" onclick="resolveWithdrawal('approved')">قبول ✓</button>
+      <button class="btn btn-success" onclick="resolveWithdrawal('approved')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
+        قبول
+      </button>
     </div>
   </div>
 </div>
@@ -1318,15 +1376,13 @@
 <script>
 // ══════════════════════════════════════════
 // CONFIG
-// admin-index.js يجب أن يكون على نفس الدومين
-// أو عدّل API_BASE لرابط Vercel deployment
 // ══════════════════════════════════════════
 const API_BASE = '/admin/api';
 
 const ADMIN_TOKEN = (function() {
   let t = localStorage.getItem('admin_token');
   if (!t) {
-    t = prompt('🔐 أدخل ADMIN_SECRET:') || '';
+    t = prompt('أدخل ADMIN_SECRET:') || '';
     if (t) localStorage.setItem('admin_token', t);
   }
   return t;
@@ -1366,12 +1422,30 @@ async function apiFetch(path, opts = {}) {
 // ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
-let allUsers   = [];
-let allWds     = [];
-let userFilter = 'all';
-let wdFilter   = 'pending';
+let allUsers    = [];
+let allWds      = [];
+let userFilter  = 'all';
+let wdFilter    = 'pending';
 let currentWdId = null;
-let currentUserId = null;
+
+// ══════════════════════════════════════════
+// SIDEBAR TOGGLE
+// ══════════════════════════════════════════
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const isOpen = sb.classList.toggle('open');
+  ov.classList.toggle('open', isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+
+function closeSidebarMobile() {
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
 
 // ══════════════════════════════════════════
 // NAVIGATION
@@ -1383,24 +1457,6 @@ const PAGE_TITLES = {
   withdrawals: ['طلبات السحب',        'مراجعة وإدارة طلبات السحب'],
   settings:    ['الإعدادات',          'تكوين المنصة'],
 };
-
-function toggleSidebar() {
-  const sb  = document.getElementById('sidebar');
-  const ov  = document.getElementById('sidebar-overlay');
-  const open = sb.classList.toggle('open');
-  ov.classList.toggle('open', open);
-  document.body.style.overflow = open ? 'hidden' : '';
-}
-
-function closeSidebarOnMobile() {
-  if (window.innerWidth <= 768) {
-    const sb = document.getElementById('sidebar');
-    const ov = document.getElementById('sidebar-overlay');
-    sb.classList.remove('open');
-    ov.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-}
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1417,7 +1473,7 @@ function showPage(id) {
   if (id === 'online')      loadOnline();
   if (id === 'withdrawals') loadWithdrawals();
   if (id === 'dashboard')   loadDashboard();
-  closeSidebarOnMobile();
+  closeSidebarMobile();
 }
 
 // ══════════════════════════════════════════
@@ -1436,7 +1492,6 @@ async function loadDashboard() {
     setText('badge-online',    fmt(data.online ?? ''));
     setText('badge-wd',        fmt(data.pending_withdrawals ?? ''));
   }
-  // Recent users
   const users = await apiFetch('/admin/users?limit=6&sort=created_at');
   if (users?.users) renderUsersTable('recent-users-body', users.users, 6);
 }
@@ -1484,32 +1539,36 @@ function renderUsersTable(tbodyId, users, cols) {
     return;
   }
   tbody.innerHTML = users.map(u => {
-    const name     = u.tg_first_name || u.tg_username || `#${u.tg_id}`;
-    const initial  = name.charAt(0).toUpperCase();
-    const status   = u.is_banned ? '<span class="badge badge-red"><span class="dot dot-red"></span>محظور</span>'
-                   : u.is_shadow_banned ? '<span class="badge badge-orange"><span class="dot dot-orange"></span>شادو</span>'
-                   : '<span class="badge badge-green"><span class="dot dot-green"></span>نشط</span>';
-    const premium  = u.tg_is_premium ? '<span class="badge badge-purple" style="margin-right:4px">⭐ بريميوم</span>' : '';
-    const date     = u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '—';
-    const ads      = fmt(u.ads_watched_total ?? 0);
-    const refs     = fmt(u.total_referrals ?? 0);
+    const name    = u.tg_first_name || u.tg_username || `#${u.tg_id}`;
+    const initial = name.charAt(0).toUpperCase();
+    const status  = u.is_banned
+      ? '<span class="badge badge-red"><span class="dot dot-red"></span>محظور</span>'
+      : u.is_shadow_banned
+      ? '<span class="badge badge-orange"><span class="dot dot-orange"></span>شادو</span>'
+      : '<span class="badge badge-green"><span class="dot dot-green"></span>نشط</span>';
+    const premium = u.tg_is_premium
+      ? `<span class="badge badge-purple" style="margin-right:4px"><svg viewBox="0 0 24 24" width="9" height="9" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> بريميوم</span>`
+      : '';
+    const date = u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '—';
+    const ads  = fmt(u.ads_watched_total ?? 0);
+    const refs = fmt(u.total_referrals ?? 0);
 
     if (cols === 6) {
       return `<tr onclick="openUserModal(${JSON.stringify(u).replace(/"/g,"'")})">
-        <td><div class="user-cell"><div class="avatar">${initial}</div><div><div class="user-name">${name} ${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
-        <td><strong>${fmt(u.points)}</strong></td>
-        <td><span class="badge badge-blue">Lv ${u.level}</span></td>
+        <td><div class="user-cell"><div class="avatar">${initial}</div><div><div class="user-name">${name}${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
+        <td><strong class="num">${fmt(u.points)}</strong></td>
+        <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
         <td>${status}</td>
-        <td>${date}</td>
+        <td style="font-size:12px">${date}</td>
         <td onclick="event.stopPropagation()"><div class="actions">${userActions(u)}</div></td>
       </tr>`;
     }
     return `<tr onclick="openUserModal(${encodeUser(u)})">
-      <td><div class="user-cell"><div class="avatar">${initial}</div><div><div class="user-name">${name} ${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
-      <td><strong>${fmt(u.points)}</strong></td>
-      <td><span class="badge badge-blue">Lv ${u.level}</span></td>
-      <td>${ads}</td>
-      <td>${refs}</td>
+      <td><div class="user-cell"><div class="avatar">${initial}</div><div><div class="user-name">${name}${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
+      <td><strong class="num">${fmt(u.points)}</strong></td>
+      <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
+      <td class="num">${ads}</td>
+      <td class="num">${refs}</td>
       <td>${status}</td>
       <td onclick="event.stopPropagation()"><div class="actions">${userActions(u)}</div></td>
     </tr>`;
@@ -1529,13 +1588,13 @@ function userActions(u) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </div>
     ${u.is_banned
-      ? `<div class="icon-btn success" title="رفع الحظر" onclick="confirmAction('رفع الحظر عن #${u.tg_id}?','✅','success',()=>banUser(${u.tg_id},false))">
+      ? `<div class="icon-btn success" title="رفع الحظر" onclick="confirmAction('رفع الحظر عن #${u.tg_id}?','success',()=>banUser(${u.tg_id},false))">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         </div>`
-      : `<div class="icon-btn danger" title="حظر" onclick="confirmAction('حظر المستخدم #${u.tg_id}?','🚫','danger',()=>banUser(${u.tg_id},true))">
+      : `<div class="icon-btn danger" title="حظر" onclick="confirmAction('حظر المستخدم #${u.tg_id}?','danger',()=>banUser(${u.tg_id},true))">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         </div>`}
-    <div class="icon-btn danger" title="حذف" onclick="confirmAction('حذف المستخدم #${u.tg_id} نهائياً؟','🗑️','danger',()=>deleteUser(${u.tg_id}))">
+    <div class="icon-btn danger" title="حذف" onclick="confirmAction('حذف المستخدم #${u.tg_id} نهائياً؟','danger',()=>deleteUser(${u.tg_id}))">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     </div>
   `;
@@ -1545,7 +1604,7 @@ function userActions(u) {
 // ONLINE USERS
 // ══════════════════════════════════════════
 async function loadOnline() {
-  const data = await apiFetch('/admin/online');
+  const data  = await apiFetch('/admin/online');
   const users = data?.users || [];
   setText('online-count', users.length);
   setText('badge-online', users.length);
@@ -1560,9 +1619,9 @@ async function loadOnline() {
     const ago     = timeAgo(u.updated_at);
     return `<tr>
       <td><div class="user-cell"><div class="avatar">${initial}</div><div><div class="user-name">${name}</div><div class="user-id">${u.tg_id}</div></div></div></td>
-      <td><strong>${fmt(u.points)}</strong></td>
-      <td><span class="badge badge-blue">Lv ${u.level}</span></td>
-      <td><span class="badge badge-green"><span class="online-pulse" style="width:6px;height:6px;margin-left:2px"></span>${ago}</span></td>
+      <td><strong class="num">${fmt(u.points)}</strong></td>
+      <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
+      <td><span class="badge badge-green"><span class="online-pulse" style="width:6px;height:6px;margin-left:3px"></span>${ago}</span></td>
       <td><div class="actions">${userActions(u)}</div></td>
     </tr>`;
   }).join('');
@@ -1591,7 +1650,7 @@ function renderWithdrawals() {
   const el = document.getElementById('withdrawals-list');
   if (!allWds.length) {
     el.innerHTML = `<div class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
       <p>لا توجد طلبات</p>
     </div>`;
     return;
@@ -1601,9 +1660,9 @@ function renderWithdrawals() {
     const initial = (w.tg_first_name || name).charAt(0).toUpperCase();
     const date    = new Date(w.created_at).toLocaleDateString('ar-SA');
     const statusBadge = {
-      pending:  '<span class="badge badge-orange">معلق ⏳</span>',
-      approved: '<span class="badge badge-green">مقبول ✓</span>',
-      rejected: '<span class="badge badge-red">مرفوض ✗</span>',
+      pending:  '<span class="badge badge-orange">معلق</span>',
+      approved: '<span class="badge badge-green">مقبول</span>',
+      rejected: '<span class="badge badge-red">مرفوض</span>',
     }[w.status] || `<span class="badge badge-muted">${w.status}</span>`;
 
     const actions = w.status === 'pending'
@@ -1615,10 +1674,7 @@ function renderWithdrawals() {
       <div class="wd-info">
         <div class="wd-name">${w.tg_first_name || ''} <span style="color:var(--muted);font-weight:400">${name}</span></div>
         <div class="wd-address">${w.address}</div>
-        <div class="wd-meta">
-          ${statusBadge}
-          <span class="wd-date">${date}</span>
-        </div>
+        <div class="wd-meta">${statusBadge}<span class="wd-date">${date}</span></div>
       </div>
       <div style="text-align:left">
         <div class="wd-amount">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
@@ -1636,18 +1692,19 @@ function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 function openUserModal(u) {
-  if (typeof u === 'string') { try { u = JSON.parse(u); } catch(e) { return; } }
-  currentUserId = u.tg_id;
-  const name = u.tg_first_name || u.tg_username || `#${u.tg_id}`;
-  const status = u.is_banned ? '<span class="badge badge-red">محظور</span>'
-               : u.is_shadow_banned ? '<span class="badge badge-orange">شادو بان</span>'
-               : '<span class="badge badge-green">نشط</span>';
+  if (typeof u === 'string') u = JSON.parse(u.replace(/\\'/g,"'"));
+  const name   = u.tg_first_name || u.tg_username || `#${u.tg_id}`;
+  const status = u.is_banned
+    ? '<span class="badge badge-red">محظور</span>'
+    : u.is_shadow_banned
+    ? '<span class="badge badge-orange">شادو بان</span>'
+    : '<span class="badge badge-green">نشط</span>';
 
   document.getElementById('user-detail-content').innerHTML = `
     <div class="user-detail-header">
       <div class="user-detail-avatar">${name.charAt(0).toUpperCase()}</div>
       <div>
-        <div class="user-detail-name">${name} ${u.tg_is_premium ? '⭐' : ''}</div>
+        <div class="user-detail-name">${name} ${u.tg_is_premium ? `<span class="badge badge-purple"><svg viewBox="0 0 24 24" width="9" height="9" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>` : ''}</div>
         <div class="user-detail-meta">${u.tg_username ? '@' + u.tg_username : ''} · ID: ${u.tg_id}</div>
         <div style="margin-top:6px">${status}</div>
       </div>
@@ -1658,20 +1715,20 @@ function openUserModal(u) {
       <div class="detail-item"><div class="detail-item-label">الإعلانات الكلية</div><div class="detail-item-value">${fmt(u.ads_watched_total)}</div></div>
       <div class="detail-item"><div class="detail-item-label">الإحالات</div><div class="detail-item-value">${u.total_referrals}</div></div>
       <div class="detail-item"><div class="detail-item-label">Risk Score</div><div class="detail-item-value" style="color:${u.risk_score>60?'var(--red)':'var(--green)'}">${u.risk_score}</div></div>
-      <div class="detail-item"><div class="detail-item-label">تاريخ التسجيل</div><div class="detail-item-value" style="font-size:12px">${u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '—'}</div></div>
-      ${u.ban_reason ? `<div class="detail-item" style="grid-column:1/-1"><div class="detail-item-label">سبب الحظر</div><div class="detail-item-value" style="color:var(--red);font-size:13px">${u.ban_reason}</div></div>` : ''}
+      <div class="detail-item"><div class="detail-item-label">تاريخ التسجيل</div><div class="detail-item-value" style="font-size:12px;font-family:'Cairo',sans-serif">${u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '—'}</div></div>
+      ${u.ban_reason ? `<div class="detail-item" style="grid-column:1/-1"><div class="detail-item-label">سبب الحظر</div><div class="detail-item-value" style="color:var(--red);font-size:13px;font-family:'Cairo',sans-serif">${u.ban_reason}</div></div>` : ''}
     </div>
   `;
   document.getElementById('user-detail-actions').innerHTML = `
     <button class="btn btn-ghost btn-sm" onclick="openBalanceModal(${u.tg_id});closeModal('modal-user')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       تعديل رصيد
     </button>
     ${u.is_banned
       ? `<button class="btn btn-success btn-sm" onclick="banUser(${u.tg_id},false);closeModal('modal-user')">رفع الحظر</button>`
-      : `<button class="btn btn-danger btn-sm" onclick="confirmAction('حظر #${u.tg_id}?','🚫','danger',()=>{banUser(${u.tg_id},true);closeModal('modal-user')})">حظر</button>`}
-    <button class="btn btn-danger btn-sm" onclick="confirmAction('حذف #${u.tg_id} نهائياً؟','🗑️','danger',()=>{deleteUser(${u.tg_id});closeModal('modal-user')})">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      : `<button class="btn btn-danger btn-sm" onclick="confirmAction('حظر #${u.tg_id}?','danger',()=>{banUser(${u.tg_id},true);closeModal('modal-user')})">حظر</button>`}
+    <button class="btn btn-danger btn-sm" onclick="confirmAction('حذف #${u.tg_id} نهائياً؟','danger',()=>{deleteUser(${u.tg_id});closeModal('modal-user')})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
       حذف
     </button>
   `;
@@ -1696,14 +1753,14 @@ function openWdModal(wdId) {
   if (!w) return;
   const name = w.tg_first_name || w.tg_username || `#${w.user_id}`;
   document.getElementById('wd-detail-content').innerHTML = `
-    <div style="background:var(--surface);border-radius:10px;padding:16px;margin-bottom:16px">
-      <div style="font-weight:700;font-size:15px;margin-bottom:4px">${name}</div>
+    <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-weight:700;font-size:15px;margin-bottom:3px">${name}</div>
       <div style="color:var(--muted);font-size:12px;margin-bottom:12px">ID: ${w.user_id}</div>
       <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
         <div>
           <div style="font-size:11px;color:var(--muted)">المبلغ</div>
-          <div style="font-size:22px;font-weight:900;color:var(--gold)">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
-          <div style="font-size:12px;color:var(--muted)">${fmt(w.pts)} نقطة</div>
+          <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:'DynaPuff',sans-serif">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
+          <div style="font-size:12px;color:var(--muted);font-family:'DynaPuff',sans-serif">${fmt(w.pts)} نقطة</div>
         </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;color:var(--muted);margin-bottom:3px">عنوان المحفظة</div>
@@ -1746,7 +1803,7 @@ async function doUpdateBalance() {
     body: JSON.stringify({ tg_id: uid, action, amount, note }),
   });
   if (data?.ok) {
-    toast(`تم تعديل الرصيد ✓ — نقاط جديدة: ${fmt(data.new_points)}`, 'success');
+    toast(`تم تعديل الرصيد — نقاط جديدة: ${fmt(data.new_points)}`, 'success');
     closeModal('modal-balance');
     refreshData();
   } else toast('فشل التعديل', 'error');
@@ -1760,7 +1817,7 @@ async function resolveWithdrawal(status) {
     body: JSON.stringify({ id: currentWdId, status, notes: note, tx_hash: txhash }),
   });
   if (data?.ok) {
-    toast(status === 'approved' ? 'تم قبول السحب ✓' : 'تم رفض السحب', status === 'approved' ? 'success' : 'error');
+    toast(status === 'approved' ? 'تم قبول السحب' : 'تم رفض السحب', status === 'approved' ? 'success' : 'error');
     closeModal('modal-wd');
     loadWithdrawals();
   } else toast('فشل الإجراء', 'error');
@@ -1790,18 +1847,25 @@ async function saveSettings() {
     risk_shadow:       parseInt(document.getElementById('cfg-risk-shadow').value),
   };
   const data = await apiFetch('/admin/config', { method: 'POST', body: JSON.stringify(payload) });
-  if (data?.ok) toast('تم حفظ الإعدادات ✓', 'success');
+  if (data?.ok) toast('تم حفظ الإعدادات', 'success');
   else toast('فشل حفظ الإعدادات', 'error');
 }
 
-function resetSettings() { toast('تم إعادة تعيين الإعدادات للقيم الافتراضية', 'success'); }
+function resetSettings() { toast('تم إعادة تعيين الإعدادات', 'success'); }
 
 // ══════════════════════════════════════════
 // CONFIRM DIALOG
 // ══════════════════════════════════════════
-function confirmAction(msg, icon, type, cb) {
-  document.getElementById('confirm-icon').textContent = icon;
-  document.getElementById('confirm-msg').textContent  = msg;
+function confirmAction(msg, type, cb) {
+  const box = document.getElementById('confirm-icon-box');
+  const svg = document.getElementById('confirm-icon-svg');
+  box.className = `confirm-icon-box ${type}`;
+  if (type === 'danger') {
+    svg.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
+  } else {
+    svg.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+  }
+  document.getElementById('confirm-msg').textContent = msg;
   const btn = document.getElementById('confirm-ok-btn');
   btn.className = `btn ${type === 'danger' ? 'btn-danger' : 'btn-success'}`;
   btn.onclick = () => { cb(); closeModal('modal-confirm'); };
@@ -1814,7 +1878,10 @@ function confirmAction(msg, icon, type, cb) {
 function toast(msg, type = 'success') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `<span class="toast-icon">${type === 'success' ? '✅' : '❌'}</span>${msg}`;
+  const iconSvg = type === 'success'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  el.innerHTML = `<span class="toast-icon">${iconSvg}</span>${msg}`;
   document.getElementById('toasts').appendChild(el);
   setTimeout(() => el.remove(), 3500);
 }
@@ -1857,7 +1924,7 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 
 // ── INIT ──
 loadDashboard();
-setInterval(refreshData, 30000); // auto-refresh every 30s
+setInterval(refreshData, 30000);
 </script>
 </body>
 </html>
