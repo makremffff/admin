@@ -1,2459 +1,1735 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tomato Farm — Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة التحكم — Tomato Farm</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════
-   DESIGN TOKENS — 8px Grid System
-═══════════════════════════════════════════ */
-:root {
-  --bg:      #030a05;
-  --surf-1:  #060e08;
-  --surf-2:  #0a1410;
-  --surf-3:  #0f1c12;
-  --surf-4:  #142018;
+  :root {
+    --bg:        #0a0c0f;
+    --surface:   #111418;
+    --card:      #161b22;
+    --border:    #21262d;
+    --accent:    #e85d04;
+    --accent2:   #f48c06;
+    --gold:      #ffd60a;
+    --green:     #2ea043;
+    --red:       #f85149;
+    --blue:      #388bfd;
+    --purple:    #bc8cff;
+    --text:      #e6edf3;
+    --muted:     #7d8590;
+    --glow:      rgba(232,93,4,0.15);
+    --radius:    12px;
+  }
 
-  --bdr-1:   rgba(78,203,122,.06);
-  --bdr-2:   rgba(78,203,122,.13);
-  --bdr-3:   rgba(78,203,122,.22);
+  * { margin:0; padding:0; box-sizing:border-box; }
 
-  --green:   #3ecf6e;
-  --green-d: #2db85a;
-  --green-g: rgba(62,207,110,.05);
-  --green-g2:rgba(62,207,110,.10);
-  --glow:    0 0 24px rgba(62,207,110,.14), 0 0 60px rgba(62,207,110,.06);
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+  }
 
-  --gold:    #f0c040;
-  --gold-g:  rgba(240,192,64,.06);
-  --red:     #e05555;
-  --red-g:   rgba(224,85,85,.07);
-  --blue:    #4ab4e8;
-  --blue-g:  rgba(74,180,232,.06);
-  --purple:  #9b7aff;
-  --purple-g:rgba(155,122,255,.06);
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    transition: transform .3s ease;
+  }
 
-  --t1: #c8e8d4;
-  --t2: rgba(200,232,212,.60);
-  --t3: rgba(200,232,212,.32);
-  --t4: rgba(200,232,212,.15);
+  .sidebar-logo {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
 
-  --mono: 'IBM Plex Mono', monospace;
-  --sans: 'Tajawal', sans-serif;
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 20px var(--glow);
+  }
 
-  --s1: 4px;  --s2: 8px;   --s3: 12px;
-  --s4: 16px; --s5: 20px;  --s6: 24px;
-  --s7: 32px; --s8: 40px;  --s9: 48px;
+  .logo-text { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .logo-sub  { font-size: 11px; color: var(--muted); font-weight: 400; }
 
-  --r1: 6px; --r2: 10px; --r3: 14px; --r4: 20px; --r5: 28px;
+  .nav { flex: 1; padding: 16px 0; }
 
-  --nb: 64px;
-  --sb: 230px;
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: .08em;
+    padding: 8px 20px 4px;
+    text-transform: uppercase;
+  }
 
-  --t-fast: .1s ease;
-  --t-base: .18s ease;
-  --t-slow: .3s ease;
-}
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 20px;
+    cursor: pointer;
+    border-radius: 8px;
+    margin: 2px 8px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all .2s;
+    position: relative;
+  }
 
-/* ═══════════════════════════════════════════
-   SVG ICON SYSTEM
-═══════════════════════════════════════════ */
-.icon {
-  display: inline-block; flex-shrink: 0;
-  fill: none; stroke: currentColor;
-  stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
-  transition: stroke var(--t-base), transform var(--t-base);
-  vertical-align: middle;
-}
-.icon-sm  { width: 14px; height: 14px; }
-.icon-md  { width: 18px; height: 18px; }
-.icon-lg  { width: 22px; height: 22px; }
-.icon-xl  { width: 28px; height: 28px; }
+  .nav-item:hover { background: var(--card); color: var(--text); }
 
-button:hover .icon, a:hover .icon, .ni:hover .icon { transform: scale(1.1); }
-.tk-del:hover .icon { stroke: var(--red); transform: scale(1.15) rotate(8deg); }
+  .nav-item.active {
+    background: linear-gradient(90deg, rgba(232,93,4,.18), transparent);
+    color: var(--accent2);
+    border-right: 3px solid var(--accent);
+  }
 
-/* ═══════════════════════════════════════════
-   RESET & BASE
-═══════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body {
-  height: 100%; font-family: var(--sans); color: var(--t1);
-  background: var(--bg); overflow: hidden; -webkit-font-smoothing: antialiased;
-}
+  .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
 
-/* animated mesh background */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    radial-gradient(ellipse 80% 50% at 20% 80%, rgba(62,207,110,.04) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(74,180,232,.03) 0%, transparent 50%),
-    linear-gradient(rgba(62,207,110,.006) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(62,207,110,.006) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 28px 28px, 28px 28px;
-  pointer-events: none; z-index: 0;
-}
+  .nav-badge {
+    margin-right: auto;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    min-width: 20px;
+    text-align: center;
+  }
 
-body::after {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 0; opacity: .5;
-}
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+  }
 
-/* ═══════════════════════════════════════════
-   LOGIN
-═══════════════════════════════════════════ */
-#login {
-  position: fixed; inset: 0; background: var(--bg);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 9000;
-}
-.lbox {
-  background: linear-gradient(160deg, var(--surf-2), var(--surf-1));
-  border: 1px solid var(--bdr-2);
-  border-radius: var(--r5);
-  padding: var(--s8) var(--s7);
-  width: 340px; text-align: center;
-  box-shadow: 0 32px 100px rgba(0,0,0,.7), 0 0 60px rgba(62,207,110,.07), inset 0 1px 0 rgba(62,207,110,.1);
-  position: relative; z-index: 1;
-  animation: lbox-in .45s cubic-bezier(.23,1,.32,1) both;
-}
-@keyframes lbox-in {
-  from { opacity:0; transform: translateY(24px) scale(.96); }
-  to   { opacity:1; transform: translateY(0) scale(1); }
-}
-.lbox-logo {
-  width: 68px; height: 68px; margin: 0 auto var(--s5);
-  background: linear-gradient(135deg, #153d22, #1e6e39);
-  border-radius: 20px;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid rgba(62,207,110,.2);
-  box-shadow: 0 8px 32px rgba(0,0,0,.4), 0 0 20px rgba(62,207,110,.12);
-}
-.lbox h2 {
-  font-family: var(--mono); color: var(--green);
-  font-size: 12px; letter-spacing: .16em; margin-bottom: var(--s1);
-  text-transform: uppercase;
-}
-.lbox p { color: var(--t3); font-size: 10px; font-family: var(--mono); margin-bottom: var(--s6); letter-spacing:.06em; }
-.lbox input {
-  width: 100%;
-  background: var(--surf-1); border: 1px solid var(--bdr-2);
-  border-radius: var(--r3); padding: 13px var(--s4);
-  color: var(--t1); font-family: var(--mono); font-size: 18px;
-  text-align: center; outline: none; letter-spacing: .3em;
-  margin-bottom: var(--s3); transition: border-color var(--t-base), box-shadow var(--t-base);
-}
-.lbox input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(62,207,110,.12); }
-.lerr {
-  color: var(--red); font-family: var(--mono); font-size: 11px;
-  margin-top: var(--s2); display: none; align-items: center; gap: var(--s2); justify-content: center;
-}
+  .admin-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(232,93,4,.12);
+    border: 1px solid rgba(232,93,4,.3);
+    color: var(--accent2);
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+    margin-bottom: 6px;
+  }
 
-/* ═══════════════════════════════════════════
-   LAYOUT
-═══════════════════════════════════════════ */
-#app { display: flex; height: 100vh; position: relative; z-index: 1; }
+  /* ── MAIN ── */
+  .main {
+    margin-right: 240px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
 
-/* ═══════════════════════════════════════════
-   SIDEBAR
-═══════════════════════════════════════════ */
-#sidebar {
-  width: var(--sb); flex-shrink: 0;
-  background: var(--surf-1);
-  border-left: 1px solid var(--bdr-1);
-  display: flex; flex-direction: column; height: 100vh; overflow-y: auto;
-}
-.sb-logo {
-  padding: var(--s5) var(--s4) var(--s4);
-  border-bottom: 1px solid var(--bdr-1);
-  display: flex; align-items: center; gap: var(--s3);
-}
-.sb-logo-icon {
-  width: 40px; height: 40px; border-radius: var(--r2);
-  background: linear-gradient(135deg, #142f1c, #1e5a30);
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid rgba(62,207,110,.18); flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(0,0,0,.3);
-}
-.sb-logo-text h1 {
-  font-family: var(--mono); font-size: 11px;
-  color: var(--green); letter-spacing: .07em; text-transform: uppercase;
-}
-.sb-logo-text small { font-family: var(--mono); font-size: 9px; color: var(--t4); }
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+  }
 
-nav { flex: 1; padding: var(--s2) 0; }
-.ns {
-  padding: var(--s4) var(--s4) var(--s2);
-  font-size: 9px; color: var(--t4); font-family: var(--mono);
-  letter-spacing: .18em; text-transform: uppercase; margin-top: var(--s2);
-}
-.ni {
-  display: flex; align-items: center; gap: var(--s3);
-  padding: 10px var(--s4); cursor: pointer; color: var(--t2);
-  font-size: 13.5px; font-weight: 500;
-  transition: all var(--t-base);
-  border-right: 2px solid transparent; margin: 1px 0;
-  border-radius: 0 0 0 0;
-  position: relative;
-}
-.ni:hover { background: var(--green-g); color: var(--t1); }
-.ni.act {
-  background: var(--green-g2); color: var(--green);
-  border-right-color: var(--green);
-}
-.ni .ni-ico { width: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.ni .badge {
-  margin-right: auto;
-  background: var(--red); color: #fff;
-  font-size: 9px; font-family: var(--mono);
-  padding: 1px 6px; border-radius: 20px; min-width: 18px; text-align: center;
-}
-.sb-foot {
-  padding: var(--s3) var(--s4);
-  border-top: 1px solid var(--bdr-1);
-  font-family: var(--mono); font-size: 9px; color: var(--t3);
-  display: flex; align-items: center; gap: var(--s2);
-}
-.dot {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
-  animation: pulse 2.4s infinite;
-}
-@keyframes pulse {
-  0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(62,207,110,.4); }
-  50%      { opacity: .7; box-shadow: 0 0 0 4px rgba(62,207,110,0); }
-}
+  .page-title { font-size: 16px; font-weight: 700; }
+  .page-sub   { font-size: 12px; color: var(--muted); margin-top: 1px; }
 
-/* ═══════════════════════════════════════════
-   MAIN
-═══════════════════════════════════════════ */
-#main { flex: 1; overflow-y: auto; overflow-x: hidden; height: 100vh; }
-.page { display: none; padding: var(--s6) var(--s5) 120px; }
-.page.act { display: block; animation: pg-in .22s ease both; }
-@keyframes pg-in {
-  from { opacity:0; transform: translateY(8px); }
-  to   { opacity:1; transform: translateY(0); }
-}
+  .topbar-actions { display: flex; align-items: center; gap: 12px; }
 
-/* ═══════════════════════════════════════════
-   TOPBAR
-═══════════════════════════════════════════ */
-.topbar {
-  display: flex; align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: var(--s5); gap: var(--s3); flex-wrap: wrap;
-}
-.topbar h2 {
-  font-family: var(--mono); font-size: 16px; color: var(--green); letter-spacing: .04em;
-  display: flex; align-items: center; gap: var(--s2);
-}
-.topbar h2 .page-icon {
-  width: 32px; height: 32px; border-radius: var(--r2);
-  background: var(--green-g2); border: 1px solid var(--bdr-2);
-  display: inline-flex; align-items: center; justify-content: center;
-  color: var(--green); margin-left: var(--s2);
-}
-.topbar .sub { font-size: 11px; color: var(--t3); margin-top: 4px; font-family: var(--mono); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: all .2s;
+  }
 
-/* ═══════════════════════════════════════════
-   STATS GRID
-═══════════════════════════════════════════ */
-.stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); margin-bottom: var(--s5); }
-.sc {
-  background: var(--surf-2);
-  border: 1px solid var(--bdr-1);
-  border-radius: var(--r3);
-  padding: var(--s4) var(--s5);
-  position: relative; overflow: hidden;
-  transition: border-color var(--t-base), box-shadow var(--t-base), transform var(--t-base);
-}
-.sc:hover { border-color: var(--bdr-3); box-shadow: var(--glow); transform: translateY(-1px); }
-.sc::before {
-  content: ''; position: absolute;
-  top: 0; right: 0; width: 3px; height: 100%;
-  background: var(--green); opacity: .45;
-  transition: opacity var(--t-base), width var(--t-base);
-}
-.sc:hover::before { opacity: 1; }
-.sc.gold::before { background: var(--gold); }
-.sc.red::before  { background: var(--red); }
-.sc.blue::before { background: var(--blue); }
-.sc.purple::before { background: var(--purple); }
-.sc-icon { position: absolute; top: 12px; left: 12px; opacity: .07; }
-.sl {
-  font-size: 9px; color: var(--t3); font-family: var(--mono);
-  letter-spacing: .1em; text-transform: uppercase; margin-bottom: var(--s2);
-}
-.sv { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--t1); }
-.sv.g { color: var(--green); }
-.sv.q { color: var(--gold); }
-.sv.r { color: var(--red); }
-.sv.b { color: var(--blue); }
-.sv.p { color: var(--purple); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(232,93,4,.3);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,93,4,.4); }
 
-/* ═══════════════════════════════════════════
-   BUTTONS
-═══════════════════════════════════════════ */
-.btn {
-  padding: var(--s2) var(--s4);
-  border-radius: var(--r2); border: none; cursor: pointer;
-  font-family: var(--sans); font-size: 13px; font-weight: 700;
-  transition: all var(--t-fast);
-  display: inline-flex; align-items: center; gap: var(--s2);
-  white-space: nowrap; position: relative; overflow: hidden;
-}
-.btn::after {
-  content: ''; position: absolute; inset: 0;
-  background: rgba(255,255,255,0); transition: background var(--t-fast);
-}
-.btn:hover::after { background: rgba(255,255,255,.06); }
-.btn:active { transform: scale(.97); }
+  .btn-ghost {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent2); }
 
-.btn-g {
-  background: linear-gradient(135deg, var(--green), var(--green-d));
-  color: #041008;
-  box-shadow: 0 4px 16px rgba(62,207,110,.22);
-}
-.btn-g:hover { box-shadow: 0 6px 24px rgba(62,207,110,.32); }
+  .btn-danger { background: rgba(248,81,73,.15); color: var(--red); border: 1px solid rgba(248,81,73,.3); }
+  .btn-danger:hover { background: rgba(248,81,73,.25); }
 
-.btn-r {
-  background: linear-gradient(135deg, var(--red), #c73c3c);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(224,85,85,.18);
-}
-.btn-r:hover { box-shadow: 0 6px 24px rgba(224,85,85,.28); }
+  .btn-success { background: rgba(46,160,67,.15); color: var(--green); border: 1px solid rgba(46,160,67,.3); }
+  .btn-success:hover { background: rgba(46,160,67,.25); }
 
-.btn-gold {
-  background: linear-gradient(135deg, var(--gold), #d4a820);
-  color: #1a0e00;
-  box-shadow: 0 4px 16px rgba(240,192,64,.22);
-}
-.btn-gold:hover { box-shadow: 0 6px 24px rgba(240,192,64,.32); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .btn svg { width: 15px; height: 15px; }
 
-.btn-purple {
-  background: linear-gradient(135deg, var(--purple), #7a5ee0);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(155,122,255,.22);
-}
-.btn-purple:hover { box-shadow: 0 6px 24px rgba(155,122,255,.32); }
+  /* ── CONTENT ── */
+  .content { padding: 28px; flex: 1; }
 
-.btn-gh {
-  background: transparent; border: 1px solid var(--bdr-2); color: var(--t2);
-}
-.btn-gh:hover { border-color: var(--green); color: var(--green); background: var(--green-g); }
+  /* ── PAGE SECTIONS ── */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn .3s ease; }
 
-.btn-sm { padding: var(--s1) var(--s3); font-size: 11px; }
-.btn-full { width: 100%; justify-content: center; padding: 12px; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
-/* ═══════════════════════════════════════════
-   SEARCH ROW
-═══════════════════════════════════════════ */
-.srow { display: flex; gap: var(--s2); margin-bottom: var(--s4); }
-.srow input {
-  flex: 1;
-  background: var(--surf-2); border: 1px solid var(--bdr-2);
-  border-radius: var(--r2); padding: var(--s3) var(--s3);
-  color: var(--t1); font-family: var(--mono); font-size: 13px;
-  outline: none; transition: border-color var(--t-base), box-shadow var(--t-base);
-}
-.srow input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(62,207,110,.1); }
-.srow input::placeholder { color: var(--t4); }
+  /* ── STATS GRID ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
 
-/* ═══════════════════════════════════════════
-   TABLE
-═══════════════════════════════════════════ */
-.tw {
-  background: var(--surf-2); border: 1px solid var(--bdr-1);
-  border-radius: var(--r3); overflow: hidden; overflow-x: auto;
-}
-.th {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: var(--s3) var(--s4); border-bottom: 1px solid var(--bdr-1);
-  background: var(--surf-3);
-}
-.th span { font-family: var(--mono); font-size: 11px; color: var(--t2); display: flex; align-items: center; gap: var(--s2); }
-table { width: 100%; border-collapse: collapse; min-width: 540px; }
-thead th {
-  text-align: right; padding: var(--s2) var(--s3);
-  font-family: var(--mono); font-size: 9px; color: var(--t4);
-  letter-spacing: .12em; text-transform: uppercase;
-  background: var(--surf-3); border-bottom: 1px solid var(--bdr-1);
-  white-space: nowrap;
-}
-tbody tr { border-bottom: 1px solid var(--bdr-1); transition: background var(--t-fast); }
-tbody tr:hover { background: var(--green-g); }
-tbody tr:last-child { border-bottom: none; }
-tbody td { padding: var(--s2) var(--s3); font-family: var(--mono); font-size: 11px; white-space: nowrap; }
-.tid { color: var(--t3); }
-.tname { color: var(--t1); font-weight: 600; }
-.tname a {
-  color: inherit; text-decoration: none;
-  transition: color var(--t-fast);
-  display: inline-flex; align-items: center; gap: 4px;
-}
-.tname a:hover { color: var(--blue); }
-.tname a .tg-arrow { opacity: 0; transition: opacity var(--t-fast), transform var(--t-fast); }
-.tname a:hover .tg-arrow { opacity: 1; transform: translateX(-2px); }
-.tbal { color: var(--gold); }
-.tr0 { color: var(--green); }
-.tr1 { color: var(--gold); }
-.tr2 { color: var(--red); }
-.bban {
-  background: var(--red-g); color: var(--red);
-  border: 1px solid rgba(224,85,85,.2);
-  padding: 2px 8px; border-radius: 4px; font-size: 9px; font-family: var(--mono);
-}
-.bok {
-  background: var(--green-g2); color: var(--green);
-  border: 1px solid var(--bdr-2);
-  padding: 2px 8px; border-radius: 4px; font-size: 9px; font-family: var(--mono);
-}
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+  }
+  .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
 
-/* ═══════════════════════════════════════════
-   MODAL
-═══════════════════════════════════════════ */
-#ov {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.82); backdrop-filter: blur(6px);
-  z-index: 1000; align-items: flex-end; justify-content: center;
-}
-#ov.open { display: flex; }
-.modal {
-  background: linear-gradient(160deg, var(--surf-2), var(--surf-1));
-  border: 1px solid var(--bdr-2);
-  border-radius: var(--r4) var(--r4) 0 0;
-  width: 100%; max-width: 520px; max-height: 92vh;
-  overflow-y: auto; padding: var(--s6) var(--s5) var(--s8);
-  animation: slide-up .22s cubic-bezier(.23,1,.32,1);
-  position: relative;
-  box-shadow: 0 -8px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(62,207,110,.06) inset;
-}
-@keyframes slide-up {
-  from { transform: translateY(32px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
-}
-.mcl {
-  position: absolute; top: var(--s4); left: var(--s4);
-  background: var(--surf-3); border: 1px solid var(--bdr-1);
-  border-radius: var(--r1); width: 28px; height: 28px;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--t3); cursor: pointer; transition: all var(--t-fast);
-}
-.mcl:hover { border-color: var(--red); color: var(--red); background: var(--red-g); }
-.mtitle {
-  font-family: var(--mono); font-size: 14px; color: var(--green);
-  margin-bottom: var(--s4); padding-bottom: var(--s3);
-  border-bottom: 1px solid var(--bdr-1);
-  display: flex; align-items: center; gap: var(--s2);
-}
-.modal-tg-link {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--blue-g); border: 1px solid rgba(74,180,232,.2);
-  border-radius: var(--r2); padding: 6px 12px;
-  color: var(--blue); font-family: var(--mono); font-size: 11px;
-  text-decoration: none; margin-bottom: var(--s4);
-  transition: all var(--t-fast);
-}
-.modal-tg-link:hover { background: rgba(74,180,232,.14); border-color: rgba(74,180,232,.35); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: .4;
+  }
 
-/* ═══════════════════════════════════════════
-   FORM ELEMENTS
-═══════════════════════════════════════════ */
-.fg { margin-bottom: var(--s3); }
-.fl {
-  display: block; font-size: 10px; color: var(--t3); font-family: var(--mono);
-  letter-spacing: .08em; text-transform: uppercase; margin-bottom: var(--s1);
-}
-.fi {
-  width: 100%; background: var(--surf-3); border: 1px solid var(--bdr-2);
-  border-radius: var(--r2); padding: var(--s2) var(--s3);
-  color: var(--t1); font-family: var(--mono); font-size: 13px;
-  outline: none; transition: border-color var(--t-base), box-shadow var(--t-base);
-}
-.fi:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(62,207,110,.1); }
-.fi::placeholder { color: var(--t4); }
-.fi.err { border-color: var(--red); box-shadow: 0 0 0 3px rgba(224,85,85,.1); }
-.fi.ok  { border-color: var(--green); }
-select.fi { appearance: none; cursor: pointer; }
-.frow { display: flex; gap: var(--s3); }
-.frow .fg { flex: 1; }
-.trow {
-  display: flex; align-items: center;
-  justify-content: space-between;
-  padding: var(--s3) 0; border-bottom: 1px solid var(--bdr-1);
-}
-.trow span { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: var(--s2); }
-.tog {
-  width: 40px; height: 22px; border-radius: 11px;
-  background: var(--surf-4); border: 1px solid var(--bdr-2);
-  cursor: pointer; position: relative;
-  transition: background var(--t-base), border-color var(--t-base);
-  flex-shrink: 0;
-}
-.tog.on { background: var(--green); border-color: transparent; }
-.tog::after {
-  content: ''; position: absolute;
-  top: 3px; right: 3px; width: 14px; height: 14px;
-  border-radius: 50%; background: #fff;
-  transition: transform var(--t-base);
-  box-shadow: 0 1px 4px rgba(0,0,0,.3);
-}
-.tog.on::after { transform: translateX(-18px); }
-.mact { display: flex; gap: var(--s2); margin-top: var(--s4); flex-wrap: wrap; }
+  .stat-card.orange::before { background: var(--accent); }
+  .stat-card.green::before  { background: var(--green); }
+  .stat-card.red::before    { background: var(--red); }
+  .stat-card.blue::before   { background: var(--blue); }
+  .stat-card.gold::before   { background: var(--gold); }
+  .stat-card.purple::before { background: var(--purple); }
 
-/* ═══════════════════════════════════════════
-   INLINE VALIDATION
-═══════════════════════════════════════════ */
-.field-hint {
-  font-family: var(--mono); font-size: 10px; margin-top: var(--s1);
-  display: none; align-items: center; gap: var(--s1); transition: all var(--t-base);
-}
-.field-hint.show-err { display: flex; color: var(--red); }
-.field-hint.show-ok  { display: flex; color: var(--green); }
+  .stat-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+    font-size: 20px;
+  }
+  .stat-card.orange .stat-icon { background: rgba(232,93,4,.15); }
+  .stat-card.green  .stat-icon { background: rgba(46,160,67,.15); }
+  .stat-card.red    .stat-icon { background: rgba(248,81,73,.15); }
+  .stat-card.blue   .stat-icon { background: rgba(56,139,253,.15); }
+  .stat-card.gold   .stat-icon { background: rgba(255,214,10,.15); }
+  .stat-card.purple .stat-icon { background: rgba(188,140,255,.15); }
 
-/* ═══════════════════════════════════════════
-   REQUESTS
-═══════════════════════════════════════════ */
-.rlist { display: flex; flex-direction: column; gap: var(--s3); }
-.rcard {
-  background: var(--surf-2); border: 1px solid var(--bdr-1);
-  border-radius: var(--r3); padding: var(--s4);
-  transition: border-color var(--t-base), transform var(--t-base);
-}
-.rcard:hover { border-color: var(--bdr-2); transform: translateY(-1px); }
-.rcard-top { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s2); }
-.rav {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: var(--green-g); border: 1px solid var(--bdr-2);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--green); flex-shrink: 0;
-}
-.rav img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: block; }
-.rname { font-weight: 700; font-size: 14px; flex: 1; }
-.rname a {
-  color: inherit; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 5px;
-  transition: color var(--t-fast);
-}
-.rname a:hover { color: var(--blue); }
-.rmeta { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 2px; }
-.ramt { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--gold); white-space: nowrap; }
-.rwallet {
-  font-family: var(--mono); font-size: 10px; color: var(--t2);
-  background: var(--surf-3); padding: var(--s2) var(--s3);
-  border-radius: var(--r1); word-break: break-all; margin-bottom: var(--s2);
-  border: 1px solid var(--bdr-1);
-  display: flex; align-items: flex-start; gap: var(--s2);
-}
-.ract { display: flex; gap: var(--s2); }
+  .stat-value { font-size: 28px; font-weight: 900; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .stat-delta {
+    font-size: 11px; font-weight: 600; margin-top: 8px;
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .stat-delta.up   { color: var(--green); }
+  .stat-delta.down { color: var(--red); }
 
-/* ═══════════════════════════════════════════
-   TASK CARDS
-═══════════════════════════════════════════ */
-.tform {
-  background: var(--surf-2); border: 1px solid var(--bdr-1);
-  border-radius: var(--r3); padding: var(--s5); margin-bottom: var(--s4);
-}
-.tform-title {
-  font-family: var(--mono); font-size: 11px; color: var(--green);
-  margin-bottom: var(--s4); padding-bottom: var(--s3);
-  border-bottom: 1px solid var(--bdr-1); letter-spacing: .06em;
-  display: flex; align-items: center; gap: var(--s2);
-}
-.tcard-list {
-  background: var(--surf-2); border: 1px solid var(--bdr-1);
-  border-radius: var(--r3); overflow: hidden;
-}
-.tcard-list-header {
-  font-family: var(--mono); font-size: 11px; color: var(--green);
-  padding: var(--s3) var(--s4); border-bottom: 1px solid var(--bdr-1);
-  letter-spacing: .06em; background: var(--surf-3);
-  display: flex; align-items: center; gap: var(--s2);
-}
-.tk {
-  display: flex; align-items: center; gap: var(--s3);
-  padding: var(--s3) var(--s4); border-bottom: 1px solid var(--bdr-1);
-  transition: background var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
-  cursor: pointer; position: relative;
-}
-.tk:hover { background: var(--green-g); transform: translateX(-2px); box-shadow: inset 3px 0 0 var(--green); }
-.tk:last-child { border-bottom: none; }
-.tk.invalid-card { opacity: .4; cursor: not-allowed; pointer-events: none; }
-.tk-ic {
-  width: 46px; height: 46px; border-radius: var(--r2);
-  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #0d5a28, #1a9645);
-  border: 1px solid rgba(62,207,110,.18);
-  box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 0 10px rgba(62,207,110,.07);
-  transition: box-shadow var(--t-base), transform var(--t-base); color: var(--green);
-}
-.tk:hover .tk-ic { box-shadow: 0 6px 20px rgba(0,0,0,.4), 0 0 14px rgba(62,207,110,.14); transform: translateY(-1px); }
-.tk-ic.tg {
-  background: linear-gradient(135deg, #0d4a7a, #1469ae);
-  border-color: rgba(74,180,232,.18);
-  box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 0 10px rgba(74,180,232,.07);
-  color: var(--blue);
-}
-.tk:hover .tk-ic.tg { box-shadow: 0 6px 20px rgba(0,0,0,.4), 0 0 14px rgba(74,180,232,.14); }
-.tk-info { flex: 1; min-width: 0; }
-.tk-name {
-  font-size: 13px; font-weight: 700;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  display: flex; align-items: center; gap: var(--s2);
-}
-.tk-badge {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .06em;
-  padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
-}
-.tk-badge.ch  { background: var(--blue-g); color: var(--blue); border: 1px solid rgba(74,180,232,.2); }
-.tk-badge.url { background: var(--green-g); color: var(--green); border: 1px solid var(--bdr-2); }
-.tk-reward { font-family: var(--mono); font-size: 11px; color: var(--gold); margin-top: 3px; }
-.tk-link {
-  font-family: var(--mono); font-size: 10px; color: var(--blue);
-  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  text-decoration: none; display: block; transition: color var(--t-fast);
-}
-.tk-link:hover { color: #7dd4f7; text-decoration: underline; }
-.tk-link.invalid { color: var(--t4); pointer-events: none; }
-.tk-del {
-  background: none; border: none; color: var(--t4); cursor: pointer;
-  padding: var(--s2); flex-shrink: 0; transition: color var(--t-fast);
-  border-radius: var(--r1); display: flex; align-items: center; justify-content: center;
-}
-.tk-del:hover { color: var(--red); background: var(--red-g); }
-.tk-copy {
-  background: none; border: none; color: var(--t4); cursor: pointer;
-  padding: var(--s2); flex-shrink: 0; transition: color var(--t-fast), background var(--t-fast);
-  border-radius: var(--r1); display: flex; align-items: center; justify-content: center;
-}
-.tk-copy:hover { color: var(--blue); background: var(--blue-g); }
-.tk-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
+  }
 
-/* Smart Input */
-.smart-input-wrap { position: relative; }
-.smart-input-prefix {
-  position: absolute; top: 50%; right: 11px;
-  transform: translateY(-50%);
-  font-family: var(--mono); font-size: 12px; color: var(--t4);
-  pointer-events: none; transition: color var(--t-base);
-  display: flex; align-items: center; gap: 6px;
-}
-.smart-input-prefix .prefix-badge {
-  font-size: 9px; padding: 1px 6px; border-radius: 4px;
-  border: 1px solid var(--bdr-2); color: var(--t3); transition: all var(--t-base);
-}
-.prefix-badge.tg      { color: var(--blue); border-color: rgba(74,180,232,.3); background: var(--blue-g); }
-.prefix-badge.url     { color: var(--green); border-color: var(--bdr-2); background: var(--green-g); }
-.prefix-badge.err-badge { color: var(--red); border-color: rgba(224,85,85,.3); background: var(--red-g); }
-.fi.has-prefix { padding-right: 90px; }
+  .section-title { font-size: 15px; font-weight: 700; }
 
-/* JSON Box */
-.jbox {
-  background: var(--surf-2); border: 1px solid var(--bdr-1);
-  border-radius: var(--r3); padding: var(--s4); margin-top: var(--s3);
-}
-.jhead {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s2);
-}
-.jhead span { font-family: var(--mono); font-size: 10px; color: var(--t2); }
-.jbox textarea {
-  width: 100%; background: var(--surf-3); border: 1px solid var(--bdr-1);
-  border-radius: var(--r1); padding: var(--s2) var(--s3);
-  color: var(--green); font-family: var(--mono); font-size: 10px;
-  height: 100px; outline: none; resize: none; direction: ltr;
-}
+  /* ── SEARCH BAR ── */
+  .search-wrap {
+    display: flex; align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 14px;
+    gap: 10px;
+    min-width: 260px;
+    transition: border-color .2s;
+  }
+  .search-wrap:focus-within { border-color: var(--accent); }
+  .search-wrap svg { color: var(--muted); flex-shrink: 0; width:16px; height:16px; }
+  .search-wrap input {
+    flex: 1;
+    background: none; border: none; outline: none;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    padding: 10px 0;
+  }
+  .search-wrap input::placeholder { color: var(--muted); }
 
-/* ═══════════════════════════════════════════
-   PROMO CODES
-═══════════════════════════════════════════ */
-.promo-grid { display: flex; flex-direction: column; gap: var(--s3); }
-.pc {
-  display: flex; align-items: center; gap: var(--s3);
-  background: var(--surf-2); border: 1px solid var(--bdr-1);
-  border-radius: var(--r3); padding: var(--s3) var(--s4);
-  transition: border-color var(--t-base), transform var(--t-fast);
-  position: relative; overflow: hidden;
-}
-.pc::before {
-  content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%;
-  background: var(--purple); opacity: .5; transition: opacity var(--t-base);
-}
-.pc:hover { border-color: var(--bdr-2); transform: translateX(-2px); }
-.pc:hover::before { opacity: 1; }
-.pc-icon {
-  width: 40px; height: 40px; border-radius: var(--r2); flex-shrink: 0;
-  background: var(--purple-g); border: 1px solid rgba(155,122,255,.2);
-  display: flex; align-items: center; justify-content: center; color: var(--purple);
-}
-.pc-info { flex: 1; min-width: 0; }
-.pc-code {
-  font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--t1);
-  letter-spacing: .08em;
-}
-.pc-meta { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 3px; display: flex; gap: var(--s3); flex-wrap: wrap; }
-.pc-meta span { display: flex; align-items: center; gap: 4px; }
-.pc-uses {
-  font-family: var(--mono); font-size: 11px; color: var(--t2);
-  text-align: center; min-width: 48px;
-}
-.pc-uses strong { display: block; font-size: 16px; color: var(--green); }
-.pc-del {
-  background: none; border: none; color: var(--t4); cursor: pointer;
-  padding: var(--s2); border-radius: var(--r1); transition: all var(--t-fast);
-  display: flex; align-items: center;
-}
-.pc-del:hover { color: var(--red); background: var(--red-g); }
-.pc-status {
-  font-family: var(--mono); font-size: 9px; padding: 2px 8px;
-  border-radius: 4px; flex-shrink: 0;
-}
-.pc-status.active { background: var(--green-g2); color: var(--green); border: 1px solid var(--bdr-2); }
-.pc-status.expired { background: var(--red-g); color: var(--red); border: 1px solid rgba(224,85,85,.2); }
-.pc-status.used { background: var(--gold-g); color: var(--gold); border: 1px solid rgba(240,192,64,.2); }
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
 
-/* ═══════════════════════════════════════════
-   BOTTOM NAV
-═══════════════════════════════════════════ */
-#bnav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  height: var(--nb);
-  background: rgba(6,14,8,.94); backdrop-filter: blur(16px);
-  border-top: 1px solid var(--bdr-1);
-  z-index: 200; display: none;
-  align-items: stretch; justify-content: space-around;
-}
-.bni {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  cursor: pointer; color: var(--t3);
-  font-size: 8.5px; gap: 3px; font-family: var(--mono);
-  position: relative; transition: color var(--t-base);
-}
-.bni .bic { color: var(--t3); transition: color var(--t-base), transform var(--t-base); }
-.bni:hover .bic { transform: translateY(-1px); }
-.bni.act { color: var(--green); }
-.bni.act .bic { color: var(--green); }
-.bni .badge {
-  position: absolute; top: 6px; right: calc(50% - 20px);
-  background: var(--red); color: #fff; font-size: 9px;
-  padding: 1px 5px; border-radius: 10px;
-}
+  table { width: 100%; border-collapse: collapse; }
 
-/* ═══════════════════════════════════════════
-   LOADING SKELETON
-═══════════════════════════════════════════ */
-.skel {
-  background: linear-gradient(90deg, var(--surf-3) 25%, var(--surf-4) 50%, var(--surf-3) 75%);
-  background-size: 200% 100%; animation: shimmer 1.6s infinite; border-radius: var(--r1);
-}
-@keyframes shimmer { to { background-position: -200% 0; } }
-.skel-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s3); }
-.skel-av  { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
-.skel-line { height: 10px; border-radius: 4px; }
+  thead tr { background: rgba(255,255,255,.03); border-bottom: 1px solid var(--border); }
+  thead th {
+    padding: 12px 16px;
+    font-size: 11px; font-weight: 700;
+    color: var(--muted); text-align: right;
+    white-space: nowrap; letter-spacing: .04em; text-transform: uppercase;
+  }
 
-/* ═══════════════════════════════════════════
-   TOAST SYSTEM
-═══════════════════════════════════════════ */
-#toast-container {
-  position: fixed; bottom: 80px; left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999; display: flex;
-  flex-direction: column; gap: var(--s2);
-  align-items: center; pointer-events: none; width: 300px;
-}
-.toast-item {
-  background: var(--surf-3); border: 1px solid var(--bdr-2);
-  border-radius: var(--r3);
-  padding: 10px var(--s4);
-  font-family: var(--mono); font-size: 12px; color: var(--green);
-  display: flex; align-items: center; gap: var(--s2);
-  transform: translateY(20px); opacity: 0;
-  transition: transform .26s cubic-bezier(.23,1,.32,1), opacity .26s ease;
-  white-space: nowrap;
-  box-shadow: 0 8px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
-}
-.toast-item.show { transform: translateY(0); opacity: 1; }
-.toast-item.err  { color: var(--red); border-color: rgba(224,85,85,.3); }
-.toast-item.info { color: var(--blue); border-color: rgba(74,180,232,.3); }
+  tbody tr {
+    border-bottom: 1px solid rgba(33,38,45,.7);
+    transition: background .15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(232,93,4,.04); cursor: pointer; }
 
-/* ═══════════════════════════════════════════
-   EMPTY STATE
-═══════════════════════════════════════════ */
-.empty-state { text-align: center; padding: 56px var(--s5); color: var(--t3); font-family: var(--mono); }
-.empty-state .es-icon {
-  width: 56px; height: 56px; margin: 0 auto var(--s4);
-  background: var(--surf-3); border: 1px solid var(--bdr-1);
-  border-radius: var(--r3);
-  display: flex; align-items: center; justify-content: center; color: var(--t3);
-}
-.empty-state h3 { font-size: 13px; color: var(--t2); margin-bottom: var(--s1); }
-.empty-state p  { font-size: 11px; color: var(--t4); }
+  tbody td {
+    padding: 13px 16px;
+    font-size: 13px; vertical-align: middle;
+  }
 
-/* ═══════════════════════════════════════════
-   UTILS
-═══════════════════════════════════════════ */
-.spin {
-  display: inline-block; width: 14px; height: 14px;
-  border: 2px solid var(--bdr-2); border-top-color: var(--green);
-  border-radius: 50%; animation: sp .7s linear infinite;
-}
-@keyframes sp { to { transform: rotate(360deg); } }
-.lrow { text-align: center; padding: var(--s8); color: var(--t3); font-family: var(--mono); font-size: 12px; }
-hr.sep { border: none; border-top: 1px solid var(--bdr-1); margin: var(--s3) 0; }
+  .user-cell { display: flex; align-items: center; gap: 10px; }
 
-/* section divider */
-.sdiv {
-  display: flex; align-items: center; gap: var(--s3); margin: var(--s5) 0 var(--s4);
-  font-family: var(--mono); font-size: 10px; color: var(--t3); letter-spacing: .1em; text-transform: uppercase;
-}
-.sdiv::before, .sdiv::after {
-  content: ''; flex: 1; height: 1px; background: var(--bdr-1);
-}
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #fff;
+    flex-shrink: 0; overflow: hidden;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-/* ═══════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════ */
-@media (max-width: 680px) {
-  #sidebar { display: none; }
-  #bnav    { display: flex; }
-  #main    { height: calc(100vh - var(--nb)); }
-  .page    { padding: var(--s4) var(--s3) var(--s5); }
-  .frow    { flex-direction: column; gap: 0; }
-  table    { min-width: 460px; }
-  #toast-container { bottom: calc(var(--nb) + 12px); }
-}
-@media (min-width: 681px) {
-  #bnav            { display: none !important; }
-  #toast-container { bottom: 24px; }
-}
+  .user-name { font-weight: 600; font-size: 13px; }
+  .user-id   { font-size: 11px; color: var(--muted); direction: ltr; }
 
-/* ═══════════════════════════════════════════
-   SPIN PANEL
-═══════════════════════════════════════════ */
-:root {
-  --gold-g: rgba(240,192,64,.06);
-  --gold-g2: rgba(240,192,64,.13);
-}
-.spin-tab {
-  transition: all var(--t-base);
-}
-.spin-tab.act-tab {
-  background: linear-gradient(135deg, var(--gold), #d4a820) !important;
-  color: #1a0e00 !important;
-  border-color: transparent !important;
-  box-shadow: 0 4px 16px rgba(240,192,64,.28);
-}
-.spin-ch-card {
-  display: flex; align-items: center; gap: var(--s3);
-  padding: var(--s3) var(--s4);
-  background: var(--surf-3); border: 1px solid rgba(240,192,64,.12);
-  border-radius: var(--r3); margin-bottom: var(--s2);
-  transition: border-color var(--t-base), background var(--t-fast);
-}
-.spin-ch-card:hover { border-color: rgba(240,192,64,.28); background: var(--gold-g); }
-.spin-ch-icon {
-  width: 36px; height: 36px; border-radius: var(--r2); flex-shrink: 0;
-  background: var(--gold-g2); border: 1px solid rgba(240,192,64,.22);
-  display: flex; align-items: center; justify-content: center; color: var(--gold);
-}
-.spin-ch-name {
-  flex: 1; font-family: var(--mono); font-size: 13px; color: var(--t1); font-weight: 600;
-}
-.spin-ch-at { color: var(--gold); margin-left: 2px; }
-.spin-ch-date { font-size: 9px; color: var(--t4); font-family: var(--mono); }
-.spin-ch-del {
-  background: transparent; border: 1px solid rgba(224,85,85,.2);
-  border-radius: var(--r2); padding: 5px 9px; color: var(--red);
-  cursor: pointer; transition: all var(--t-fast); display: flex; align-items: center;
-}
-.spin-ch-del:hover { background: var(--red-g); border-color: var(--red); }
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+  }
+  .badge-green  { background: rgba(46,160,67,.15);  color: var(--green); }
+  .badge-red    { background: rgba(248,81,73,.15);  color: var(--red); }
+  .badge-orange { background: rgba(232,93,4,.15);   color: var(--accent2); }
+  .badge-blue   { background: rgba(56,139,253,.15); color: var(--blue); }
+  .badge-muted  { background: rgba(125,133,144,.12); color: var(--muted); }
+  .badge-gold   { background: rgba(255,214,10,.12); color: var(--gold); }
+  .badge-purple { background: rgba(188,140,255,.15); color: var(--purple); }
 
-#spin-tab-channels, #spin-tab-players, #spin-tab-withdrawals {
-  animation: pg-in .2s ease both;
-}
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot-red    { background: var(--red); }
+  .dot-orange { background: var(--accent2); }
+
+  /* ── ACTIONS CELL ── */
+  .actions { display: flex; align-items: center; gap: 6px; }
+
+  .icon-btn {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .2s; color: var(--muted);
+    flex-shrink: 0;
+  }
+  .icon-btn:hover         { border-color: var(--accent); color: var(--accent2); }
+  .icon-btn.danger:hover  { border-color: var(--red);  color: var(--red); }
+  .icon-btn.success:hover { border-color: var(--green); color: var(--green); }
+  .icon-btn svg { width: 14px; height: 14px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.75);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; animation: fadeIn .2s ease; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .modal-title {
+    font-size: 16px; font-weight: 700;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .modal-close {
+    position: absolute; top: 16px; left: 16px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--border); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); transition: all .2s;
+  }
+  .modal-close:hover { background: var(--red); color: #fff; }
+  .modal-close svg { width: 14px; height: 14px; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block; }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-select option { background: var(--card); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+
+  /* ── USER DETAIL MODAL ── */
+  .user-detail-header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px;
+    background: var(--surface);
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  .user-detail-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .user-detail-name { font-size: 16px; font-weight: 700; }
+  .user-detail-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .detail-item {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .detail-item-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  .detail-item-value { font-size: 14px; font-weight: 700; }
+
+  .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+  /* ── WITHDRAWAL CARDS ── */
+  .withdrawals-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .withdrawal-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex; align-items: center; gap: 16px;
+    transition: border-color .2s;
+  }
+  .withdrawal-card:hover { border-color: var(--accent); }
+
+  .wd-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #f48c06, #e85d04);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0;
+    overflow: hidden;
+  }
+  .wd-avatar img { width:100%; height:100%; object-fit:cover; }
+
+  .wd-info { flex: 1; min-width: 0; }
+  .wd-name { font-weight: 700; font-size: 14px; }
+  .wd-address { font-size: 11px; color: var(--muted); direction: ltr; font-family: monospace; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+  .wd-meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+
+  .wd-amount { font-size: 16px; font-weight: 900; color: var(--gold); }
+  .wd-pts    { font-size: 12px; color: var(--muted); }
+  .wd-date   { font-size: 11px; color: var(--muted); }
+
+  .wd-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ── SETTINGS ── */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  .settings-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .settings-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.02);
+  }
+
+  .settings-card-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .settings-card-body { padding: 20px; }
+
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .setting-row:last-child { border-bottom: none; }
+
+  .setting-label { font-size: 13px; font-weight: 600; }
+  .setting-desc  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .setting-input-sm {
+    width: 100px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px; font-weight: 700;
+    padding: 7px 10px;
+    outline: none;
+    text-align: center;
+    transition: border-color .2s;
+  }
+  .setting-input-sm:focus { border-color: var(--accent); }
+
+  /* ── TOGGLE ── */
+  .toggle { position: relative; width: 42px; height: 24px; cursor: pointer; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 100px;
+    transition: .3s;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--muted);
+    top: 3px; right: 3px;
+    transition: .3s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(-18px); background: #fff; }
+
+  /* ── FILTER TABS ── */
+  .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-tab {
+    padding: 6px 14px;
+    border-radius: 7px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Cairo', sans-serif;
+    transition: all .2s;
+  }
+  .filter-tab:hover  { border-color: var(--accent); color: var(--accent2); }
+  .filter-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ── ONLINE INDICATOR ── */
+  .online-pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 0 rgba(46,160,67,.6);
+    animation: pulse 1.4s infinite;
+    display: inline-block;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0   rgba(46,160,67,.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(46,160,67,0);  }
+    100% { box-shadow: 0 0 0 0   rgba(46,160,67,0);  }
+  }
+
+  /* ── TOAST ── */
+  .toast-container { position:fixed; bottom:24px; left:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+  .toast {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+    min-width: 220px;
+    animation: slideUp .3s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+  .toast.success { border-color: rgba(46,160,67,.4); }
+  .toast.error   { border-color: rgba(248,81,73,.4); }
+  .toast-icon { font-size: 16px; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+  }
+  .empty-state svg { width: 48px; height: 48px; margin: 0 auto 14px; opacity:.3; display: block; }
+  .empty-state p { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text); opacity: .5; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    height: 4px; border-radius: 100px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .progress-fill { height: 100%; border-radius: 100px; transition: width .5s ease; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-right: 0; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ── LIVE BADGE ── */
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(46,160,67,.12);
+    border: 1px solid rgba(46,160,67,.3);
+    color: var(--green);
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+  }
 </style>
 </head>
 <body>
 
-<!-- SVG DEFS -->
-<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <symbol id="ic-dashboard" viewBox="0 0 24 24">
-      <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-      <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-      <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-      <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-    </symbol>
-    <symbol id="ic-users" viewBox="0 0 24 24">
-      <circle cx="9" cy="7" r="3.5"/>
-      <path d="M2 20c0-4 3.13-7 7-7s7 3 7 7"/>
-      <circle cx="17" cy="8" r="2.5" stroke-opacity=".6"/>
-      <path d="M21 20c0-3-2-5-4-5.5" stroke-opacity=".6"/>
-    </symbol>
-    <symbol id="ic-withdraw" viewBox="0 0 24 24">
-      <rect x="2" y="6" width="20" height="14" rx="2"/>
-      <path d="M2 10h20"/>
-      <circle cx="6" cy="15" r="1.5" fill="currentColor" stroke="none"/>
-      <path d="M16 5V3M12 5V3M8 5V3"/>
-    </symbol>
-    <symbol id="ic-task" viewBox="0 0 24 24">
-      <path d="M9 11l3 3L22 4"/>
-      <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-    </symbol>
-    <symbol id="ic-promo" viewBox="0 0 24 24">
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
-      <line x1="7" y1="7" x2="7.01" y2="7"/>
-    </symbol>
-    <symbol id="ic-channel" viewBox="0 0 24 24">
-      <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
-    </symbol>
-    <symbol id="ic-link" viewBox="0 0 24 24">
-      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-    </symbol>
-    <symbol id="ic-delete" viewBox="0 0 24 24">
-      <polyline points="3 6 5 6 21 6"/>
-      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-      <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-    </symbol>
-    <symbol id="ic-refresh" viewBox="0 0 24 24">
-      <polyline points="23 4 23 10 17 10"/>
-      <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
-    </symbol>
-    <symbol id="ic-copy" viewBox="0 0 24 24">
-      <rect x="9" y="9" width="13" height="13" rx="2"/>
-      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-    </symbol>
-    <symbol id="ic-close" viewBox="0 0 24 24">
-      <line x1="18" y1="6" x2="6" y2="18"/>
-      <line x1="6" y1="6" x2="18" y2="18"/>
-    </symbol>
-    <symbol id="ic-search" viewBox="0 0 24 24">
-      <circle cx="11" cy="11" r="8"/>
-      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </symbol>
-    <symbol id="ic-save" viewBox="0 0 24 24">
-      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-      <polyline points="17 21 17 13 7 13 7 21"/>
-      <polyline points="7 3 7 8 15 8"/>
-    </symbol>
-    <symbol id="ic-check" viewBox="0 0 24 24">
-      <polyline points="20 6 9 17 4 12"/>
-    </symbol>
-    <symbol id="ic-ban" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9"/>
-      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-    </symbol>
-    <symbol id="ic-tomato" viewBox="0 0 24 24">
-      <circle cx="12" cy="14" r="8" fill="none"/>
-      <path d="M12 6c0 0 0-3 3-4M12 6c0 0 -2-2 -2-4M12 6v2"/>
-      <circle cx="12" cy="14" r="8"/>
-    </symbol>
-    <symbol id="ic-wallet" viewBox="0 0 24 24">
-      <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
-      <path d="M16 3H8L6 7h12l-2-4z"/>
-      <circle cx="17" cy="14" r="1.5" fill="currentColor" stroke="none"/>
-    </symbol>
-    <symbol id="ic-plus" viewBox="0 0 24 24">
-      <line x1="12" y1="5" x2="12" y2="19"/>
-      <line x1="5" y1="12" x2="19" y2="12"/>
-    </symbol>
-    <symbol id="ic-user" viewBox="0 0 24 24">
-      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-      <circle cx="12" cy="7" r="4"/>
-    </symbol>
-    <symbol id="ic-edit" viewBox="0 0 24 24">
-      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-    </symbol>
-    <symbol id="ic-pin" viewBox="0 0 24 24">
-      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/>
-      <circle cx="12" cy="10" r="3"/>
-    </symbol>
-    <symbol id="ic-external" viewBox="0 0 24 24">
-      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-      <polyline points="15 3 21 3 21 9"/>
-      <line x1="10" y1="14" x2="21" y2="3"/>
-    </symbol>
-    <symbol id="ic-tg-plane" viewBox="0 0 24 24">
-      <path d="M22 2L11 13"/>
-      <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
-    </symbol>
-    <symbol id="ic-globe" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9"/>
-      <path d="M12 3c-2.5 3-4 5.5-4 9s1.5 6 4 9"/>
-      <path d="M12 3c2.5 3 4 5.5 4 9s-1.5 6-4 9"/>
-      <line x1="3" y1="12" x2="21" y2="12"/>
-      <line x1="3.6" y1="7" x2="20.4" y2="7"/>
-      <line x1="3.6" y1="17" x2="20.4" y2="17"/>
-    </symbol>
-    <symbol id="ic-telegram" viewBox="0 0 24 24">
-      <path d="M21.5 4L2.5 11.5l6 2.5 2.5 7 3-4 5 3.5 2.5-16.5z"/>
-      <line x1="8.5" y1="14" x2="13" y2="10"/>
-    </symbol>
-    <symbol id="ic-clock" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9"/>
-      <polyline points="12 7 12 12 15 15"/>
-    </symbol>
-    <symbol id="ic-zap" viewBox="0 0 24 24">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-    </symbol>
-  </defs>
-</svg>
-
-<!-- ══════════════════════════════════════════ LOGIN ══ -->
-<div id="login">
-  <div class="lbox">
-    <div class="lbox-logo">
-      <svg class="icon icon-xl" style="color:var(--green)"><use href="#ic-tomato"/></svg>
-    </div>
-    <h2>ADMIN PANEL</h2>
-    <p>TOMATO FARM // SECURE ACCESS</p>
-    <input type="password" id="apass" placeholder="••••••••" autocomplete="current-password" />
-    <button class="btn btn-g btn-full" onclick="doLogin()">
-      <svg class="icon icon-sm"><use href="#ic-check"/></svg>
-      دخول
-    </button>
-    <div class="lerr" id="lerr">
-      <svg class="icon icon-sm" style="color:var(--red)"><use href="#ic-ban"/></svg>
-      كلمة المرور خاطئة
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════ APP ══ -->
-<div id="app">
-
-  <!-- SIDEBAR -->
-  <div id="sidebar">
-    <div class="sb-logo">
-      <div class="sb-logo-icon">
-        <svg class="icon icon-md" style="color:var(--green)"><use href="#ic-tomato"/></svg>
-      </div>
-      <div class="sb-logo-text">
-        <h1>Tomato Admin</h1>
-        <small>v2.2 // LIVE DB</small>
-      </div>
-    </div>
-    <nav>
-      <div class="ns">الرئيسية</div>
-      <div class="ni act" id="sn-dash" onclick="nav('dash',this)">
-        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-dashboard"/></svg></span>
-        <span>لوحة التحكم</span>
-      </div>
-      <div class="ns">المستخدمون</div>
-      <div class="ni" id="sn-users" onclick="nav('users',this)">
-        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-users"/></svg></span>
-        <span>المستخدمين</span>
-      </div>
-      <div class="ni" id="sn-requests" onclick="nav('requests',this)">
-        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-withdraw"/></svg></span>
-        <span>طلبات السحب</span>
-        <span class="badge" id="rb">0</span>
-      </div>
-      <div class="ns">المحتوى</div>
-      <div class="ni" id="sn-tasks" onclick="nav('tasks',this)">
-        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-task"/></svg></span>
-        <span>المهام</span>
-      </div>
-      <div class="ni" id="sn-promo" onclick="nav('promo',this)">
-        <span class="ni-ico"><svg class="icon icon-md"><use href="#ic-promo"/></svg></span>
-        <span>أكواد البرومو</span>
-      </div>
-      <div class="ns">TON Spin</div>
-      <div class="ni" id="sn-spin" onclick="nav('spin',this)" style="border-right-color: transparent;">
-        <span class="ni-ico">
-          <svg class="icon icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
-            <circle cx="12" cy="12" r="3" fill="currentColor" opacity=".2"/>
-          </svg>
-        </span>
-        <span style="color:var(--gold)">Spin Panel</span>
-        <span style="margin-right:auto;background:linear-gradient(135deg,var(--gold),#d4a820);color:#1a0e00;font-size:8px;font-family:var(--mono);padding:1px 7px;border-radius:20px;font-weight:700;letter-spacing:.04em">NEW</span>
-      </div>
-    </nav>
-    <div class="sb-foot">
-      <span class="dot"></span>
-      CONNECTED
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🍅</div>
+    <div>
+      <div class="logo-text">Tomato Farm</div>
+      <div class="logo-sub">لوحة التحكم</div>
     </div>
   </div>
 
-  <!-- MAIN -->
-  <div id="main">
-
-    <!-- DASHBOARD -->
-    <div class="page act" id="p-dash">
-      <div class="topbar">
-        <div>
-          <h2>
-            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-dashboard"/></svg></span>
-            لوحة التحكم
-          </h2>
-          <div class="sub" id="dtime"></div>
-        </div>
-        <button class="btn btn-gh btn-sm" onclick="loadDash()">
-          <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
-          تحديث
-        </button>
-      </div>
-      <div class="stats">
-        <div class="sc">
-          <div class="sc-icon"><svg class="icon icon-xl" style="width:36px;height:36px"><use href="#ic-users"/></svg></div>
-          <div class="sl">المستخدمون</div>
-          <div class="sv g" id="s-users">—</div>
-        </div>
-        <div class="sc gold">
-          <div class="sc-icon"><svg class="icon icon-xl" style="width:36px;height:36px"><use href="#ic-wallet"/></svg></div>
-          <div class="sl">الأرصدة (TON)</div>
-          <div class="sv q" id="s-bal">—</div>
-        </div>
-        <div class="sc red">
-          <div class="sc-icon"><svg class="icon icon-xl" style="width:36px;height:36px"><use href="#ic-ban"/></svg></div>
-          <div class="sl">محظورون</div>
-          <div class="sv r" id="s-ban">—</div>
-        </div>
-        <div class="sc blue">
-          <div class="sc-icon"><svg class="icon icon-xl" style="width:36px;height:36px"><use href="#ic-withdraw"/></svg></div>
-          <div class="sl">سحب معلق</div>
-          <div class="sv b" id="s-pend">—</div>
-        </div>
-      </div>
-      <div class="tw">
-        <div class="th">
-          <span>
-            <svg class="icon icon-sm"><use href="#ic-users"/></svg>
-            آخر المستخدمين
-          </span>
-          <button class="btn btn-gh btn-sm" onclick="nav('users',document.getElementById('sn-users'))">عرض الكل</button>
-        </div>
-        <table>
-          <thead><tr><th>ID</th><th>الاسم</th><th>الرصيد</th><th>بذور</th><th>حالة</th></tr></thead>
-          <tbody id="dt"></tbody>
-        </table>
-      </div>
+  <nav class="nav">
+    <div class="nav-section-label">الرئيسية</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      نظرة عامة
+    </div>
+    <div class="nav-item" onclick="showPage('users')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      المستخدمون
+      <span class="nav-badge" id="badge-users">…</span>
+    </div>
+    <div class="nav-item" onclick="showPage('online')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      المتصلون الآن
+      <span class="nav-badge" id="badge-online" style="background:var(--green)">…</span>
     </div>
 
-    <!-- USERS -->
-    <div class="page" id="p-users">
-      <div class="topbar">
-        <div>
-          <h2>
-            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-users"/></svg></span>
-            المستخدمون
-          </h2>
-          <div class="sub">بحث — تعديل — حظر</div>
-        </div>
-      </div>
-      <div class="srow">
-        <input id="sq" placeholder="ID أو اسم مستخدم..." />
-        <button class="btn btn-g" onclick="searchUser()">
-          <svg class="icon icon-sm"><use href="#ic-search"/></svg>
-        </button>
-        <button class="btn btn-gh" onclick="loadUsers()">الكل</button>
-      </div>
-      <div class="tw">
-        <div class="th"><span id="uc"><svg class="icon icon-sm"><use href="#ic-users"/></svg> المستخدمون</span></div>
-        <table>
-          <thead><tr><th>ID</th><th>الاسم</th><th>الرصيد</th><th>بذور</th><th>ماء</th><th>Risk</th><th>حالة</th><th></th></tr></thead>
-          <tbody id="ut"></tbody>
-        </table>
-      </div>
+    <div class="nav-section-label" style="margin-top:8px">المالية</div>
+    <div class="nav-item" onclick="showPage('withdrawals')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+      طلبات السحب
+      <span class="nav-badge" id="badge-wd" style="background:var(--gold);color:#000">…</span>
     </div>
 
-    <!-- REQUESTS -->
-    <div class="page" id="p-requests">
-      <div class="topbar">
-        <div>
-          <h2>
-            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-withdraw"/></svg></span>
-            طلبات السحب
-          </h2>
-          <div class="sub">قبول أو رفض</div>
-        </div>
-        <button class="btn btn-gh btn-sm" onclick="loadRequests()">
-          <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
-        </button>
-      </div>
-      <div id="rl" class="rlist">
-        <div class="empty-state">
-          <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
-          <h3>لا توجد طلبات</h3>
-          <p>ستظهر هنا طلبات السحب المعلقة</p>
-        </div>
-      </div>
+    <div class="nav-section-label" style="margin-top:8px">النظام</div>
+    <div class="nav-item" onclick="showPage('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      الإعدادات
     </div>
+  </nav>
 
-    <!-- TASKS -->
-    <div class="page" id="p-tasks">
-      <div class="topbar">
-        <div>
-          <h2>
-            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-task"/></svg></span>
-            إدارة المهام
-          </h2>
-          <div class="sub">إضافة وحذف مهام</div>
-        </div>
-      </div>
-
-      <div class="tform">
-        <div class="tform-title">
-          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
-          مهمة جديدة
-        </div>
-        <div class="frow">
-          <div class="fg" style="flex:2">
-            <label class="fl">اسم المهمة *</label>
-            <input class="fi" id="tn" placeholder="انضم لقناتنا" />
-          </div>
-          <div class="fg">
-            <label class="fl">نوع المهمة *</label>
-            <select class="fi" id="tt" onchange="onTypeChange()">
-              <option value="channel">قناة Telegram</option>
-              <option value="url">رابط خارجي</option>
-            </select>
-          </div>
-        </div>
-        <div class="frow">
-          <div class="fg">
-            <label class="fl">الجائزة (TON) *</label>
-            <input class="fi" id="tr" type="number" step="0.001" placeholder="0.005" />
-          </div>
-        </div>
-        <div class="fg" id="field-smart">
-          <label class="fl" id="smart-label">رابط أو يوزرنيم القناة *</label>
-          <div class="smart-input-wrap">
-            <input class="fi has-prefix" id="tsmartinput"
-              placeholder="t.me/channel أو username"
-              oninput="onSmartInput(this)"
-              onpaste="setTimeout(()=>onSmartInput(this),0)"
-            />
-            <div class="smart-input-prefix">
-              <span class="prefix-badge" id="smart-badge">AUTO</span>
-            </div>
-          </div>
-          <div class="field-hint" id="smart-hint"></div>
-        </div>
-        <input type="hidden" id="tch" />
-        <input type="hidden" id="tu"  />
-        <div class="fg">
-          <label class="fl">وصف (اختياري)</label>
-          <input class="fi" id="td" placeholder="وصف قصير للمهمة" />
-        </div>
-        <button class="btn btn-g btn-full" style="margin-top:4px" onclick="addTask()">
-          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
-          إضافة المهمة
-        </button>
-      </div>
-
-      <div class="tcard-list">
-        <div class="tcard-list-header">
-          <svg class="icon icon-sm"><use href="#ic-task"/></svg>
-          المهام الحالية (<span id="tc">0</span>)
-        </div>
-        <div id="tl"></div>
-      </div>
-
-      <div class="jbox">
-        <div class="jhead">
-          <span>JSON — عرض المهام</span>
-          <button class="btn btn-gh btn-sm" onclick="copyJson()">
-            <svg class="icon icon-sm"><use href="#ic-copy"/></svg>
-            نسخ
-          </button>
-        </div>
-        <textarea id="tj" readonly></textarea>
-      </div>
+  <div class="sidebar-footer">
+    <div class="admin-badge">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      أدمن
     </div>
-
-    <!-- PROMO CODES PAGE -->
-    <div class="page" id="p-promo">
-      <div class="topbar">
-        <div>
-          <h2>
-            <span class="page-icon"><svg class="icon icon-md"><use href="#ic-promo"/></svg></span>
-            أكواد البرومو
-          </h2>
-          <div class="sub">إنشاء وإدارة أكواد الخصم والمكافآت</div>
-        </div>
-        <button class="btn btn-gh btn-sm" onclick="loadPromos()">
-          <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
-        </button>
-      </div>
-
-      <!-- ADD FORM -->
-      <div class="tform">
-        <div class="tform-title">
-          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
-          كود جديد
-        </div>
-        <div class="frow">
-          <div class="fg" style="flex:2">
-            <label class="fl">الكود *</label>
-            <input class="fi" id="pcode" placeholder="WELCOME2025" style="letter-spacing:.1em; text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" />
-          </div>
-        </div>
-        <div class="frow">
-          <div class="fg">
-            <label class="fl">💎 TON</label>
-            <input class="fi" id="preward_ton" type="number" step="0.001" min="0" placeholder="0.000" />
-          </div>
-          <div class="fg">
-            <label class="fl">🌱 بذور</label>
-            <input class="fi" id="preward_seeds" type="number" min="0" placeholder="0" />
-          </div>
-          <div class="fg">
-            <label class="fl">💧 ماء</label>
-            <input class="fi" id="preward_water" type="number" min="0" placeholder="0" />
-          </div>
-        </div>
-        <div class="frow">
-          <div class="fg">
-            <label class="fl">الحد الأقصى للاستخدام</label>
-            <input class="fi" id="pmaxuses" type="number" placeholder="100 (0 = غير محدود)" />
-          </div>
-          <div class="fg">
-            <label class="fl">تاريخ الانتهاء (اختياري)</label>
-            <input class="fi" id="pexpiry" type="date" />
-          </div>
-        </div>
-        <div class="fg">
-          <label class="fl">وصف (اختياري)</label>
-          <input class="fi" id="pdesc" placeholder="كود ترحيبي للمستخدمين الجدد" />
-        </div>
-        <button class="btn btn-purple btn-full" style="margin-top:4px" onclick="addPromo()">
-          <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
-          إضافة الكود
-        </button>
-      </div>
-
-      <!-- LIST -->
-      <div class="tcard-list">
-        <div class="tcard-list-header" style="color:var(--purple)">
-          <svg class="icon icon-sm"><use href="#ic-promo"/></svg>
-          الأكواد الحالية (<span id="promo-count">0</span>)
-        </div>
-        <div id="promo-list">
-          <div class="empty-state">
-            <div class="es-icon"><svg class="icon icon-lg" style="color:var(--purple)"><use href="#ic-promo"/></svg></div>
-            <h3>لا توجد أكواد</h3>
-            <p>أضف أول كود برومو باستخدام النموذج أعلاه</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SPIN PANEL -->
-    <div class="page" id="p-spin">
-      <div class="topbar">
-        <div>
-          <h2 style="color:var(--gold)">
-            <span class="page-icon" style="background:var(--gold-g);border-color:rgba(240,192,64,.22)">
-              <svg class="icon icon-md" style="color:var(--gold)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
-                <circle cx="12" cy="12" r="3" fill="currentColor" opacity=".2"/>
-              </svg>
-            </span>
-            TON Spin Panel
-          </h2>
-          <div class="sub">إدارة قنوات الانضمام — اللاعبون — السحوبات</div>
-        </div>
-        <button class="btn btn-gh btn-sm" onclick="loadSpinPanel()">
-          <svg class="icon icon-sm"><use href="#ic-refresh"/></svg>
-          تحديث
-        </button>
-      </div>
-
-      <!-- SPIN STATS -->
-      <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:var(--s4)">
-        <div class="sc gold">
-          <div class="sl">اللاعبون</div>
-          <div class="sv q" id="sp-total">—</div>
-        </div>
-        <div class="sc">
-          <div class="sl">إجمالي الأرصدة (TON)</div>
-          <div class="sv g" id="sp-bal">—</div>
-        </div>
-        <div class="sc">
-          <div class="sl">إجمالي السبينات</div>
-          <div class="sv" id="sp-spins" style="color:var(--purple)">—</div>
-        </div>
-        <div class="sc">
-          <div class="sl">تحقق القنوات</div>
-          <div class="sv g" id="sp-verified">—</div>
-        </div>
-        <div class="sc red">
-          <div class="sl">سحب معلق</div>
-          <div class="sv r" id="sp-pend">—</div>
-        </div>
-        <div class="sc red">
-          <div class="sl">محظورون</div>
-          <div class="sv r" id="sp-ban">—</div>
-        </div>
-      </div>
-
-      <!-- SPIN SUB TABS -->
-      <div style="display:flex;gap:var(--s2);margin-bottom:var(--s4);flex-wrap:wrap">
-        <button class="btn btn-gold btn-sm spin-tab act-tab" id="stab-channels" onclick="showSpinTab('channels')">
-          <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
-          القنوات
-        </button>
-        <button class="btn btn-gh btn-sm spin-tab" id="stab-players" onclick="showSpinTab('players')">
-          <svg class="icon icon-sm"><use href="#ic-users"/></svg>
-          اللاعبون
-        </button>
-        <button class="btn btn-gh btn-sm spin-tab" id="stab-withdrawals" onclick="showSpinTab('withdrawals')">
-          <svg class="icon icon-sm"><use href="#ic-withdraw"/></svg>
-          السحوبات
-          <span class="badge" id="sp-wd-badge" style="display:none">0</span>
-        </button>
-      </div>
-
-      <!-- TAB: CHANNELS -->
-      <div id="spin-tab-channels">
-        <div class="tform" style="margin-bottom:var(--s4)">
-          <div class="tform-title">
-            <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
-            إضافة قناة Telegram
-          </div>
-          <div class="frow">
-            <div class="fg" style="flex:3">
-              <label class="fl">اسم القناة (بدون @)</label>
-              <input class="fi" id="spin-ch-input" placeholder="mychannel أو @mychannel" />
-            </div>
-            <div class="fg" style="flex:1;align-self:flex-end">
-              <button class="btn btn-gold btn-full" onclick="addSpinChannel()">
-                <svg class="icon icon-sm"><use href="#ic-plus"/></svg>
-                إضافة
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="tcard-list">
-          <div class="tcard-list-header" style="color:var(--gold)">
-            <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
-            قنوات الانضمام المطلوبة (<span id="spin-ch-count">0</span>)
-          </div>
-          <div id="spin-ch-list">
-            <div class="empty-state">
-              <h3>لا توجد قنوات</h3>
-              <p>أضف قناة أعلاه لتُظهر في شاشة الانضمام</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: PLAYERS -->
-      <div id="spin-tab-players" style="display:none">
-        <div class="srow">
-          <input id="spin-sq" placeholder="ID أو اسم مستخدم..." />
-          <button class="btn btn-g" onclick="searchSpinPlayer()">
-            <svg class="icon icon-sm"><use href="#ic-search"/></svg>
-          </button>
-          <button class="btn btn-gh" onclick="loadSpinPlayers()">الكل</button>
-        </div>
-        <div class="tw">
-          <div class="th"><span id="spin-pc"><svg class="icon icon-sm"><use href="#ic-users"/></svg> اللاعبون</span></div>
-          <table>
-            <thead><tr><th>ID</th><th>الاسم</th><th>الرصيد</th><th>Spins</th><th>إجمالي</th><th>قنوات</th><th>حالة</th><th></th></tr></thead>
-            <tbody id="spin-pt"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- TAB: WITHDRAWALS -->
-      <div id="spin-tab-withdrawals" style="display:none">
-        <div id="spin-wl" class="rlist"></div>
-      </div>
-    </div>
-
-  </div><!-- /main -->
-</div><!-- /app -->
-
-<!-- BOTTOM NAV -->
-<div id="bnav">
-  <div class="bni act" id="bn-dash" onclick="nav('dash',this,true)">
-    <div class="bic"><svg class="icon icon-lg"><use href="#ic-dashboard"/></svg></div>
-    <div>رئيسية</div>
+    <div style="font-size:11px;color:var(--muted)">v5.0 Zero Trust</div>
   </div>
-  <div class="bni" id="bn-users" onclick="nav('users',this,true)">
-    <div class="bic"><svg class="icon icon-lg"><use href="#ic-users"/></svg></div>
-    <div>مستخدمون</div>
-  </div>
-  <div class="bni" id="bn-requests" onclick="nav('requests',this,true)">
-    <div class="bic"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
-    <div>سحوبات</div>
-    <span class="badge" id="rbb">0</span>
-  </div>
-  <div class="bni" id="bn-tasks" onclick="nav('tasks',this,true)">
-    <div class="bic"><svg class="icon icon-lg"><use href="#ic-task"/></svg></div>
-    <div>مهام</div>
-  </div>
-  <div class="bni" id="bn-promo" onclick="nav('promo',this,true)">
-    <div class="bic"><svg class="icon icon-lg"><use href="#ic-promo"/></svg></div>
-    <div>بروموكود</div>
-  </div>
-  <div class="bni" id="bn-spin" onclick="nav('spin',this,true)">
-    <div class="bic" style="color:var(--gold)">
-      <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
-        <circle cx="12" cy="12" r="3" fill="currentColor" opacity=".25"/>
-      </svg>
-    </div>
-    <div style="color:var(--gold)">Spin</div>
-  </div>
-</div>
+</aside>
 
-<!-- USER MODAL -->
-<div id="ov">
-  <div class="modal">
-    <button class="mcl" onclick="closeModal()">
-      <svg class="icon icon-sm"><use href="#ic-close"/></svg>
-    </button>
-    <div class="mtitle">
-      <svg class="icon icon-md"><use href="#ic-edit"/></svg>
-      <span id="mun">تعديل مستخدم</span>
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div id="topbar-info">
+      <div class="page-title">نظرة عامة</div>
+      <div class="page-sub">مرحباً بك في لوحة التحكم</div>
     </div>
-    <!-- Telegram link -->
-    <div id="modal-tg-wrap"></div>
-    <div class="frow">
-      <div class="fg"><label class="fl">الرصيد (TON)</label><input class="fi" id="eb" type="number" step="0.000001" /></div>
-      <div class="fg"><label class="fl">البذور</label><input class="fi" id="es" type="number" /></div>
-    </div>
-    <div class="frow">
-      <div class="fg"><label class="fl">الماء</label><input class="fi" id="ew" type="number" /></div>
-      <div class="fg"><label class="fl">Risk Score</label><input class="fi" id="er" type="number" min="0" max="100" /></div>
-    </div>
-    <hr class="sep">
-    <div class="trow">
-      <span>
-        <svg class="icon icon-sm" style="color:var(--gold)"><use href="#ic-ban"/></svg>
-        Shadow Ban
-      </span>
-      <div class="tog" id="et-sb" onclick="togSB()"></div>
-    </div>
-    <div class="trow">
-      <span>
-        <svg class="icon icon-sm" style="color:var(--red)"><use href="#ic-ban"/></svg>
-        Hard Ban
-      </span>
-      <div class="tog" id="et-hb" onclick="togHB()"></div>
-    </div>
-    <div class="mact">
-      <button class="btn btn-gh" onclick="closeModal()">إلغاء</button>
-      <button class="btn btn-r btn-sm" onclick="resetUser()">تصفير</button>
-      <button class="btn btn-g" onclick="saveUser()">
-        <svg class="icon icon-sm"><use href="#ic-save"/></svg>
-        حفظ
+    <div class="topbar-actions">
+      <div class="live-badge">
+        <span class="online-pulse"></span>
+        مباشر
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="refreshData()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        تحديث
       </button>
     </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ═══════════════════════════════════════ PAGE: DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card orange">
+          <div class="stat-icon">👥</div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">إجمالي المستخدمين</div>
+          <div class="stat-delta up">↑ يتم التحميل...</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon"><span class="online-pulse" style="width:10px;height:10px"></span></div>
+          <div class="stat-value" id="stat-online">—</div>
+          <div class="stat-label">متصلون الآن (آخر 5 دقائق)</div>
+          <div class="stat-delta up">نشاط حي</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">🚫</div>
+          <div class="stat-value" id="stat-banned">—</div>
+          <div class="stat-label">محظورون</div>
+          <div class="stat-delta down">حظر + شادو بان</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-icon">💎</div>
+          <div class="stat-value" id="stat-pending-wd">—</div>
+          <div class="stat-label">سحوبات معلقة</div>
+          <div class="stat-delta" style="color:var(--gold)">بانتظار المراجعة</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon">📢</div>
+          <div class="stat-value" id="stat-ads">—</div>
+          <div class="stat-label">إعلانات شوهدت اليوم</div>
+          <div class="stat-delta up">إجمالي اليوم</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-icon">🔗</div>
+          <div class="stat-value" id="stat-refs">—</div>
+          <div class="stat-label">إجمالي الإحالات</div>
+          <div class="stat-delta up">كل الأوقات</div>
+        </div>
+      </div>
+
+      <!-- Recent users -->
+      <div class="section-header">
+        <div class="section-title">أحدث المستخدمين</div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('users')">عرض الكل</button>
+      </div>
+      <div class="table-wrap" id="recent-users-table">
+        <table>
+          <thead><tr>
+            <th>المستخدم</th>
+            <th>النقاط</th>
+            <th>المستوى</th>
+            <th>الحالة</th>
+            <th>تاريخ التسجيل</th>
+            <th>إجراءات</th>
+          </tr></thead>
+          <tbody id="recent-users-body">
+            <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PAGE: USERS -->
+    <div class="page" id="page-users">
+      <div class="section-header">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" placeholder="ابحث باسم أو ID..." id="users-search" oninput="filterUsers()">
+          </div>
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setUserFilter('all',this)">الكل</button>
+            <button class="filter-tab" onclick="setUserFilter('banned',this)">محظور</button>
+            <button class="filter-tab" onclick="setUserFilter('shadow',this)">شادو بان</button>
+            <button class="filter-tab" onclick="setUserFilter('premium',this)">بريميوم</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openAddBalanceModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          تعديل رصيد
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>المستخدم</th>
+            <th>النقاط</th>
+            <th>المستوى</th>
+            <th>الإعلانات</th>
+            <th>الإحالات</th>
+            <th>الحالة</th>
+            <th>إجراءات</th>
+          </tr></thead>
+          <tbody id="users-body">
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PAGE: ONLINE -->
+    <div class="page" id="page-online">
+      <div class="section-header">
+        <div>
+          <div class="section-title">المستخدمون المتصلون</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">نشاط آخر 5 دقائق</div>
+        </div>
+        <div class="live-badge">
+          <span class="online-pulse"></span>
+          <span id="online-count">…</span> متصل
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>المستخدم</th>
+            <th>النقاط</th>
+            <th>المستوى</th>
+            <th>آخر نشاط</th>
+            <th>إجراءات</th>
+          </tr></thead>
+          <tbody id="online-body">
+            <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PAGE: WITHDRAWALS -->
+    <div class="page" id="page-withdrawals">
+      <div class="section-header">
+        <div class="section-title">طلبات السحب</div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="setWdFilter('pending',this)">معلق</button>
+          <button class="filter-tab" onclick="setWdFilter('approved',this)">مقبول</button>
+          <button class="filter-tab" onclick="setWdFilter('rejected',this)">مرفوض</button>
+          <button class="filter-tab" onclick="setWdFilter('all',this)">الكل</button>
+        </div>
+      </div>
+
+      <div class="withdrawals-grid" id="withdrawals-list">
+        <div style="text-align:center;padding:48px;color:var(--muted)">جاري التحميل...</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PAGE: SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="settings-grid">
+
+        <!-- الإعلانات -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(232,93,4,.15)">📢</div>
+            <div>
+              <div style="font-weight:700;font-size:14px">الإعلانات اليومية</div>
+              <div style="font-size:11px;color:var(--muted)">حد الإعلانات والمكافآت</div>
+            </div>
+          </div>
+          <div class="settings-card-body">
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">الحد اليومي للإعلانات</div>
+                <div class="setting-desc">أقصى عدد إعلانات يومياً</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="22" id="cfg-daily-limit">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">نقاط لكل إعلان</div>
+                <div class="setting-desc">المكافأة الأساسية</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="50" id="cfg-pts-ad">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">مكافأة 10 إعلانات</div>
+                <div class="setting-desc">بونص المشاهدة المكثفة</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="200" id="cfg-bonus-10">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">مكافأة 25 إعلان</div>
+                <div class="setting-desc">بونص اليوم الكامل</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="300" id="cfg-bonus-25">
+            </div>
+          </div>
+        </div>
+
+        <!-- الإحالات -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(56,139,253,.15)">🔗</div>
+            <div>
+              <div style="font-weight:700;font-size:14px">نظام الإحالات</div>
+              <div style="font-size:11px;color:var(--muted)">جوائز دعوة الأصدقاء</div>
+            </div>
+          </div>
+          <div class="settings-card-body">
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">نقاط لكل إحالة</div>
+                <div class="setting-desc">مكافأة الداعي</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="100" id="cfg-ref-pts">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">مكافأة 3 إحالات يومية</div>
+                <div class="setting-desc">بونص النشاط اليومي</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="1000" id="cfg-ref-3">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">حد الإعلانات للإحالة النشطة</div>
+                <div class="setting-desc">شرط الإحالة الصالحة</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="3" id="cfg-ref-min-ads">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">حد النقاط للإحالة النشطة</div>
+                <div class="setting-desc">أو هذه النقاط</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="100" id="cfg-ref-min-pts">
+            </div>
+          </div>
+        </div>
+
+        <!-- السحب -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(255,214,10,.12)">💰</div>
+            <div>
+              <div style="font-weight:700;font-size:14px">شروط السحب</div>
+              <div style="font-size:11px;color:var(--muted)">الحد الأدنى للسحب</div>
+            </div>
+          </div>
+          <div class="settings-card-body">
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">أول سحبة (نقاط)</div>
+                <div class="setting-desc">للمستخدم الجديد</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="3000" id="cfg-wd-first">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">سحب عادي (نقاط)</div>
+                <div class="setting-desc">بعد أول سحبة</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="20000" id="cfg-wd-normal">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">مستوى السحب العادي</div>
+                <div class="setting-desc">المستوى المطلوب</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="5" id="cfg-wd-level">
+            </div>
+          </div>
+        </div>
+
+        <!-- مهمة Adsgram -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(188,140,255,.15)">🎯</div>
+            <div>
+              <div style="font-weight:700;font-size:14px">مهمة Adsgram</div>
+              <div style="font-size:11px;color:var(--muted)">إعدادات مهمة الإعلان الخاص</div>
+            </div>
+          </div>
+          <div class="settings-card-body">
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">نقاط المهمة</div>
+                <div class="setting-desc">مكافأة إتمام المهمة</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="50" id="cfg-adsgram-pts">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">كود البلوك</div>
+                <div class="setting-desc">Block ID على Adsgram</div>
+              </div>
+              <input class="form-input" type="text" value="task-30166" id="cfg-adsgram-block" style="max-width:160px">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">تفعيل المهمة</div>
+                <div class="setting-desc">إظهار/إخفاء للمستخدمين</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" checked id="cfg-adsgram-enabled">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- مهمة تيليجرام -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(56,139,253,.15)">✈️</div>
+            <div>
+              <div style="font-weight:700;font-size:14px">مهمة تيليجرام</div>
+              <div style="font-size:11px;color:var(--muted)">مكافأة الاشتراك في القناة</div>
+            </div>
+          </div>
+          <div class="settings-card-body">
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">نقاط مهمة تيليجرام</div>
+                <div class="setting-desc">مكافأة الاشتراك</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="200" id="cfg-tg-pts">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">رابط القناة</div>
+                <div class="setting-desc">عنوان القناة الرسمية</div>
+              </div>
+              <input class="form-input" type="text" value="https://t.me/botbababab" id="cfg-channel-url" style="max-width:200px;font-size:11px;direction:ltr">
+            </div>
+          </div>
+        </div>
+
+        <!-- الأمان -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(248,81,73,.12)">🛡️</div>
+            <div>
+              <div style="font-weight:700;font-size:14px">الأمان والحظر</div>
+              <div style="font-size:11px;color:var(--muted)">معايير Zero Trust</div>
+            </div>
+          </div>
+          <div class="settings-card-body">
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">حد IP واحد</div>
+                <div class="setting-desc">أقصى حسابات لكل IP</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="3" id="cfg-max-ip">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">حد البصمة الواحدة</div>
+                <div class="setting-desc">أقصى حسابات لكل جهاز</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="2" id="cfg-max-fp">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">نقاط الحظر التلقائي</div>
+                <div class="setting-desc">حد Risk Score للبان</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="100" id="cfg-risk-ban">
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="setting-label">Shadow Ban عند</div>
+                <div class="setting-desc">حد Risk Score للشادو</div>
+              </div>
+              <input class="setting-input-sm" type="number" value="60" id="cfg-risk-shadow">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="resetSettings()">إعادة تعيين</button>
+        <button class="btn btn-primary" onclick="saveSettings()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+          حفظ الإعدادات
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ══════════════════ MODALS ══════════════════ -->
+
+<!-- User Detail Modal -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-close" onclick="closeModal('modal-user')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      تفاصيل المستخدم
+    </div>
+    <div id="user-detail-content">—</div>
+    <div class="detail-actions" id="user-detail-actions"></div>
   </div>
 </div>
 
-<!-- TOAST -->
-<div id="toast-container"></div>
+<!-- Balance Modal -->
+<div class="modal-overlay" id="modal-balance">
+  <div class="modal" style="max-width:400px">
+    <button class="modal-close" onclick="closeModal('modal-balance')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      تعديل رصيد مستخدم
+    </div>
+    <div class="form-group">
+      <label class="form-label">Telegram ID أو اسم المستخدم</label>
+      <input class="form-input" type="text" id="bal-user-id" placeholder="مثال: 123456789">
+    </div>
+    <div class="form-group">
+      <label class="form-label">الإجراء</label>
+      <select class="form-select" id="bal-action">
+        <option value="add">إضافة نقاط</option>
+        <option value="subtract">خصم نقاط</option>
+        <option value="set">تحديد مبلغ ثابت</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">القيمة (نقاط)</label>
+      <input class="form-input" type="number" id="bal-amount" placeholder="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">ملاحظة (اختياري)</label>
+      <input class="form-input" type="text" id="bal-note" placeholder="سبب التعديل...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-balance')">إلغاء</button>
+      <button class="btn btn-primary" onclick="doUpdateBalance()">تطبيق التعديل</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:40px;margin-bottom:16px" id="confirm-icon">⚠️</div>
+    <div class="modal-title" style="justify-content:center" id="confirm-title">تأكيد الإجراء</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:24px" id="confirm-msg">هل أنت متأكد؟</div>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">إلغاء</button>
+      <button class="btn btn-danger" id="confirm-ok-btn" onclick="">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- Withdrawal Review Modal -->
+<div class="modal-overlay" id="modal-wd">
+  <div class="modal" style="max-width:440px">
+    <button class="modal-close" onclick="closeModal('modal-wd')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+      مراجعة طلب السحب
+    </div>
+    <div id="wd-detail-content">—</div>
+    <div class="form-group">
+      <label class="form-label">ملاحظة (اختياري)</label>
+      <input class="form-input" type="text" id="wd-note" placeholder="سبب القبول أو الرفض...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">TX Hash (عند القبول)</label>
+      <input class="form-input" type="text" id="wd-txhash" placeholder="0x..." style="direction:ltr;font-size:12px">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-wd')">إلغاء</button>
+      <button class="btn btn-danger" onclick="resolveWithdrawal('rejected')">رفض</button>
+      <button class="btn btn-success" onclick="resolveWithdrawal('approved')">قبول ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toasts"></div>
 
 <script>
-// ══════════════════════════════════════
-//  CONFIG
-// ══════════════════════════════════════
-const ADMIN_PASS = 'admin123';
-const API_BASE   = 'https://admin-pi-black-84.vercel.app/api';
-const ADMIN_KEY  = 'admin-secret-key-2025';
+// ══════════════════════════════════════════
+// CONFIG — غير هذا لرابط API الفعلي
+// ══════════════════════════════════════════
+const API_BASE    = '/api'; // أو 'https://your-app.vercel.app/api'
+const ADMIN_TOKEN = localStorage.getItem('admin_token') || prompt('🔐 أدخل ADMIN_SECRET:') || '';
+if (ADMIN_TOKEN) localStorage.setItem('admin_token', ADMIN_TOKEN);
 
-// ══════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════
-let editId = null, isSB = false, isHB = false, tasks = [], promos = [];
-
-// ══════════════════════════════════════
-//  TELEGRAM INPUT PARSER
-// ══════════════════════════════════════
-function parseTelegramInput(raw) {
-  const val = (raw || '').replace(/[\x00-\x1F\x7F]/g, '').trim();
-  if (!val) return { valid: false, hint: '', badgeType: null, type: null, channel: null, url: null };
-  if (/\s/.test(val)) return { valid: false, hint: 'لا يُسمح بالمسافات', badgeType: null, type: null, channel: null, url: null };
-  const noAt = val.startsWith('@') ? val.slice(1) : val;
-  const tgUrlRe = /^(?:https?:\/\/)?t\.me\/([a-zA-Z][a-zA-Z0-9_]{3,31})\/?$/i;
-  const tgMatch = tgUrlRe.exec(noAt) || tgUrlRe.exec(val);
-  if (tgMatch) {
-    const ch = tgMatch[1].toLowerCase();
-    return { valid: true, type: 'channel', badgeType: 'tg', channel: ch, url: `https://t.me/${ch}`, hint: `تم التعرف على قناة Telegram: @${ch}` };
-  }
-  const usernameRe = /^[a-zA-Z][a-zA-Z0-9_]{3,31}$/;
-  if (usernameRe.test(noAt)) {
-    const ch = noAt.toLowerCase();
-    return { valid: true, type: 'channel', badgeType: 'tg', channel: ch, url: `https://t.me/${ch}`, hint: `قناة Telegram — سيُستخدم: t.me/${ch}` };
-  }
-  const extUrlRe = /^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})(\/[^\s]*)?$/i;
-  if (extUrlRe.test(val)) {
-    return { valid: true, type: 'url', badgeType: 'url', channel: null, url: val, hint: 'رابط خارجي صالح' };
-  }
-  return { valid: false, type: null, channel: null, url: null, badgeType: null, hint: 'إدخال غير صالح — أدخل يوزرنيم أو رابط صحيح' };
+function apiHeaders() {
+  return { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_TOKEN };
 }
 
-function validateTask(name, reward, parsed) {
-  if (!name || name.length < 2) return { ok: false, error: 'اسم المهمة مطلوب (حرفان على الأقل)' };
-  if (isNaN(reward) || reward <= 0) return { ok: false, error: 'أدخل جائزة صحيحة أكبر من صفر' };
-  if (!parsed || !parsed.valid) return { ok: false, error: 'أدخل رابط أو يوزرنيم صالح' };
-  if (parsed.type === 'channel' && !parsed.channel) return { ok: false, error: 'تعذّر استخراج اسم القناة' };
-  if (parsed.type === 'url' && !parsed.url) return { ok: false, error: 'الرابط الخارجي غير صالح' };
-  return { ok: true };
-}
-
-function getTaskIcon(type) {
-  if (type === 'channel') return '#ic-tg-plane';
-  if (type === 'url')     return '#ic-globe';
-  return '#ic-task';
-}
-
-function updateSmartUI(parsed, inputEl) {
-  const badge = document.getElementById('smart-badge');
-  const hint  = document.getElementById('smart-hint');
-  const val   = (inputEl.value || '').trim();
-  if (!val) {
-    badge.textContent = 'AUTO'; badge.className = 'prefix-badge';
-    hint.className = 'field-hint'; hint.textContent = '';
-    inputEl.classList.remove('err', 'ok');
-    document.getElementById('tch').value = ''; document.getElementById('tu').value = '';
-    return;
-  }
-  if (parsed.badgeType === 'tg')  { badge.textContent = 'TG';  badge.className = 'prefix-badge tg'; }
-  else if (parsed.badgeType === 'url') { badge.textContent = 'URL'; badge.className = 'prefix-badge url'; }
-  else { badge.textContent = 'ERR'; badge.className = 'prefix-badge err-badge'; }
-  if (parsed.valid) {
-    hint.textContent = parsed.hint; hint.className = 'field-hint show-ok';
-    inputEl.classList.remove('err'); inputEl.classList.add('ok');
-    document.getElementById('tch').value = parsed.channel || '';
-    document.getElementById('tu').value  = parsed.url     || '';
-  } else {
-    hint.textContent = parsed.hint || 'إدخال غير صالح'; hint.className = 'field-hint show-err';
-    inputEl.classList.remove('ok'); inputEl.classList.add('err');
-    document.getElementById('tch').value = ''; document.getElementById('tu').value = '';
-  }
-}
-
-function onSmartInput(el) { updateSmartUI(parseTelegramInput(el.value), el); }
-
-function onTypeChange() {
-  const type  = document.getElementById('tt').value;
-  const label = document.getElementById('smart-label');
-  const input = document.getElementById('tsmartinput');
-  if (type === 'channel') { label.textContent = 'رابط القناة أو يوزرنيم *'; input.placeholder = 'مثال: t.me/mychannel أو mychannel'; }
-  else                    { label.textContent = 'رابط خارجي *';              input.placeholder = 'https://example.com/...'; }
-  if (input.value) onSmartInput(input);
-}
-
-function buildTaskCard(t) {
-  const isChannel = t.task_type === 'channel';
-  const iconId    = getTaskIcon(t.task_type);
-  const href      = isChannel ? (t.url || (t.channel ? `https://t.me/${t.channel}` : null)) : t.url;
-  const hasLink   = !!href;
-  const displayText = isChannel ? `@${t.channel || '—'}` : (t.url ? (t.url.length > 40 ? t.url.slice(0, 40) + '…' : t.url) : '—');
-  const badge = isChannel
-    ? `<span class="tk-badge ch"><svg class="icon icon-sm" style="width:10px;height:10px"><use href="#ic-tg-plane"/></svg> TELEGRAM</span>`
-    : `<span class="tk-badge url"><svg class="icon icon-sm" style="width:10px;height:10px"><use href="#ic-globe"/></svg> URL</span>`;
-  const linkEl = hasLink
-    ? `<a class="tk-link" href="${href}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${displayText}</a>`
-    : `<span class="tk-link invalid">${displayText}</span>`;
-  const activeStyle = t.is_active === false ? ' invalid-card' : '';
-  return `<div class="tk${activeStyle}" onclick="${hasLink ? `openTaskLink('${href}')` : ''}" title="${hasLink ? 'انقر لفتح الرابط' : 'رابط غير متاح'}">
-    <div class="tk-ic ${isChannel ? 'tg' : ''}">
-      <svg class="icon icon-md"><use href="${iconId}"/></svg>
-    </div>
-    <div class="tk-info">
-      <div class="tk-name">${t.name} ${badge}</div>
-      <div class="tk-reward">+${parseFloat(t.reward).toFixed(3)} TON</div>
-      ${linkEl}
-    </div>
-    <div class="tk-actions" onclick="event.stopPropagation()">
-      ${hasLink ? `<button class="tk-copy" title="نسخ الرابط" onclick="copyTaskLink('${href}', event)">
-        <svg class="icon icon-sm"><use href="#ic-copy"/></svg>
-      </button>` : ''}
-      <button class="tk-del" title="حذف" onclick="deleteTask('${t.id}')">
-        <svg class="icon icon-md"><use href="#ic-delete"/></svg>
-      </button>
-    </div>
-  </div>`;
-}
-
-function openTaskLink(href) { if (href) window.open(href, '_blank', 'noopener,noreferrer'); }
-function copyTaskLink(href, e) {
-  e && e.stopPropagation();
-  if (!href) return;
-  navigator.clipboard.writeText(href).then(() => toast('تم نسخ الرابط', 'ok')).catch(() => toast('فشل النسخ', 'err'));
-}
-
-// ══════════════════════════════════════
-//  API
-// ══════════════════════════════════════
-async function api(action, body = {}) {
-  const r = await fetch(`${API_BASE}?action=${action}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
-    body: JSON.stringify(body),
-  });
-  return r.json();
-}
-
-// ══════════════════════════════════════
-//  LOGIN
-// ══════════════════════════════════════
-function doLogin() {
-  if (document.getElementById('apass').value === ADMIN_PASS) {
-    document.getElementById('login').style.display = 'none';
-    init();
-  } else {
-    const el = document.getElementById('lerr');
-    el.style.display = 'flex';
-    document.getElementById('apass').value = '';
-    setTimeout(() => el.style.display = 'none', 3000);
-  }
-}
-document.getElementById('apass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-// ══════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════
-function init() {
-  updateTime(); setInterval(updateTime, 1000);
-  loadDash(); loadTasks(); loadRequests(); loadPromos(); loadSpinPanel();
-}
-function updateTime() {
-  const el = document.getElementById('dtime');
-  if (el) el.textContent = new Date().toLocaleString('ar-DZ');
-}
-
-// ══════════════════════════════════════
-//  NAV
-// ══════════════════════════════════════
-function nav(id, el, mobile = false) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('act'));
-  document.getElementById('p-' + id).classList.add('act');
-  if (mobile) {
-    document.querySelectorAll('.bni').forEach(n => n.classList.remove('act'));
-    el.classList.add('act');
-    const sn = document.getElementById('sn-' + id);
-    if (sn) { document.querySelectorAll('.ni').forEach(n => n.classList.remove('act')); sn.classList.add('act'); }
-  } else {
-    document.querySelectorAll('.ni').forEach(n => n.classList.remove('act'));
-    el.classList.add('act');
-    const bn = document.getElementById('bn-' + id);
-    if (bn) { document.querySelectorAll('.bni').forEach(n => n.classList.remove('act')); bn.classList.add('act'); }
-  }
-}
-
-// ══════════════════════════════════════
-//  DASHBOARD
-// ══════════════════════════════════════
-async function loadDash() {
-  document.getElementById('dt').innerHTML = `<tr><td colspan="5" class="lrow"><span class="spin"></span></td></tr>`;
+async function apiFetch(path, opts = {}) {
   try {
-    const [sRes, uRes] = await Promise.all([api('stats'), api('get_users', { limit: 10, offset: 0 })]);
-    if (sRes.ok) {
-      const s = sRes.stats;
-      document.getElementById('s-users').textContent = s.total_users;
-      document.getElementById('s-bal').textContent   = parseFloat(s.total_balance).toFixed(4);
-      document.getElementById('s-ban').textContent   = s.banned_count;
-      document.getElementById('s-pend').textContent  = s.pending_withdrawals;
-      setBadge(s.pending_withdrawals);
-    }
-    if (uRes.ok) {
-      document.getElementById('dt').innerHTML = uRes.users.map(u => `
-        <tr>
-          <td class="tid">${u.telegram_id}</td>
-          <td class="tname">${buildTgLink(u.username, u.telegram_id)}</td>
-          <td class="tbal">${parseFloat(u.balance || 0).toFixed(4)}</td>
-          <td style="color:var(--green)">${u.seeds}</td>
-          <td>${(u.shadow_banned || u.is_hard_banned) ? '<span class="bban">BAN</span>' : '<span class="bok">OK</span>'}</td>
-        </tr>`).join('') || `<tr><td colspan="5" class="lrow">لا يوجد مستخدمون</td></tr>`;
-    }
-  } catch (e) { toast('تحقق من رابط API', 'err'); }
-}
-
-// ══════════════════════════════════════
-//  USERS
-// ══════════════════════════════════════
-function buildTgLink(username, id) {
-  if (username) {
-    return `<a href="https://t.me/${username}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">
-      @${username}
-      <svg class="icon tg-arrow" style="width:12px;height:12px;color:var(--blue)"><use href="#ic-telegram"/></svg>
-    </a>`;
+    const res = await fetch(API_BASE + path, { headers: apiHeaders(), ...opts });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.warn('API error:', e.message);
+    return null;
   }
-  return `<span style="color:var(--t3)">${id}</span>`;
 }
 
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let allUsers   = [];
+let allWds     = [];
+let userFilter = 'all';
+let wdFilter   = 'pending';
+let currentWdId = null;
+let currentUserId = null;
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+const PAGE_TITLES = {
+  dashboard:   ['نظرة عامة',         'إحصائيات عامة للمنصة'],
+  users:       ['إدارة المستخدمين',  'بحث وتعديل وحظر وحذف'],
+  online:      ['المتصلون الآن',      'نشاط حي في الوقت الفعلي'],
+  withdrawals: ['طلبات السحب',        'مراجعة وإدارة طلبات السحب'],
+  settings:    ['الإعدادات',          'تكوين المنصة'],
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(id)) n.classList.add('active');
+  });
+  const [title, sub] = PAGE_TITLES[id] || ['—', ''];
+  document.querySelector('#topbar-info .page-title').textContent = title;
+  document.querySelector('#topbar-info .page-sub').textContent   = sub;
+
+  if (id === 'users')       loadUsers();
+  if (id === 'online')      loadOnline();
+  if (id === 'withdrawals') loadWithdrawals();
+  if (id === 'dashboard')   loadDashboard();
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+async function loadDashboard() {
+  const data = await apiFetch('/admin/stats');
+  if (data) {
+    setText('stat-total',      fmt(data.total_users      ?? data.users ?? '—'));
+    setText('stat-online',     fmt(data.online           ?? '—'));
+    setText('stat-banned',     fmt(data.banned           ?? '—'));
+    setText('stat-pending-wd', fmt(data.pending_withdrawals ?? '—'));
+    setText('stat-ads',        fmt(data.ads_today        ?? '—'));
+    setText('stat-refs',       fmt(data.total_referrals  ?? '—'));
+    setText('badge-users',     fmt(data.total_users ?? data.users ?? ''));
+    setText('badge-online',    fmt(data.online ?? ''));
+    setText('badge-wd',        fmt(data.pending_withdrawals ?? ''));
+  }
+  // Recent users
+  const users = await apiFetch('/admin/users?limit=6&sort=created_at');
+  if (users?.users) renderUsersTable('recent-users-body', users.users, 6);
+}
+
+// ══════════════════════════════════════════
+// USERS
+// ══════════════════════════════════════════
 async function loadUsers() {
-  setUT(skeletonRows(8, 8));
-  try {
-    const r = await api('get_users', { limit: 100 });
-    if (r.ok) renderUsers(r.users, r.total);
-    else toast(r.error, 'err');
-  } catch (e) { toast('خطأ في الاتصال', 'err'); }
+  const data = await apiFetch('/admin/users?limit=100');
+  if (data?.users) {
+    allUsers = data.users;
+    renderUsersFiltered();
+  }
 }
 
-async function searchUser() {
-  const q = document.getElementById('sq').value.trim();
-  if (!q) { loadUsers(); return; }
-  setUT(skeletonRows(3, 8));
-  try {
-    const r = await api('search_user', { q });
-    if (r.ok) renderUsers(r.users, r.users.length);
-    else toast(r.error, 'err');
-  } catch (e) { toast('خطأ', 'err'); }
+function setUserFilter(f, el) {
+  userFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderUsersFiltered();
 }
-document.getElementById('sq').addEventListener('keydown', e => { if (e.key === 'Enter') searchUser(); });
 
-function setUT(html) { document.getElementById('ut').innerHTML = html; }
+function filterUsers() { renderUsersFiltered(); }
 
-function renderUsers(users, total) {
-  document.getElementById('uc').innerHTML = `
-    <svg class="icon icon-sm"><use href="#ic-users"/></svg>
-    ${total} مستخدم
-  `;
-  if (!users.length) {
-    setUT(`<tr><td colspan="8" class="lrow">لا توجد نتائج</td></tr>`);
+function renderUsersFiltered() {
+  const q = document.getElementById('users-search')?.value.toLowerCase() || '';
+  let list = allUsers.filter(u => {
+    const match = !q || (u.tg_username||'').toLowerCase().includes(q)
+      || (u.tg_first_name||'').toLowerCase().includes(q)
+      || String(u.tg_id).includes(q);
+    if (!match) return false;
+    if (userFilter === 'banned')  return u.is_banned;
+    if (userFilter === 'shadow')  return u.is_shadow_banned;
+    if (userFilter === 'premium') return u.tg_is_premium;
+    return true;
+  });
+  renderUsersTable('users-body', list, 7);
+}
+
+function renderUsersTable(tbodyId, users, cols) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  if (!users?.length) {
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;padding:32px;color:var(--muted)">لا يوجد مستخدمون</td></tr>`;
     return;
   }
-  setUT(users.map(u => {
-    const risk = parseInt(u.risk_score || 0);
-    const rc   = risk < 40 ? 'tr0' : risk < 70 ? 'tr1' : 'tr2';
-    const banned = u.shadow_banned || u.is_hard_banned;
-    const ud = JSON.stringify(u).replace(/'/g, "&#39;");
-    return `<tr>
-      <td class="tid">${u.telegram_id}</td>
-      <td class="tname">${buildTgLink(u.username, u.telegram_id)}</td>
-      <td class="tbal">${parseFloat(u.balance || 0).toFixed(4)}</td>
-      <td style="color:var(--green)">${u.seeds}</td>
-      <td style="color:var(--blue)">${u.water_count}</td>
-      <td class="${rc}">${risk}</td>
-      <td>${banned ? '<span class="bban">BAN</span>' : '<span class="bok">OK</span>'}</td>
-      <td>
-        <button class="btn btn-gh btn-sm" onclick='openModal(${ud})'>
-          <svg class="icon icon-sm"><use href="#ic-edit"/></svg>
-        </button>
-      </td>
-    </tr>`;
-  }).join(''));
-}
+  tbody.innerHTML = users.map(u => {
+    const name     = u.tg_first_name || u.tg_username || `#${u.tg_id}`;
+    const initial  = name.charAt(0).toUpperCase();
+    const status   = u.is_banned ? '<span class="badge badge-red"><span class="dot dot-red"></span>محظور</span>'
+                   : u.is_shadow_banned ? '<span class="badge badge-orange"><span class="dot dot-orange"></span>شادو</span>'
+                   : '<span class="badge badge-green"><span class="dot dot-green"></span>نشط</span>';
+    const premium  = u.tg_is_premium ? '<span class="badge badge-purple" style="margin-right:4px">⭐ بريميوم</span>' : '';
+    const date     = u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '—';
+    const ads      = fmt(u.ads_watched_total ?? 0);
+    const refs     = fmt(u.total_referrals ?? 0);
 
-// ══════════════════════════════════════
-//  MODAL
-// ══════════════════════════════════════
-function openModal(u) {
-  editId = u.telegram_id;
-  isSB = !!u.shadow_banned; isHB = !!u.is_hard_banned;
-  document.getElementById('mun').textContent = `@${u.username || u.telegram_id}`;
-  // Telegram link inside modal
-  const tgWrap = document.getElementById('modal-tg-wrap');
-  if (u.username) {
-    tgWrap.innerHTML = `<a class="modal-tg-link" href="https://t.me/${u.username}" target="_blank" rel="noopener noreferrer">
-      <svg class="icon icon-sm"><use href="#ic-telegram"/></svg>
-      فتح @${u.username} على تيليغرام
-      <svg class="icon icon-sm"><use href="#ic-external"/></svg>
-    </a>`;
-  } else {
-    tgWrap.innerHTML = '';
-  }
-  document.getElementById('eb').value = parseFloat(u.balance || 0).toFixed(6);
-  document.getElementById('es').value = u.seeds || 0;
-  document.getElementById('ew').value = u.water_count || 0;
-  document.getElementById('er').value = u.risk_score || 0;
-  syncTog('et-sb', isSB); syncTog('et-hb', isHB);
-  document.getElementById('ov').classList.add('open');
-}
-function closeModal() { document.getElementById('ov').classList.remove('open'); editId = null; }
-document.getElementById('ov').addEventListener('click', e => { if (e.target === document.getElementById('ov')) closeModal(); });
-function syncTog(id, on) { document.getElementById(id).className = 'tog' + (on ? ' on' : ''); }
-function togSB() { isSB = !isSB; syncTog('et-sb', isSB); }
-function togHB() { isHB = !isHB; syncTog('et-hb', isHB); }
-
-async function saveUser() {
-  if (!editId) return;
-  try {
-    const r = await api('update_user', {
-      telegram_id:   editId,
-      balance:       parseFloat(document.getElementById('eb').value),
-      seeds:         parseInt(document.getElementById('es').value),
-      water_count:   parseInt(document.getElementById('ew').value),
-      risk_score:    parseInt(document.getElementById('er').value),
-      shadow_banned: isSB,
-      is_hard_banned: isHB,
-    });
-    if (r.ok) { toast('تم الحفظ بنجاح', 'ok'); closeModal(); }
-    else toast(r.error, 'err');
-  } catch (e) { toast('خطأ في الاتصال', 'err'); }
-}
-
-function resetUser() {
-  document.getElementById('eb').value = 0;
-  document.getElementById('es').value = 3;
-  document.getElementById('ew').value = 3;
-  document.getElementById('er').value = 0;
-  isSB = false; isHB = false;
-  syncTog('et-sb', false); syncTog('et-hb', false);
-  toast('تم التصفير — اضغط حفظ للتأكيد', 'info');
-}
-
-// ══════════════════════════════════════
-//  REQUESTS
-// ══════════════════════════════════════
-async function loadRequests() {
-  document.getElementById('rl').innerHTML = skeletonCards(3);
-  try {
-    const r = await api('get_withdrawals');
-    if (!r.ok) { toast(r.error, 'err'); return; }
-    const list = r.withdrawals || [];
-    setBadge(list.length);
-    if (!list.length) {
-      document.getElementById('rl').innerHTML = `
-        <div class="empty-state">
-          <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
-          <h3>لا توجد طلبات معلقة</h3>
-          <p>ستظهر هنا طلبات السحب عند ورودها</p>
-        </div>`;
-      return;
+    if (cols === 6) {
+      return `<tr onclick="openUserModal(${JSON.stringify(u).replace(/"/g,"'")})">
+        <td><div class="user-cell"><div class="avatar">${initial}</div><div><div class="user-name">${name} ${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
+        <td><strong>${fmt(u.points)}</strong></td>
+        <td><span class="badge badge-blue">Lv ${u.level}</span></td>
+        <td>${status}</td>
+        <td>${date}</td>
+        <td onclick="event.stopPropagation()"><div class="actions">${userActions(u)}</div></td>
+      </tr>`;
     }
-    document.getElementById('rl').innerHTML = list.map(w => `
-      <div class="rcard" id="rc-${w.telegram_id}-${w.index}">
-        <div class="rcard-top">
-          <div class="rav">
-            ${w.photo_url
-              ? `<img src="${w.photo_url}" onerror="this.parentElement.innerHTML='<svg class=\\'icon icon-md\\'><use href=\\'#ic-user\\'/></svg>'">`
-              : `<svg class="icon icon-md"><use href="#ic-user"/></svg>`}
-          </div>
-          <div style="flex:1">
-            <div class="rname">
-              ${w.username
-                ? `<a href="https://t.me/${w.username}" target="_blank" rel="noopener noreferrer">
-                    <svg class="icon icon-sm"><use href="#ic-telegram"/></svg>
-                    @${w.username}
-                  </a>`
-                : `<span>ID: ${w.telegram_id}</span>`}
-            </div>
-            <div class="rmeta">ID: ${w.telegram_id} &nbsp;·&nbsp; ${new Date(w.date).toLocaleString('ar-DZ')}</div>
-          </div>
-          <div class="ramt">${w.amount} TON</div>
-        </div>
-        <div class="rwallet">
-          <svg class="icon icon-sm" style="flex-shrink:0;margin-top:1px"><use href="#ic-wallet"/></svg>
-          ${w.account}
-        </div>
-        <div class="ract">
-          <button class="btn btn-g btn-sm" onclick="resolveWD(${w.telegram_id},${w.index},'approved')">
-            <svg class="icon icon-sm"><use href="#ic-check"/></svg>
-            موافقة
-          </button>
-          <button class="btn btn-r btn-sm" onclick="resolveWD(${w.telegram_id},${w.index},'rejected')">
-            <svg class="icon icon-sm"><use href="#ic-close"/></svg>
-            رفض
-          </button>
-        </div>
-      </div>`).join('');
-  } catch (e) { toast('خطأ في تحميل الطلبات', 'err'); }
-}
-
-async function resolveWD(tid, idx, verdict) {
-  try {
-    const r = await api('resolve_withdrawal', { telegram_id: tid, index: idx, verdict });
-    if (r.ok) {
-      document.getElementById(`rc-${tid}-${idx}`)?.remove();
-      toast(verdict === 'approved' ? 'تم قبول الطلب' : 'تم رفض الطلب', verdict === 'rejected' ? 'err' : 'ok');
-      const b = parseInt(document.getElementById('rb').textContent || 0);
-      setBadge(Math.max(0, b - 1));
-    } else toast(r.error, 'err');
-  } catch (e) { toast('خطأ', 'err'); }
-}
-
-// ══════════════════════════════════════
-//  TASKS
-// ══════════════════════════════════════
-async function loadTasks() {
-  try {
-    const r = await api('get_tasks');
-    if (r.ok) { tasks = r.tasks || []; renderTasks(); }
-    else toast(r.error, 'err');
-  } catch (e) { toast('فشل تحميل المهام', 'err'); }
-}
-
-function renderTasks() {
-  document.getElementById('tc').textContent = tasks.length;
-  const tl = document.getElementById('tl');
-  if (!tasks.length) {
-    tl.innerHTML = `<div class="empty-state" style="padding:40px 20px">
-      <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-task"/></svg></div>
-      <h3>لا توجد مهام</h3>
-      <p>أضف أول مهمة باستخدام النموذج أعلاه</p>
-    </div>`;
-    document.getElementById('tj').value = '[]';
-    return;
-  }
-  tl.innerHTML = tasks.map(t => buildTaskCard(t)).join('');
-  document.getElementById('tj').value = JSON.stringify(tasks, null, 2);
-}
-
-async function addTask() {
-  const name     = document.getElementById('tn').value.trim();
-  const reward   = parseFloat(document.getElementById('tr').value);
-  const type     = document.getElementById('tt').value;
-  const desc     = document.getElementById('td').value.trim();
-  const rawInput = document.getElementById('tsmartinput').value.trim();
-  const parsed   = parseTelegramInput(rawInput);
-  const v        = validateTask(name, reward, parsed);
-  if (!v.ok) { toast(v.error, 'err'); return; }
-  const finalType = parsed.type === 'channel' ? 'channel' : 'url';
-  if (type === 'channel' && finalType === 'url')     toast('تم اكتشاف رابط خارجي — تم التحويل تلقائياً', 'info');
-  else if (type === 'url' && finalType === 'channel') toast('تم اكتشاف قناة Telegram — تم التحويل تلقائياً', 'info');
-  const rawId = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\u0600-\u06FF]/g, '').slice(0, 28) + '_' + Date.now().toString().slice(-5);
-  const task = { id: rawId, name, reward, task_type: finalType, url: parsed.url, channel: finalType === 'channel' ? parsed.channel : null, description: desc, is_active: true };
-  try {
-    const r = await api('add_task', task);
-    if (!r.ok) { toast(r.error || 'فشل الإضافة', 'err'); return; }
-  } catch (e) { toast('خطأ في الاتصال', 'err'); return; }
-  tasks.push(task);
-  renderTasks();
-  ['tn','tr','td'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  const smartEl = document.getElementById('tsmartinput');
-  smartEl.value = '';
-  updateSmartUI({ valid: false, hint: '', badgeType: null }, smartEl);
-  toast('تمت إضافة المهمة بنجاح', 'ok');
-}
-
-async function deleteTask(id) {
-  if (!confirm('حذف المهمة؟ سيُحذف أيضاً سجل إنجازات المستخدمين.')) return;
-  try {
-    const r = await api('delete_task', { id });
-    if (!r.ok) { toast(r.error, 'err'); return; }
-  } catch (e) { toast('خطأ', 'err'); return; }
-  tasks = tasks.filter(t => t.id !== id);
-  renderTasks();
-  toast('تم حذف المهمة', 'info');
-}
-
-function copyJson() {
-  navigator.clipboard.writeText(document.getElementById('tj').value)
-    .then(() => toast('تم نسخ JSON', 'ok'));
-}
-
-// ══════════════════════════════════════
-//  PROMO CODES
-// ══════════════════════════════════════
-async function loadPromos() {
-  try {
-    const r = await api('get_promos');
-    if (r.ok) { promos = r.promos || []; renderPromos(); }
-    else if (r.error && r.error.includes('Unknown')) {
-      // جدول غير موجود بعد — ابدأ فارغ
-      promos = []; renderPromos();
-    } else toast(r.error, 'err');
-  } catch (e) { toast('فشل تحميل الأكواد', 'err'); }
-}
-
-function promoStatus(p) {
-  const now = new Date();
-  if (p.expires_at && new Date(p.expires_at) < now) return 'expired';
-  const maxUses = parseInt(p.max_uses || 0);
-  const uses    = parseInt(p.used_count || 0);
-  if (maxUses > 0 && uses >= maxUses) return 'used';
-  return 'active';
-}
-
-function promoStatusLabel(s) {
-  if (s === 'expired') return 'منتهي';
-  if (s === 'used')    return 'مستنفد';
-  return 'نشط';
-}
-
-function renderPromos() {
-  document.getElementById('promo-count').textContent = promos.length;
-  const list = document.getElementById('promo-list');
-  if (!promos.length) {
-    list.innerHTML = `<div class="empty-state">
-      <div class="es-icon"><svg class="icon icon-lg" style="color:var(--purple)"><use href="#ic-promo"/></svg></div>
-      <h3>لا توجد أكواد</h3>
-      <p>أضف أول كود برومو باستخدام النموذج أعلاه</p>
-    </div>`;
-    return;
-  }
-  list.innerHTML = promos.map(p => {
-    const st    = promoStatus(p);
-    const stLbl = promoStatusLabel(st);
-    const uses  = parseInt(p.used_count || 0);
-    const max   = parseInt(p.max_uses || 0);
-    const expiry = p.expires_at ? new Date(p.expires_at).toLocaleDateString('ar-DZ') : '—';
-    return `<div class="pc">
-      <div class="pc-icon">
-        <svg class="icon icon-md"><use href="#ic-promo"/></svg>
-      </div>
-      <div class="pc-info">
-        <div class="pc-code">${p.code}</div>
-        <div class="pc-meta">
-          ${parseFloat(p.reward_balance||0)>0?`<span><svg class="icon icon-sm" style="width:11px;height:11px;color:var(--blue)"><use href="#ic-zap"/></svg> ${parseFloat(p.reward_balance).toFixed(3)} TON</span>`:''}
-          ${parseInt(p.reward_seeds||0)>0?`<span>🌱 ${parseInt(p.reward_seeds)} بذرة</span>`:''}
-          ${parseInt(p.reward_water||0)>0?`<span>💧 ${parseInt(p.reward_water)} ماء</span>`:''}
-          <span><svg class="icon icon-sm" style="width:11px;height:11px"><use href="#ic-clock"/></svg> ${expiry}</span>
-          ${p.description ? `<span>${p.description}</span>` : ''}
-        </div>
-      </div>
-      <div class="pc-uses">
-        <strong>${uses}</strong>
-        ${max > 0 ? `/ ${max}` : '∞'}
-      </div>
-      <span class="pc-status ${st}">${stLbl}</span>
-      <button class="pc-del" onclick="deletePromo('${p.code}')" title="حذف الكود">
-        <svg class="icon icon-md"><use href="#ic-delete"/></svg>
-      </button>
-    </div>`;
+    return `<tr onclick="openUserModal(${encodeUser(u)})">
+      <td><div class="user-cell"><div class="avatar">${initial}</div><div><div class="user-name">${name} ${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
+      <td><strong>${fmt(u.points)}</strong></td>
+      <td><span class="badge badge-blue">Lv ${u.level}</span></td>
+      <td>${ads}</td>
+      <td>${refs}</td>
+      <td>${status}</td>
+      <td onclick="event.stopPropagation()"><div class="actions">${userActions(u)}</div></td>
+    </tr>`;
   }).join('');
 }
 
-async function addPromo() {
-  const code    = document.getElementById('pcode').value.trim().toUpperCase();
-  const ton     = parseFloat(document.getElementById('preward_ton').value   || 0);
-  const seeds   = parseInt(document.getElementById('preward_seeds').value   || 0);
-  const water   = parseInt(document.getElementById('preward_water').value   || 0);
-  const maxUses = parseInt(document.getElementById('pmaxuses').value || 0);
-  const expiry  = document.getElementById('pexpiry').value;
-  const desc    = document.getElementById('pdesc').value.trim();
-
-  if (!code || code.length < 2)      { toast('أدخل كود صالح (حرفان على الأقل)', 'err'); return; }
-  if (!/^[A-Z0-9_\-]+$/.test(code)) { toast('الكود يجب أن يحتوي على أحرف إنجليزية وأرقام فقط', 'err'); return; }
-  if (ton <= 0 && seeds <= 0 && water <= 0) { toast('حدد مكافأة واحدة على الأقل (TON أو بذور أو ماء)', 'err'); return; }
-
-  try {
-    const r = await api('add_promo', {
-      code, reward_ton: ton, reward_seeds: seeds, reward_water: water,
-      max_uses: maxUses, expires_at: expiry || null, description: desc
-    });
-    if (!r.ok) { toast(r.error || 'فشل الإضافة', 'err'); return; }
-    toast('تم إضافة الكود بنجاح', 'ok');
-    ['pcode','preward_ton','preward_seeds','preward_water','pmaxuses','pexpiry','pdesc'].forEach(id => { document.getElementById(id).value = ''; });
-    await loadPromos();
-  } catch (e) { toast('خطأ في الاتصال', 'err'); }
+function encodeUser(u) {
+  return `'${JSON.stringify(u).replace(/'/g, "\\'")}'`;
 }
 
-async function deletePromo(code) {
-  if (!confirm(`حذف الكود "${code}"؟`)) return;
-  try {
-    const r = await api('delete_promo', { code });
-    if (r.ok) { promos = promos.filter(p => p.code !== code); renderPromos(); toast('تم حذف الكود', 'info'); }
-    else toast(r.error, 'err');
-  } catch (e) { toast('خطأ', 'err'); }
-}
-
-// ══════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════
-function setBadge(n) {
-  ['rb','rbb'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = n;
-  });
-}
-
-let _toastQ = [];
-function toast(msg, type = 'ok') {
-  const container = document.getElementById('toast-container');
-  const el = document.createElement('div');
-  el.className = `toast-item${type === 'err' ? ' err' : type === 'info' ? ' info' : ''}`;
-  const iconId = type === 'err' ? '#ic-ban' : type === 'info' ? '#ic-link' : '#ic-check';
-  el.innerHTML = `<svg class="icon icon-sm" style="flex-shrink:0"><use href="${iconId}"/></svg>${msg}`;
-  container.appendChild(el);
-  requestAnimationFrame(() => el.classList.add('show'));
-  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2800);
-}
-
-function skeletonRows(count, cols) {
-  return Array(count).fill(0).map(() =>
-    `<tr>${Array(cols).fill(0).map(() =>
-      `<td><div class="skel skel-line" style="width:${40 + Math.random()*40}%;height:10px"></div></td>`
-    ).join('')}</tr>`
-  ).join('');
-}
-
-function skeletonCards(count) {
-  return Array(count).fill(0).map(() => `
-    <div class="rcard">
-      <div class="skel-row">
-        <div class="skel skel-av"></div>
-        <div style="flex:1">
-          <div class="skel skel-line" style="width:55%;height:12px;margin-bottom:6px"></div>
-          <div class="skel skel-line" style="width:35%;height:9px"></div>
-        </div>
-        <div class="skel skel-line" style="width:80px;height:16px"></div>
-      </div>
-      <div class="skel skel-line" style="width:90%;height:10px;margin:6px 15px 10px"></div>
+function userActions(u) {
+  return `
+    <div class="icon-btn" title="عرض التفاصيل" onclick="openUserModalById(${u.tg_id})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     </div>
-  `).join('');
-}
-// ══════════════════════════════════════
-//  SPIN PANEL
-// ══════════════════════════════════════
-let spinChannels = [], spinWithdrawals = [];
-
-function showSpinTab(tab) {
-  ['channels','players','withdrawals'].forEach(t => {
-    const el = document.getElementById('spin-tab-' + t);
-    const btn = document.getElementById('stab-' + t);
-    if (el)  el.style.display  = t === tab ? '' : 'none';
-    if (btn) {
-      btn.classList.toggle('act-tab', t === tab);
-      btn.classList.toggle('btn-gold', t === tab);
-      btn.classList.toggle('btn-gh', t !== tab);
-    }
-  });
-  if (tab === 'players')     loadSpinPlayers();
-  if (tab === 'withdrawals') loadSpinWithdrawals();
+    <div class="icon-btn success" title="تعديل رصيد" onclick="openBalanceModal(${u.tg_id})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+    ${u.is_banned
+      ? `<div class="icon-btn success" title="رفع الحظر" onclick="confirmAction('رفع الحظر عن #${u.tg_id}?','✅','success',()=>banUser(${u.tg_id},false))">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>`
+      : `<div class="icon-btn danger" title="حظر" onclick="confirmAction('حظر المستخدم #${u.tg_id}?','🚫','danger',()=>banUser(${u.tg_id},true))">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        </div>`}
+    <div class="icon-btn danger" title="حذف" onclick="confirmAction('حذف المستخدم #${u.tg_id} نهائياً؟','🗑️','danger',()=>deleteUser(${u.tg_id}))">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+    </div>
+  `;
 }
 
-async function loadSpinPanel() {
-  // stats
-  try {
-    const r = await api('spin_stats');
-    if (r.ok) {
-      const s = r.stats;
-      document.getElementById('sp-total').textContent    = s.total_players;
-      document.getElementById('sp-bal').textContent      = s.total_balance;
-      document.getElementById('sp-spins').textContent    = s.total_spins;
-      document.getElementById('sp-verified').textContent = s.channels_verified;
-      document.getElementById('sp-ban').textContent      = s.banned_count;
-      document.getElementById('sp-pend').textContent     = s.pending_withdrawals;
-      const badge = document.getElementById('sp-wd-badge');
-      if (badge) { badge.textContent = s.pending_withdrawals; badge.style.display = s.pending_withdrawals > 0 ? '' : 'none'; }
-    }
-  } catch(e) { toast('خطأ في تحميل إحصائيات Spin', 'err'); }
-  // channels
-  await loadSpinChannels();
-}
-
-// ── CHANNELS ──────────────────────────
-async function loadSpinChannels() {
-  try {
-    const r = await api('spin_get_channels');
-    if (r.ok) { spinChannels = r.channels || []; renderSpinChannels(); }
-    else toast(r.error || 'فشل تحميل القنوات', 'err');
-  } catch(e) { toast('خطأ في الاتصال', 'err'); }
-}
-
-function renderSpinChannels() {
-  document.getElementById('spin-ch-count').textContent = spinChannels.length;
-  const list = document.getElementById('spin-ch-list');
-  if (!spinChannels.length) {
-    list.innerHTML = `<div class="empty-state">
-      <div class="es-icon" style="color:var(--gold)">
-        <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
-      </div>
-      <h3>لا توجد قنوات</h3>
-      <p>أضف قناة أعلاه لتظهر في شاشة الانضمام</p>
-    </div>`;
+// ══════════════════════════════════════════
+// ONLINE USERS
+// ══════════════════════════════════════════
+async function loadOnline() {
+  const data = await apiFetch('/admin/users?online=true&limit=50');
+  const users = data?.users || [];
+  setText('online-count', users.length);
+  setText('badge-online', users.length);
+  const tbody = document.getElementById('online-body');
+  if (!users.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">لا يوجد متصلون حالياً</td></tr>`;
     return;
   }
-  list.innerHTML = spinChannels.map(ch => {
-    const d = ch.created_at ? new Date(ch.created_at).toLocaleDateString('ar-DZ') : '';
-    return `<div class="spin-ch-card">
-      <div class="spin-ch-icon">
-        <svg class="icon icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
-      </div>
-      <div>
-        <div class="spin-ch-name"><span class="spin-ch-at">@</span>${ch.username}</div>
-        <div class="spin-ch-date">${d}</div>
-      </div>
-      <div style="margin-right:auto">
-        <a href="https://t.me/${ch.username}" target="_blank" rel="noopener" class="btn btn-gh btn-sm" style="text-decoration:none">
-          <svg class="icon icon-sm"><use href="#ic-external"/></svg>
-        </a>
-      </div>
-      <button class="spin-ch-del" onclick="deleteSpinChannel(${ch.id}, '${ch.username}')" title="حذف">
-        <svg class="icon icon-sm"><use href="#ic-delete"/></svg>
-      </button>
-    </div>`;
-  }).join('');
-}
-
-async function addSpinChannel() {
-  const raw = document.getElementById('spin-ch-input').value.trim();
-  if (!raw) { toast('أدخل اسم القناة', 'err'); return; }
-  try {
-    const r = await api('spin_add_channel', { username: raw });
-    if (!r.ok) { toast(r.error || 'فشل الإضافة', 'err'); return; }
-    document.getElementById('spin-ch-input').value = '';
-    toast('تمت إضافة القناة', 'ok');
-    await loadSpinChannels();
-  } catch(e) { toast('خطأ في الاتصال', 'err'); }
-}
-
-async function deleteSpinChannel(id, name) {
-  if (!confirm(`حذف @${name} من قنوات الانضمام؟`)) return;
-  try {
-    const r = await api('spin_delete_channel', { id });
-    if (!r.ok) { toast(r.error, 'err'); return; }
-    toast('تم حذف القناة', 'info');
-    await loadSpinChannels();
-  } catch(e) { toast('خطأ', 'err'); }
-}
-
-// ── PLAYERS ───────────────────────────
-async function loadSpinPlayers() {
-  document.getElementById('spin-pt').innerHTML = skeletonRows(6, 8);
-  try {
-    const r = await api('spin_get_players', { limit: 100 });
-    if (r.ok) renderSpinPlayers(r.players, r.total);
-    else toast(r.error, 'err');
-  } catch(e) { toast('خطأ', 'err'); }
-}
-
-async function searchSpinPlayer() {
-  const q = document.getElementById('spin-sq').value.trim();
-  if (!q) { loadSpinPlayers(); return; }
-  document.getElementById('spin-pt').innerHTML = skeletonRows(3, 8);
-  try {
-    const r = await api('spin_search_player', { q });
-    if (r.ok) renderSpinPlayers(r.players, r.players.length);
-    else toast(r.error, 'err');
-  } catch(e) { toast('خطأ', 'err'); }
-}
-document.addEventListener('DOMContentLoaded', () => {
-  const sq = document.getElementById('spin-sq');
-  if (sq) sq.addEventListener('keydown', e => { if (e.key === 'Enter') searchSpinPlayer(); });
-});
-
-function renderSpinPlayers(players, total) {
-  document.getElementById('spin-pc').innerHTML = `<svg class="icon icon-sm"><use href="#ic-users"/></svg> ${total} لاعب`;
-  if (!players || !players.length) {
-    document.getElementById('spin-pt').innerHTML = `<tr><td colspan="8" class="lrow">لا توجد نتائج</td></tr>`;
-    return;
-  }
-  document.getElementById('spin-pt').innerHTML = players.map(u => {
-    const name = u.first_name || u.username || '—';
-    const banned = u.shadow_banned || u.is_hard_banned;
-    const chOk   = u.channels_ok;
+  tbody.innerHTML = users.map(u => {
+    const name    = u.tg_first_name || u.tg_username || `#${u.tg_id}`;
+    const initial = name.charAt(0).toUpperCase();
+    const ago     = timeAgo(u.updated_at);
     return `<tr>
-      <td class="tid">${u.telegram_id}</td>
-      <td class="tname">${u.username ? buildTgLink(u.username, u.telegram_id) : `<span style="color:var(--t3)">${name}</span>`}</td>
-      <td class="tbal">${parseFloat(u.balance||0).toFixed(4)}</td>
-      <td style="color:var(--purple)">${u.spins||0}</td>
-      <td style="color:var(--t2)">${u.total_spins||0}</td>
-      <td>${chOk ? '<span class="bok">✓</span>' : '<span style="color:var(--t4)">—</span>'}</td>
-      <td>${banned ? '<span class="bban">BAN</span>' : '<span class="bok">OK</span>'}</td>
-      <td>
-        <button class="btn btn-gh btn-sm" onclick='openSpinPlayerModal(${JSON.stringify(u).replace(/'/g,"&#39;")})'>
-          <svg class="icon icon-sm"><use href="#ic-edit"/></svg>
-        </button>
-      </td>
+      <td><div class="user-cell"><div class="avatar">${initial}</div><div><div class="user-name">${name}</div><div class="user-id">${u.tg_id}</div></div></div></td>
+      <td><strong>${fmt(u.points)}</strong></td>
+      <td><span class="badge badge-blue">Lv ${u.level}</span></td>
+      <td><span class="badge badge-green"><span class="online-pulse" style="width:6px;height:6px;margin-left:2px"></span>${ago}</span></td>
+      <td><div class="actions">${userActions(u)}</div></td>
     </tr>`;
   }).join('');
 }
 
-// ── SPIN PLAYER MODAL (reuse existing modal) ──
-function openSpinPlayerModal(u) {
-  editId = u.telegram_id;
-  isSB = !!u.shadow_banned; isHB = !!u.is_hard_banned;
-  document.getElementById('mun').textContent = `@${u.username || u.telegram_id}`;
-  const tgWrap = document.getElementById('modal-tg-wrap');
-  tgWrap.innerHTML = u.username ? `<a class="modal-tg-link" href="https://t.me/${u.username}" target="_blank" rel="noopener noreferrer">
-    <svg class="icon icon-sm"><use href="#ic-telegram"/></svg> فتح @${u.username} <svg class="icon icon-sm"><use href="#ic-external"/></svg>
-  </a>` : '';
-  document.getElementById('eb').value = parseFloat(u.balance||0).toFixed(6);
-  document.getElementById('es').value = u.spins || 0;
-  document.getElementById('ew').value = u.total_spins || 0;
-  document.getElementById('er').value = 0;
-  // relabel fields for spin context
-  document.querySelectorAll('.modal .fl')[1].textContent = 'Spins المتاحة';
-  document.querySelectorAll('.modal .fl')[2].textContent = 'إجمالي Spins';
-  syncTog('et-sb', isSB); syncTog('et-hb', isHB);
-  document.getElementById('ov').classList.add('open');
-  // override save for spin players
-  document.querySelector('#ov .btn-g').onclick = saveSpinPlayer;
+// ══════════════════════════════════════════
+// WITHDRAWALS
+// ══════════════════════════════════════════
+async function loadWithdrawals() {
+  const statusMap = { pending:'pending', approved:'approved', rejected:'rejected', all:'' };
+  const s = statusMap[wdFilter] || '';
+  const data = await apiFetch('/admin/withdrawals' + (s ? `?status=${s}` : ''));
+  allWds = data?.withdrawals || [];
+  setText('badge-wd', allWds.filter(w=>w.status==='pending').length);
+  renderWithdrawals();
 }
 
-async function saveSpinPlayer() {
-  if (!editId) return;
-  try {
-    const r = await api('spin_update_player', {
-      telegram_id:    editId,
-      balance:        parseFloat(document.getElementById('eb').value),
-      spins:          parseInt(document.getElementById('es').value),
-      shadow_banned:  isSB,
-      is_hard_banned: isHB,
-    });
-    if (!r.ok) { toast(r.error || 'فشل الحفظ', 'err'); return; }
-    closeModal();
-    toast('تم الحفظ', 'ok');
-    loadSpinPlayers();
-    // reset save button
-    document.querySelector('#ov .btn-g').onclick = saveUser;
-  } catch(e) { toast('خطأ', 'err'); }
+function setWdFilter(f, el) {
+  wdFilter = f;
+  document.querySelectorAll('#page-withdrawals .filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadWithdrawals();
 }
 
-// ── SPIN WITHDRAWALS ──────────────────
-async function loadSpinWithdrawals() {
-  document.getElementById('spin-wl').innerHTML = skeletonCards(3);
-  try {
-    const r = await api('spin_get_withdrawals');
-    if (r.ok) { spinWithdrawals = r.withdrawals || []; renderSpinWithdrawals(); }
-    else toast(r.error, 'err');
-  } catch(e) { toast('خطأ', 'err'); }
-}
-
-function renderSpinWithdrawals() {
-  const el = document.getElementById('spin-wl');
-  if (!spinWithdrawals.length) {
+function renderWithdrawals() {
+  const el = document.getElementById('withdrawals-list');
+  if (!allWds.length) {
     el.innerHTML = `<div class="empty-state">
-      <div class="es-icon"><svg class="icon icon-lg"><use href="#ic-withdraw"/></svg></div>
-      <h3>لا توجد سحوبات معلقة</h3>
-      <p>ستظهر هنا طلبات سحب TON من اللاعبين</p>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/></svg>
+      <p>لا توجد طلبات</p>
     </div>`;
     return;
   }
-  el.innerHTML = spinWithdrawals.map((w, i) => {
-    const addr = w.address || '—';
-    const shortAddr = addr.length > 16 ? addr.slice(0,8) + '...' + addr.slice(-6) : addr;
-    const dt = w.date ? new Date(w.date).toLocaleString('ar-DZ') : '—';
-    return `<div class="rcard">
-      <div class="skel-row" style="display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4)">
-        <div class="rav" style="background:linear-gradient(135deg,#FFD96630,#E0A01830);color:var(--gold);border:1px solid rgba(240,192,64,.25);border-radius:var(--r2);width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mono);font-size:11px;font-weight:700">
-          TON
+  el.innerHTML = allWds.map(w => {
+    const name    = w.tg_username ? `@${w.tg_username}` : `#${w.user_id}`;
+    const initial = (w.tg_first_name || name).charAt(0).toUpperCase();
+    const date    = new Date(w.created_at).toLocaleDateString('ar-SA');
+    const statusBadge = {
+      pending:  '<span class="badge badge-orange">معلق ⏳</span>',
+      approved: '<span class="badge badge-green">مقبول ✓</span>',
+      rejected: '<span class="badge badge-red">مرفوض ✗</span>',
+    }[w.status] || `<span class="badge badge-muted">${w.status}</span>`;
+
+    const actions = w.status === 'pending'
+      ? `<button class="btn btn-success btn-sm" onclick="openWdModal(${w.id})">مراجعة</button>`
+      : `<button class="btn btn-ghost btn-sm" onclick="openWdModal(${w.id})">عرض</button>`;
+
+    return `<div class="withdrawal-card">
+      <div class="wd-avatar">${initial}</div>
+      <div class="wd-info">
+        <div class="wd-name">${w.tg_first_name || ''} <span style="color:var(--muted);font-weight:400">${name}</span></div>
+        <div class="wd-address">${w.address}</div>
+        <div class="wd-meta">
+          ${statusBadge}
+          <span class="wd-date">${date}</span>
+        </div>
+      </div>
+      <div style="text-align:left">
+        <div class="wd-amount">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
+        <div class="wd-pts">${fmt(w.pts)} نقطة</div>
+      </div>
+      <div class="wd-actions">${actions}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openUserModal(u) {
+  if (typeof u === 'string') { try { u = JSON.parse(u); } catch(e) { return; } }
+  currentUserId = u.tg_id;
+  const name = u.tg_first_name || u.tg_username || `#${u.tg_id}`;
+  const status = u.is_banned ? '<span class="badge badge-red">محظور</span>'
+               : u.is_shadow_banned ? '<span class="badge badge-orange">شادو بان</span>'
+               : '<span class="badge badge-green">نشط</span>';
+
+  document.getElementById('user-detail-content').innerHTML = `
+    <div class="user-detail-header">
+      <div class="user-detail-avatar">${name.charAt(0).toUpperCase()}</div>
+      <div>
+        <div class="user-detail-name">${name} ${u.tg_is_premium ? '⭐' : ''}</div>
+        <div class="user-detail-meta">${u.tg_username ? '@' + u.tg_username : ''} · ID: ${u.tg_id}</div>
+        <div style="margin-top:6px">${status}</div>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-item-label">النقاط</div><div class="detail-item-value" style="color:var(--gold)">${fmt(u.points)}</div></div>
+      <div class="detail-item"><div class="detail-item-label">المستوى</div><div class="detail-item-value">${u.level}</div></div>
+      <div class="detail-item"><div class="detail-item-label">الإعلانات الكلية</div><div class="detail-item-value">${fmt(u.ads_watched_total)}</div></div>
+      <div class="detail-item"><div class="detail-item-label">الإحالات</div><div class="detail-item-value">${u.total_referrals}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Risk Score</div><div class="detail-item-value" style="color:${u.risk_score>60?'var(--red)':'var(--green)'}">${u.risk_score}</div></div>
+      <div class="detail-item"><div class="detail-item-label">تاريخ التسجيل</div><div class="detail-item-value" style="font-size:12px">${u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '—'}</div></div>
+      ${u.ban_reason ? `<div class="detail-item" style="grid-column:1/-1"><div class="detail-item-label">سبب الحظر</div><div class="detail-item-value" style="color:var(--red);font-size:13px">${u.ban_reason}</div></div>` : ''}
+    </div>
+  `;
+  document.getElementById('user-detail-actions').innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="openBalanceModal(${u.tg_id});closeModal('modal-user')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      تعديل رصيد
+    </button>
+    ${u.is_banned
+      ? `<button class="btn btn-success btn-sm" onclick="banUser(${u.tg_id},false);closeModal('modal-user')">رفع الحظر</button>`
+      : `<button class="btn btn-danger btn-sm" onclick="confirmAction('حظر #${u.tg_id}?','🚫','danger',()=>{banUser(${u.tg_id},true);closeModal('modal-user')})">حظر</button>`}
+    <button class="btn btn-danger btn-sm" onclick="confirmAction('حذف #${u.tg_id} نهائياً؟','🗑️','danger',()=>{deleteUser(${u.tg_id});closeModal('modal-user')})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      حذف
+    </button>
+  `;
+  openModal('modal-user');
+}
+
+async function openUserModalById(tgId) {
+  const data = await apiFetch(`/admin/user/${tgId}`);
+  if (data?.user) openUserModal(data.user);
+}
+
+function openBalanceModal(tgId) {
+  if (tgId) document.getElementById('bal-user-id').value = tgId;
+  openModal('modal-balance');
+}
+
+function openAddBalanceModal() { openModal('modal-balance'); }
+
+function openWdModal(wdId) {
+  currentWdId = wdId;
+  const w = allWds.find(x => x.id === wdId);
+  if (!w) return;
+  const name = w.tg_first_name || w.tg_username || `#${w.user_id}`;
+  document.getElementById('wd-detail-content').innerHTML = `
+    <div style="background:var(--surface);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">${name}</div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:12px">ID: ${w.user_id}</div>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">المبلغ</div>
+          <div style="font-size:22px;font-weight:900;color:var(--gold)">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
+          <div style="font-size:12px;color:var(--muted)">${fmt(w.pts)} نقطة</div>
         </div>
         <div style="flex:1;min-width:0">
-          <div class="rname">${w.username || w.telegram_id}</div>
-          <div class="rmeta">
-            <span style="color:var(--t3);font-size:9px;font-family:var(--mono)">${shortAddr}</span>
-          </div>
-        </div>
-        <div class="ramt" style="color:var(--gold)">${parseFloat(w.amount||0).toFixed(4)} TON</div>
-      </div>
-      <div class="rdet" style="padding:0 var(--s4) var(--s3)">
-        <span class="rdate">${dt}</span>
-        <div style="display:flex;gap:var(--s2)">
-          <button class="btn btn-g btn-sm" onclick="resolveSpinWD(${w.telegram_id},${w.index},'completed')">
-            <svg class="icon icon-sm"><use href="#ic-check"/></svg> موافقة
-          </button>
-          <button class="btn btn-r btn-sm" onclick="resolveSpinWD(${w.telegram_id},${w.index},'rejected')">
-            <svg class="icon icon-sm"><use href="#ic-ban"/></svg> رفض
-          </button>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px">عنوان المحفظة</div>
+          <div style="font-family:monospace;font-size:11px;word-break:break-all;background:var(--bg);padding:8px;border-radius:6px">${w.address}</div>
         </div>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+  `;
+  openModal('modal-wd');
 }
 
-async function resolveSpinWD(tid, index, verdict) {
-  const label = verdict === 'completed' ? 'الموافقة' : 'الرفض';
-  if (!confirm(`تأكيد ${label} للسحب؟`)) return;
-  try {
-    const r = await api('spin_resolve_withdrawal', { telegram_id: tid, index, verdict });
-    if (!r.ok) { toast(r.error || 'فشل', 'err'); return; }
-    toast(verdict === 'completed' ? 'تم القبول ✓' : 'تم الرفض', 'ok');
-    await loadSpinWithdrawals();
-    await loadSpinPanel();
-  } catch(e) { toast('خطأ', 'err'); }
+// ══════════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════════
+async function banUser(tgId, ban) {
+  const data = await apiFetch(`/admin/ban`, {
+    method: 'POST',
+    body: JSON.stringify({ tg_id: tgId, ban, reason: ban ? 'admin_action' : null }),
+  });
+  if (data?.ok) {
+    toast(ban ? `تم حظر #${tgId}` : `رُفع الحظر عن #${tgId}`, ban ? 'error' : 'success');
+    refreshData();
+  } else toast('فشل الإجراء', 'error');
 }
+
+async function deleteUser(tgId) {
+  const data = await apiFetch(`/admin/user/${tgId}`, { method: 'DELETE' });
+  if (data?.ok) { toast(`حُذف المستخدم #${tgId}`, 'success'); refreshData(); }
+  else toast('فشل الحذف', 'error');
+}
+
+async function doUpdateBalance() {
+  const uid    = document.getElementById('bal-user-id').value.trim();
+  const action = document.getElementById('bal-action').value;
+  const amount = parseInt(document.getElementById('bal-amount').value);
+  const note   = document.getElementById('bal-note').value.trim();
+  if (!uid || !amount) return toast('أدخل البيانات كاملة', 'error');
+  const data = await apiFetch('/admin/balance', {
+    method: 'POST',
+    body: JSON.stringify({ tg_id: uid, action, amount, note }),
+  });
+  if (data?.ok) {
+    toast('تم تعديل الرصيد بنجاح ✓', 'success');
+    closeModal('modal-balance');
+    refreshData();
+  } else toast('فشل التعديل', 'error');
+}
+
+async function resolveWithdrawal(status) {
+  const note   = document.getElementById('wd-note').value.trim();
+  const txhash = document.getElementById('wd-txhash').value.trim();
+  const data = await apiFetch('/admin/withdrawal', {
+    method: 'POST',
+    body: JSON.stringify({ id: currentWdId, status, notes: note, tx_hash: txhash }),
+  });
+  if (data?.ok) {
+    toast(status === 'approved' ? 'تم قبول السحب ✓' : 'تم رفض السحب', status === 'approved' ? 'success' : 'error');
+    closeModal('modal-wd');
+    loadWithdrawals();
+  } else toast('فشل الإجراء', 'error');
+}
+
+async function saveSettings() {
+  const payload = {
+    ads_daily_limit:   parseInt(document.getElementById('cfg-daily-limit').value),
+    points_per_ad:     parseInt(document.getElementById('cfg-pts-ad').value),
+    bonus_10:          parseInt(document.getElementById('cfg-bonus-10').value),
+    bonus_25:          parseInt(document.getElementById('cfg-bonus-25').value),
+    referral_pts:      parseInt(document.getElementById('cfg-ref-pts').value),
+    referral_3_bonus:  parseInt(document.getElementById('cfg-ref-3').value),
+    ref_min_ads:       parseInt(document.getElementById('cfg-ref-min-ads').value),
+    ref_min_pts:       parseInt(document.getElementById('cfg-ref-min-pts').value),
+    wd_first_min:      parseInt(document.getElementById('cfg-wd-first').value),
+    wd_normal_min:     parseInt(document.getElementById('cfg-wd-normal').value),
+    wd_normal_level:   parseInt(document.getElementById('cfg-wd-level').value),
+    adsgram_pts:       parseInt(document.getElementById('cfg-adsgram-pts').value),
+    adsgram_block_id:  document.getElementById('cfg-adsgram-block').value,
+    adsgram_enabled:   document.getElementById('cfg-adsgram-enabled').checked,
+    tg_task_pts:       parseInt(document.getElementById('cfg-tg-pts').value),
+    channel_url:       document.getElementById('cfg-channel-url').value,
+    max_per_ip:        parseInt(document.getElementById('cfg-max-ip').value),
+    max_per_fp:        parseInt(document.getElementById('cfg-max-fp').value),
+    risk_ban:          parseInt(document.getElementById('cfg-risk-ban').value),
+    risk_shadow:       parseInt(document.getElementById('cfg-risk-shadow').value),
+  };
+  const data = await apiFetch('/admin/config', { method: 'POST', body: JSON.stringify(payload) });
+  if (data?.ok) toast('تم حفظ الإعدادات ✓', 'success');
+  else toast('الإعدادات لم تُحفظ — الـ endpoint غير موجود بعد', 'error');
+}
+
+function resetSettings() { toast('تم إعادة تعيين الإعدادات للقيم الافتراضية', 'success'); }
+
+// ══════════════════════════════════════════
+// CONFIRM DIALOG
+// ══════════════════════════════════════════
+function confirmAction(msg, icon, type, cb) {
+  document.getElementById('confirm-icon').textContent = icon;
+  document.getElementById('confirm-msg').textContent  = msg;
+  const btn = document.getElementById('confirm-ok-btn');
+  btn.className = `btn ${type === 'danger' ? 'btn-danger' : 'btn-success'}`;
+  btn.onclick = () => { cb(); closeModal('modal-confirm'); };
+  openModal('modal-confirm');
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${type === 'success' ? '✅' : '❌'}</span>${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function setText(id, v) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = v ?? '—';
+}
+
+function fmt(n) {
+  if (n == null || n === '') return '—';
+  return Number(n).toLocaleString('ar-SA');
+}
+
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (diff < 60) return `منذ ${diff} ث`;
+  if (diff < 3600) return `منذ ${Math.floor(diff/60)} د`;
+  return `منذ ${Math.floor(diff/3600)} س`;
+}
+
+function refreshData() {
+  const active = document.querySelector('.page.active');
+  if (!active) return;
+  const id = active.id.replace('page-', '');
+  if (id === 'dashboard')   loadDashboard();
+  if (id === 'users')       loadUsers();
+  if (id === 'online')      loadOnline();
+  if (id === 'withdrawals') loadWithdrawals();
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── INIT ──
+loadDashboard();
+setInterval(refreshData, 30000); // auto-refresh every 30s
 </script>
+</body>
 </html>
