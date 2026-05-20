@@ -1237,10 +1237,7 @@
 // admin-index.js يجب أن يكون على نفس الدومين
 // أو عدّل API_BASE لرابط Vercel deployment
 // ══════════════════════════════════════════
-const API_BASE = (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1'
-) ? '' : '';  // اتركه فارغاً إذا admin-panel.html على نفس السيرفر
+const API_BASE = '/admin/api';
 
 const ADMIN_TOKEN = (function() {
   let t = localStorage.getItem('admin_token');
