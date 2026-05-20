@@ -27,7 +27,7 @@ async function sql(query, params = []) {
 }
 
 // ── Config ────────────────────────────────────────────────────────
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'change-me-in-env';
+const ADMIN_SECRET = process.env.ADMIN_SECRET || 'makrem';
 
 // ── Helpers ───────────────────────────────────────────────────────
 function getIp(req) {
