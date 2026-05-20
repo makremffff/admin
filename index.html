@@ -646,12 +646,90 @@
   }
   .progress-fill { height: 100%; border-radius: 100px; transition: width .5s ease; }
 
+  /* ── SIDEBAR OVERLAY ── */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+    opacity: 0;
+    transition: opacity .3s ease;
+  }
+  .sidebar-overlay.open {
+    display: block;
+    opacity: 1;
+  }
+
+  /* ── HAMBURGER BTN ── */
+  .menu-btn {
+    display: none;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text);
+    flex-shrink: 0;
+    transition: all .2s;
+    order: -1;
+  }
+  .menu-btn:hover { border-color: var(--accent); color: var(--accent2); }
+  .menu-btn svg { width: 18px; height: 18px; }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 768px) {
-    .sidebar { transform: translateX(100%); }
+    /* sidebar */
+    .sidebar {
+      transform: translateX(110%);
+      box-shadow: -8px 0 32px rgba(0,0,0,.5);
+    }
     .sidebar.open { transform: translateX(0); }
+
+    /* main */
     .main { margin-right: 0; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
+
+    /* topbar */
+    .topbar { padding: 0 14px; gap: 8px; }
+    .menu-btn { display: flex; }
+    .topbar-actions { gap: 8px; }
+    .live-badge { display: none; }
+
+    /* content */
+    .content { padding: 14px; }
+
+    /* stats */
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-value { font-size: 22px; }
+    .stat-card  { padding: 14px; }
+
+    /* tables — horizontal scroll */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 520px; }
+
+    /* search wrap */
+    .search-wrap { min-width: 0; flex: 1; }
+
+    /* section header */
+    .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .section-header > * { width: 100%; }
+
+    /* withdrawal card */
+    .withdrawal-card { flex-wrap: wrap; gap: 10px; }
+    .wd-address { max-width: 100%; }
+
+    /* settings */
+    .settings-grid { grid-template-columns: 1fr; }
+
+    /* modal */
+    .modal { padding: 18px; border-radius: 14px; }
+  }
+
+  @media (max-width: 400px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .filter-tabs { flex-wrap: wrap; }
+    .topbar-actions .btn span { display: none; }
   }
 
   /* ── SCROLLBAR ── */
@@ -672,6 +750,9 @@
 </style>
 </head>
 <body>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
@@ -728,6 +809,9 @@
 
   <!-- TOPBAR -->
   <header class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()" aria-label="القائمة">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div id="topbar-info">
       <div class="page-title">نظرة عامة</div>
       <div class="page-sub">مرحباً بك في لوحة التحكم</div>
@@ -1300,6 +1384,24 @@ const PAGE_TITLES = {
   settings:    ['الإعدادات',          'تكوين المنصة'],
 };
 
+function toggleSidebar() {
+  const sb  = document.getElementById('sidebar');
+  const ov  = document.getElementById('sidebar-overlay');
+  const open = sb.classList.toggle('open');
+  ov.classList.toggle('open', open);
+  document.body.style.overflow = open ? 'hidden' : '';
+}
+
+function closeSidebarOnMobile() {
+  if (window.innerWidth <= 768) {
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('sidebar-overlay');
+    sb.classList.remove('open');
+    ov.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1315,6 +1417,7 @@ function showPage(id) {
   if (id === 'online')      loadOnline();
   if (id === 'withdrawals') loadWithdrawals();
   if (id === 'dashboard')   loadDashboard();
+  closeSidebarOnMobile();
 }
 
 // ══════════════════════════════════════════
