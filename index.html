@@ -1377,9 +1377,7 @@
 // ══════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════
-// API_BASE: leave empty so paths like '/admin/stats' go directly to the server root.
-// If your Vercel function is at a custom prefix, set it here (e.g. '/api').
-const API_BASE = '';
+const API_BASE = '/admin/api';
 
 const ADMIN_TOKEN = (function() {
   let t = localStorage.getItem('admin_token');
