@@ -5,39 +5,49 @@
  * يتصل بنفس قاعدة بيانات index.js الأصلي
  *
  * Endpoints:
- *   GET  /admin/stats          — إحصائيات عامة
- *   GET  /admin/users          — قائمة المستخدمين (مع فلترة وبحث)
- *   GET  /admin/user/:tgId     — تفاصيل مستخدم واحد
- *   DELETE /admin/user/:tgId   — حذف مستخدم
- *   POST /admin/ban            — حظر / رفع حظر
- *   POST /admin/balance        — تعديل نقاط مستخدم
- *   GET  /admin/withdrawals    — قائمة السحوبات
- *   POST /admin/withdrawal     — قبول / رفض سحب
- *   GET  /admin/online         — المتصلون (آخر 5 دقائق)
- *   POST /admin/config         — حفظ الإعدادات (in-memory للآن)
+ *   GET    /admin/stats          — إحصائيات عامة
+ *   GET    /admin/users          — قائمة المستخدمين (مع فلترة وبحث)
+ *   GET    /admin/user/:tgId     — تفاصيل مستخدم واحد
+ *   DELETE /admin/user/:tgId     — حذف مستخدم (داخل transaction)
+ *   POST   /admin/ban            — حظر / رفع حظر
+ *   POST   /admin/balance        — تعديل نقاط مستخدم
+ *   GET    /admin/withdrawals    — قائمة السحوبات
+ *   POST   /admin/withdrawal     — قبول / رفض سحب
+ *   GET    /admin/online         — المتصلون (آخر 5 دقائق)
+ *   GET    /admin/audit          — سجل الأحداث
+ *   GET    /admin/risk           — أحداث المخاطر
+ *   POST   /admin/config         — حفظ الإعدادات في DB
  */
 
-const { createHash } = require('crypto');
-const { neon }       = require('@neondatabase/serverless');
+const { neon } = require('@neondatabase/serverless');
 
 // ── DB ────────────────────────────────────────────────────────────
 const _db = neon(process.env.DATABASE_URL);
+
 async function sql(query, params = []) {
   return await _db(query, params);
+}
+
+/**
+ * تشغيل عدة استعلامات داخل transaction واحدة.
+ * لو أي استعلام فشل → ROLLBACK تلقائي.
+ */
+async function withTransaction(fn) {
+  await sql('BEGIN');
+  try {
+    const result = await fn();
+    await sql('COMMIT');
+    return result;
+  } catch (err) {
+    await sql('ROLLBACK');
+    throw err;
+  }
 }
 
 // ── Config ────────────────────────────────────────────────────────
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'makrem';
 
 // ── Helpers ───────────────────────────────────────────────────────
-function getIp(req) {
-  return (
-    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-    req.headers['x-real-ip'] ||
-    '0.0.0.0'
-  );
-}
-
 function fmt(n) {
   return n == null ? 0 : Number(n);
 }
@@ -47,10 +57,7 @@ function setCors(req, res) {
   res.setHeader('Access-Control-Allow-Origin', req.headers['origin'] || '*');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Type, X-Admin-Secret'
-  );
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Secret');
 }
 
 // ── Auth check ────────────────────────────────────────────────────
@@ -75,16 +82,16 @@ async function handleStats() {
   const users = (
     await sql(`
       SELECT
-        COUNT(*)                                        AS total_users,
-        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 day')  AS new_today,
-        COUNT(*) FILTER (WHERE updated_at > NOW() - INTERVAL '5 minutes') AS online,
-        COUNT(*) FILTER (WHERE is_banned = TRUE)       AS banned,
+        COUNT(*)                                                              AS total_users,
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 day')        AS new_today,
+        COUNT(*) FILTER (WHERE updated_at > NOW() - INTERVAL '5 minutes')    AS online,
+        COUNT(*) FILTER (WHERE is_banned = TRUE)                             AS banned,
         COUNT(*) FILTER (WHERE is_shadow_banned = TRUE AND is_banned = FALSE) AS shadow_banned,
-        COUNT(*) FILTER (WHERE tg_is_premium = TRUE)   AS premium_users,
-        COUNT(*) FILTER (WHERE first_withdraw_done = TRUE) AS first_withdraw_done_count,
-        COALESCE(SUM(points),0)                        AS total_points,
-        COALESCE(SUM(total_referrals),0)               AS total_referrals,
-        COALESCE(SUM(ads_watched_total),0)             AS total_ads
+        COUNT(*) FILTER (WHERE tg_is_premium = TRUE)                         AS premium_users,
+        COUNT(*) FILTER (WHERE first_withdraw_done = TRUE)                   AS first_withdraw_done_count,
+        COALESCE(SUM(points), 0)                                             AS total_points,
+        COALESCE(SUM(total_referrals), 0)                                    AS total_referrals,
+        COALESCE(SUM(ads_watched_total), 0)                                  AS total_ads
       FROM users
     `)
   )[0];
@@ -92,9 +99,9 @@ async function handleStats() {
   const wdStats = (
     await sql(`
       SELECT
-        COUNT(*) FILTER (WHERE status='pending')    AS pending_withdrawals,
-        COUNT(*) FILTER (WHERE status='completed')  AS completed_withdrawals,
-        COALESCE(SUM(ton_amount) FILTER (WHERE status='completed'), 0) AS total_ton_paid
+        COUNT(*) FILTER (WHERE status = 'pending')   AS pending_withdrawals,
+        COUNT(*) FILTER (WHERE status = 'completed') AS completed_withdrawals,
+        COALESCE(SUM(ton_amount) FILTER (WHERE status = 'completed'), 0) AS total_ton_paid
       FROM withdrawals
     `)
   )[0];
@@ -109,34 +116,34 @@ async function handleStats() {
 
   return {
     ok: true,
-    total_users:           fmt(users.total_users),
-    new_today:             fmt(users.new_today),
-    online:                fmt(users.online),
-    banned:                fmt(users.banned),
-    shadow_banned:         fmt(users.shadow_banned),
-    premium_users:         fmt(users.premium_users),
-    total_points:          fmt(users.total_points),
-    total_referrals:       fmt(users.total_referrals),
-    total_ads:             fmt(users.total_ads),
+    total_users:               fmt(users.total_users),
+    new_today:                 fmt(users.new_today),
+    online:                    fmt(users.online),
+    banned:                    fmt(users.banned),
+    shadow_banned:             fmt(users.shadow_banned),
+    premium_users:             fmt(users.premium_users),
+    total_points:              fmt(users.total_points),
+    total_referrals:           fmt(users.total_referrals),
+    total_ads:                 fmt(users.total_ads),
     first_withdraw_done_count: fmt(users.first_withdraw_done_count),
-    pending_withdrawals:   fmt(wdStats.pending_withdrawals),
-    completed_withdrawals: fmt(wdStats.completed_withdrawals),
-    total_ton_paid:        parseFloat(wdStats.total_ton_paid || 0).toFixed(4),
-    ads_today:             fmt(adsToday.ads_today),
+    pending_withdrawals:       fmt(wdStats.pending_withdrawals),
+    completed_withdrawals:     fmt(wdStats.completed_withdrawals),
+    total_ton_paid:            parseFloat(wdStats.total_ton_paid || 0).toFixed(4),
+    ads_today:                 fmt(adsToday.ads_today),
   };
 }
 
 // GET /admin/users?limit=100&sort=created_at&search=&filter=&online=true
 async function handleUsers(query) {
-  const limit   = Math.min(parseInt(query.limit  || '100'), 500);
-  const search  = (query.search  || '').trim();
-  const filter  = (query.filter  || '').trim(); // banned | shadow | premium | ''
-  const online  = query.online === 'true';
-  const sort    = query.sort === 'points' ? 'points' : 'created_at';
+  const limit  = Math.min(parseInt(query.limit  || '100'), 500);
+  const search = (query.search || '').trim();
+  const filter = (query.filter || '').trim(); // banned | shadow | premium | ''
+  const online = query.online === 'true';
+  const sort   = query.sort === 'points' ? 'points' : 'created_at';
 
-  let where = ['1=1'];
-  let params = [];
-  let idx = 1;
+  const where  = ['1=1'];
+  const params = [];
+  let   idx    = 1;
 
   if (search) {
     where.push(
@@ -145,12 +152,10 @@ async function handleUsers(query) {
     params.push(`%${search}%`);
     idx++;
   }
-  if (filter === 'banned')  { where.push('is_banned = TRUE'); }
-  if (filter === 'shadow')  { where.push('is_shadow_banned = TRUE AND is_banned = FALSE'); }
-  if (filter === 'premium') { where.push('tg_is_premium = TRUE'); }
-  if (online) {
-    where.push(`updated_at > NOW() - INTERVAL '5 minutes'`);
-  }
+  if (filter === 'banned')  where.push('is_banned = TRUE');
+  if (filter === 'shadow')  where.push('is_shadow_banned = TRUE AND is_banned = FALSE');
+  if (filter === 'premium') where.push('tg_is_premium = TRUE');
+  if (online)               where.push(`updated_at > NOW() - INTERVAL '5 minutes'`);
 
   params.push(limit);
 
@@ -208,7 +213,9 @@ async function handleUserDetail(tgId) {
   // إعلانات اليوم
   const adToday = (
     await sql(
-      `SELECT count, points_earned FROM ad_logs WHERE user_id = $1 AND log_date = CURRENT_DATE`,
+      `SELECT count, points_earned
+       FROM ad_logs
+       WHERE user_id = $1 AND log_date = CURRENT_DATE`,
       [u.id]
     )
   )[0] || { count: 0, points_earned: 0 };
@@ -227,54 +234,59 @@ async function handleUserDetail(tgId) {
     ok: true,
     user: {
       ...u,
-      ads_today:     fmt(adToday.count),
-      earned_today:  fmt(adToday.points_earned),
+      ads_today:    fmt(adToday.count),
+      earned_today: fmt(adToday.points_earned),
     },
-    audit:    auditRows,
+    audit:       auditRows,
     withdrawals: wdRows,
-    referrals: refRows,
+    referrals:   refRows,
   };
 }
 
-// DELETE /admin/user/:tgId — حذف مستخدم
+// DELETE /admin/user/:tgId — حذف مستخدم داخل transaction
+// FIX: الآن كل الحذف يتم داخل transaction واحدة — لو فشل أي استعلام يُعاد كل شيء
 async function handleDeleteUser(tgId) {
   const id = parseInt(tgId);
   if (!id) return { ok: false, error: 'invalid_id' };
 
-  // جلب id الداخلي أولاً
-  const u = (await sql(`SELECT id FROM users WHERE tg_id = $1`, [id]))[0];
-  if (!u) return { ok: false, error: 'user_not_found' };
+  return await withTransaction(async () => {
+    const u = (await sql(`SELECT id FROM users WHERE tg_id = $1`, [id]))[0];
+    if (!u) return { ok: false, error: 'user_not_found' };
 
-  const uid = u.id;
+    const uid = u.id;
 
-  // حذف مرتبط
-  await sql(`DELETE FROM sessions          WHERE user_id = $1`, [uid]);
-  await sql(`DELETE FROM nonces            WHERE user_id = $1`, [uid]);
-  await sql(`DELETE FROM ad_logs           WHERE user_id = $1`, [uid]);
-  await sql(`DELETE FROM user_tasks        WHERE user_id = $1`, [uid]);
-  await sql(`DELETE FROM referrals         WHERE referrer_id = $1 OR referred_id = $1`, [uid]);
-  await sql(`DELETE FROM risk_events       WHERE user_id = $1`, [uid]);
-  await sql(`DELETE FROM audit_log         WHERE user_id = $1`, [uid]);
-  await sql(`DELETE FROM device_fingerprints WHERE user_id = $1`, [uid]);
-  await sql(`DELETE FROM security_logs     WHERE user_id = $1`, [uid]);
-  await sql(`DELETE FROM completed_tasks   WHERE user_id = $1`, [uid]);
-  // السحوبات نبقيها للسجل فقط، لكن نفصلها
-  await sql(`UPDATE withdrawals SET user_id = NULL WHERE user_id = $1`, [uid]).catch(() => {});
-  await sql(`DELETE FROM users WHERE id = $1`, [uid]);
+    await sql(`DELETE FROM sessions             WHERE user_id = $1`, [uid]);
+    await sql(`DELETE FROM nonces               WHERE user_id = $1`, [uid]);
+    await sql(`DELETE FROM ad_logs              WHERE user_id = $1`, [uid]);
+    await sql(`DELETE FROM user_tasks           WHERE user_id = $1`, [uid]);
+    await sql(`DELETE FROM referrals            WHERE referrer_id = $1 OR referred_id = $1`, [uid]);
+    await sql(`DELETE FROM risk_events          WHERE user_id = $1`, [uid]);
+    await sql(`DELETE FROM audit_log            WHERE user_id = $1`, [uid]);
+    await sql(`DELETE FROM device_fingerprints  WHERE user_id = $1`, [uid]);
+    await sql(`DELETE FROM security_logs        WHERE user_id = $1`, [uid]);
+    await sql(`DELETE FROM completed_tasks      WHERE user_id = $1`, [uid]);
 
-  return { ok: true, deleted_tg_id: id };
+    // السحوبات نبقيها للسجل المالي لكن نفصلها عن المستخدم
+    await sql(`UPDATE withdrawals SET user_id = NULL WHERE user_id = $1`, [uid]);
+
+    await sql(`DELETE FROM users WHERE id = $1`, [uid]);
+
+    return { ok: true, deleted_tg_id: id };
+  });
 }
 
 // POST /admin/ban  { tg_id, ban: true/false, reason? }
 async function handleBan(body) {
-  const tgId  = parseInt(body?.tg_id);
-  const ban   = !!body?.ban;
+  const tgId   = parseInt(body?.tg_id);
+  const ban    = !!body?.ban;
   const reason = body?.reason || 'admin_action';
   if (!tgId) return { ok: false, error: 'missing_tg_id' };
 
   if (ban) {
     await sql(
-      `UPDATE users SET is_banned = TRUE, ban_reason = $1, updated_at = NOW() WHERE tg_id = $2`,
+      `UPDATE users
+       SET is_banned = TRUE, ban_reason = $1, updated_at = NOW()
+       WHERE tg_id = $2`,
       [reason, tgId]
     );
   } else {
@@ -290,28 +302,31 @@ async function handleBan(body) {
 }
 
 // POST /admin/balance  { tg_id, action: add|subtract|set, amount, note? }
+// FIX: action=set الآن يعدّل النقاط فقط دون المساس بالـ xp المكتسب
 async function handleBalance(body) {
   const tgId   = parseInt(body?.tg_id);
   const action = body?.action || 'add';
   const amount = parseInt(body?.amount);
-  if (!tgId)               return { ok: false, error: 'missing_tg_id' };
-  if (isNaN(amount))       return { ok: false, error: 'invalid_amount' };
+  if (!tgId)         return { ok: false, error: 'missing_tg_id' };
+  if (isNaN(amount)) return { ok: false, error: 'invalid_amount' };
+  if (amount < 0)    return { ok: false, error: 'amount_must_be_positive' };
 
   let updateExpr;
-  if (action === 'add')      updateExpr = `points = points + $1, xp = xp + $1`;
+  if      (action === 'add')      updateExpr = `points = points + $1, xp = xp + $1`;
   else if (action === 'subtract') updateExpr = `points = GREATEST(0, points - $1), xp = GREATEST(0, xp - $1)`;
-  else if (action === 'set') updateExpr = `points = $1, xp = $1`;
+  else if (action === 'set')      updateExpr = `points = $1`;   // FIX: لا نعدّل xp عند set
   else return { ok: false, error: 'invalid_action' };
 
   const r = await sql(
-    `UPDATE users SET ${updateExpr}, updated_at = NOW()
+    `UPDATE users
+     SET ${updateExpr}, updated_at = NOW()
      WHERE tg_id = $2
      RETURNING id, tg_id, points, xp`,
     [amount, tgId]
   );
   if (!r.length) return { ok: false, error: 'user_not_found' };
 
-  // Sync level
+  // Sync level بناءً على xp الحالي (غير متأثر بـ set)
   const xp = parseInt(r[0].xp) || 0;
   const LEVEL_THRESHOLDS = [0, 0, 500, 1500, 3500, 8000, 16000, 30000, 55000, 90000, 150000];
   let level = 1;
@@ -321,23 +336,24 @@ async function handleBalance(body) {
   await sql(`UPDATE users SET level = $1 WHERE id = $2`, [level, r[0].id]);
 
   return {
-    ok: true,
+    ok:         true,
     tg_id:      tgId,
     new_points: fmt(r[0].points),
     action,
     amount,
-    note: body?.note || '',
+    note:       body?.note || '',
   };
 }
 
 // GET /admin/withdrawals?status=pending|completed|rejected|all&limit=100
 async function handleWithdrawals(query) {
-  const status = query.status || 'pending';
-  const limit  = Math.min(parseInt(query.limit || '100'), 500);
+  const status   = query.status || 'pending';
+  const limit    = Math.min(parseInt(query.limit || '100'), 500);
+  const hasFilter = status && status !== 'all';
 
-  let where = status && status !== 'all' ? `WHERE w.status = $1` : `WHERE 1=1`;
-  let params = status && status !== 'all' ? [status, limit] : [limit];
-  let limitIdx = status && status !== 'all' ? 2 : 1;
+  const where    = hasFilter ? `WHERE w.status = $1` : `WHERE 1=1`;
+  const params   = hasFilter ? [status, limit] : [limit];
+  const limitIdx = hasFilter ? 2 : 1;
 
   const rows = await sql(
     `SELECT
@@ -357,43 +373,49 @@ async function handleWithdrawals(query) {
 }
 
 // POST /admin/withdrawal  { id, status: approved|rejected, notes?, tx_hash? }
+// FIX: completed لم يعد مقبولاً كـ input مباشر — فقط approved أو rejected
 async function handleWithdrawalAction(body) {
-  const wdId  = parseInt(body?.id);
+  const wdId   = parseInt(body?.id);
   const status = body?.status;
-  if (!wdId)   return { ok: false, error: 'missing_id' };
-  if (!['approved', 'rejected', 'completed'].includes(status)) {
-    return { ok: false, error: 'invalid_status' };
+  if (!wdId) return { ok: false, error: 'missing_id' };
+
+  // FIX: قبلنا فقط approved أو rejected — لا completed مباشرةً
+  if (!['approved', 'rejected'].includes(status)) {
+    return { ok: false, error: 'invalid_status — use approved or rejected' };
   }
 
-  // عند الرفض — أعد النقاط للمستخدم
-  if (status === 'rejected') {
+  return await withTransaction(async () => {
     const wr = (
       await sql(`SELECT user_id, pts, status FROM withdrawals WHERE id = $1`, [wdId])
     )[0];
     if (!wr) return { ok: false, error: 'not_found' };
-    if (wr.status !== 'pending') return { ok: false, error: 'already_resolved' };
 
-    await sql(`UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2`, [
-      wr.pts, wr.user_id,
-    ]);
-  }
+    // منع معالجة طلب محسوم مسبقاً
+    if (wr.status !== 'pending') {
+      return { ok: false, error: 'already_resolved', current_status: wr.status };
+    }
 
-  // تحديث حالة السحب
-  const r = await sql(
-    `UPDATE withdrawals
-     SET status = $1, notes = $2, tx_hash = $3, reviewed_at = NOW(), updated_at = NOW()
-     WHERE id = $4
-     RETURNING id, status`,
-    [
-      status === 'approved' ? 'completed' : status,
-      body?.notes || null,
-      body?.tx_hash || null,
-      wdId,
-    ]
-  );
-  if (!r.length) return { ok: false, error: 'not_found' };
+    // عند الرفض — أعد النقاط للمستخدم
+    if (status === 'rejected' && wr.user_id) {
+      await sql(
+        `UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2`,
+        [wr.pts, wr.user_id]
+      );
+    }
 
-  return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
+    const finalStatus = status === 'approved' ? 'completed' : 'rejected';
+
+    const r = await sql(
+      `UPDATE withdrawals
+       SET status = $1, notes = $2, tx_hash = $3,
+           reviewed_at = NOW(), updated_at = NOW()
+       WHERE id = $4
+       RETURNING id, status`,
+      [finalStatus, body?.notes || null, body?.tx_hash || null, wdId]
+    );
+
+    return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
+  });
 }
 
 // GET /admin/online — المتصلون في آخر 5 دقائق
@@ -440,13 +462,28 @@ async function handleRisk(query) {
   return { ok: true, logs: rows };
 }
 
-// POST /admin/config — حفظ إعدادات (للمستقبل — يمكن حفظها في جدول config)
-const _configOverrides = {};
+// POST /admin/config — حفظ الإعدادات في جدول app_config بالـ DB
+// FIX: بدل in-memory، الإعدادات تُحفظ فعلياً في DB وتبقى بعد إعادة النشر
 async function handleSaveConfig(body) {
-  Object.assign(_configOverrides, body);
-  // في المستقبل يمكن حفظها في DB:
-  // await sql(`INSERT INTO app_config(key, value) VALUES ... ON CONFLICT DO UPDATE ...`)
-  console.info('[ADMIN_CONFIG] Config updated:', JSON.stringify(body));
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { ok: false, error: 'invalid_body' };
+  }
+
+  const entries = Object.entries(body);
+  if (!entries.length) return { ok: false, error: 'empty_config' };
+
+  // upsert كل قيمة على حدة في جدول app_config(key TEXT PK, value TEXT, updated_at TIMESTAMPTZ)
+  for (const [key, value] of entries) {
+    await sql(
+      `INSERT INTO app_config (key, value, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE
+         SET value = EXCLUDED.value, updated_at = NOW()`,
+      [key, String(value)]
+    );
+  }
+
+  console.info('[ADMIN_CONFIG] Saved to DB:', Object.keys(body).join(', '));
   return { ok: true, saved: Object.keys(body) };
 }
 
@@ -454,12 +491,13 @@ async function handleSaveConfig(body) {
 // URL PARSER
 // ══════════════════════════════════════════════════════════════════
 function parseUrl(rawUrl = '') {
-  const qIdx  = rawUrl.indexOf('?');
-  const path  = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
+  const qIdx = rawUrl.indexOf('?');
+  const path = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
   const query = {};
   if (qIdx >= 0) {
-    const params = new URLSearchParams(rawUrl.slice(qIdx + 1));
-    params.forEach((v, k) => { query[k] = v; });
+    new URLSearchParams(rawUrl.slice(qIdx + 1)).forEach((v, k) => {
+      query[k] = v;
+    });
   }
   return { path, query };
 }
@@ -471,10 +509,8 @@ module.exports = async function handler(req, res) {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  // Auth
   if (!checkAuth(req, res)) return;
 
-  // Parse body
   let body = req.body || {};
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch (_) { body = {}; }
@@ -482,24 +518,9 @@ module.exports = async function handler(req, res) {
 
   const { path, query } = parseUrl(req.url || '');
 
-  // روابط مكشوفة:
-  // GET  /admin/stats
-  // GET  /admin/users
-  // GET  /admin/user/[tgId]
-  // DELETE /admin/user/[tgId]
-  // POST /admin/ban
-  // POST /admin/balance
-  // GET  /admin/withdrawals
-  // POST /admin/withdrawal
-  // GET  /admin/online
-  // GET  /admin/audit
-  // GET  /admin/risk
-  // POST /admin/config
-
   try {
-    // ── GET routes ───────────────────────────────────────────────
+    // ── GET ──────────────────────────────────────────────────────
     if (req.method === 'GET') {
-
       if (path.endsWith('/admin/stats'))
         return res.status(200).json(await handleStats());
 
@@ -526,7 +547,7 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ ok: false, error: 'not_found', path });
     }
 
-    // ── DELETE routes ────────────────────────────────────────────
+    // ── DELETE ───────────────────────────────────────────────────
     if (req.method === 'DELETE') {
       if (path.includes('/admin/user/')) {
         const tgId = path.split('/admin/user/')[1]?.split('/')[0];
@@ -535,9 +556,8 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ ok: false, error: 'not_found' });
     }
 
-    // ── POST routes ──────────────────────────────────────────────
+    // ── POST ─────────────────────────────────────────────────────
     if (req.method === 'POST') {
-
       if (path.endsWith('/admin/ban'))
         return res.status(200).json(await handleBan(body));
 
@@ -558,8 +578,8 @@ module.exports = async function handler(req, res) {
   } catch (err) {
     console.error('[ADMIN_API] Error:', err.message, err.stack?.split('\n')[1]);
     return res.status(500).json({
-      ok: false,
-      error: 'internal_server_error',
+      ok:     false,
+      error:  'internal_server_error',
       detail: err.message,
     });
   }
