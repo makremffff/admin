@@ -177,7 +177,21 @@ async function handleUsers(query) {
     params
   );
 
-  return { ok: true, users: rows, total: rows.length };
+  // جلب إعلانات اليوم لكل مستخدم دفعة واحدة
+  const adsToday = await sql(`
+    SELECT user_id, count AS ads_today, points_earned AS earned_today
+    FROM ad_logs WHERE log_date = CURRENT_DATE
+  `);
+  const adsTodayMap = {};
+  for (const a of adsToday) adsTodayMap[a.user_id] = a;
+
+  const enriched = rows.map(u => ({
+    ...u,
+    ads_today:    fmt(adsTodayMap[u.id]?.ads_today   ?? 0),
+    earned_today: fmt(adsTodayMap[u.id]?.earned_today ?? 0),
+  }));
+
+  return { ok: true, users: enriched, total: enriched.length };
 }
 
 // GET /admin/user/:tgId — تفاصيل مستخدم واحد مع سجل نشاطه
@@ -255,20 +269,22 @@ async function handleDeleteUser(tgId) {
 
     const uid = u.id;
 
-    await sql(`DELETE FROM sessions             WHERE user_id = $1`, [uid]);
-    await sql(`DELETE FROM nonces               WHERE user_id = $1`, [uid]);
-    await sql(`DELETE FROM ad_logs              WHERE user_id = $1`, [uid]);
-    await sql(`DELETE FROM user_tasks           WHERE user_id = $1`, [uid]);
-    await sql(`DELETE FROM referrals            WHERE referrer_id = $1 OR referred_id = $1`, [uid]);
-    await sql(`DELETE FROM risk_events          WHERE user_id = $1`, [uid]);
-    await sql(`DELETE FROM audit_log            WHERE user_id = $1`, [uid]);
-    await sql(`DELETE FROM device_fingerprints  WHERE user_id = $1`, [uid]);
-    await sql(`DELETE FROM security_logs        WHERE user_id = $1`, [uid]);
-    await sql(`DELETE FROM completed_tasks      WHERE user_id = $1`, [uid]);
+    // كل جدول في try/catch منفصل — لو الجدول غير موجود لا يوقف العملية
+    const tryDel = async (q, p) => { try { await sql(q, p); } catch(_) {} };
 
-    // السحوبات نبقيها للسجل المالي لكن نفصلها عن المستخدم
-    await sql(`UPDATE withdrawals SET user_id = NULL WHERE user_id = $1`, [uid]);
+    await tryDel(`DELETE FROM sessions            WHERE user_id = $1`, [uid]);
+    await tryDel(`DELETE FROM nonces              WHERE user_id = $1`, [uid]);
+    await tryDel(`DELETE FROM ad_logs             WHERE user_id = $1`, [uid]);
+    await tryDel(`DELETE FROM user_tasks          WHERE user_id = $1`, [uid]);
+    await tryDel(`DELETE FROM referrals           WHERE referrer_id = $1 OR referred_id = $1`, [uid]);
+    await tryDel(`DELETE FROM risk_events         WHERE user_id = $1`, [uid]);
+    await tryDel(`DELETE FROM audit_log           WHERE user_id = $1`, [uid]);
+    await tryDel(`DELETE FROM device_fingerprints WHERE user_id = $1`, [uid]);
+    await tryDel(`DELETE FROM security_logs       WHERE user_id = $1`, [uid]);
+    await tryDel(`DELETE FROM completed_tasks     WHERE user_id = $1`, [uid]);
+    await tryDel(`UPDATE withdrawals SET user_id = NULL WHERE user_id = $1`, [uid]);
 
+    // حذف المستخدم نفسه — هذا يجب أن ينجح
     await sql(`DELETE FROM users WHERE id = $1`, [uid]);
 
     return { ok: true, deleted_tg_id: id };
@@ -492,17 +508,12 @@ async function handleSaveConfig(body) {
 // ══════════════════════════════════════════════════════════════════
 function parseUrl(rawUrl = '') {
   const qIdx = rawUrl.indexOf('?');
-  let path   = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
+  const path = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
   const query = {};
   if (qIdx >= 0) {
     new URLSearchParams(rawUrl.slice(qIdx + 1)).forEach((v, k) => {
       query[k] = v;
     });
-  }
-  // strip /admin/api prefix اللي يضيفه vercel.json rewrite
-  // مثال: /admin/api/admin/stats → /admin/stats
-  if (path.startsWith('/admin/api')) {
-    path = path.slice('/admin/api'.length) || '/';
   }
   return { path, query };
 }
