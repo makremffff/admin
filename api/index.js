@@ -56,7 +56,7 @@ function fmt(n) {
 function setCors(req, res) {
   res.setHeader('Access-Control-Allow-Origin', req.headers['origin'] || '*');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Secret');
 }
 
@@ -161,18 +161,20 @@ async function handleUsers(query) {
 
   const rows = await sql(
     `SELECT
-       id, tg_id, tg_username, tg_first_name, tg_last_name,
-       tg_is_premium, tg_language_code,
-       points, level, xp, usdt_balance,
-       is_banned, is_shadow_banned, ban_reason,
-       risk_score, tg_verified,
-       streak_day, total_referrals, earned_from_refs,
-       ads_watched_total, first_withdraw_done,
-       ip_hash, fp_hash,
-       created_at, updated_at
-     FROM users
+       u.id, u.tg_id, u.tg_username, u.tg_first_name, u.tg_last_name,
+       u.tg_is_premium, u.tg_language_code,
+       u.points, u.level, u.xp, u.usdt_balance,
+       u.is_banned, u.is_shadow_banned, u.ban_reason,
+       u.risk_score, u.tg_verified,
+       u.streak_day, u.total_referrals, u.earned_from_refs,
+       u.ads_watched_total, u.first_withdraw_done,
+       u.ip_hash, u.fp_hash,
+       u.created_at, u.updated_at,
+       up.photo_url
+     FROM users u
+     LEFT JOIN user_photos up ON up.user_id = u.id
      WHERE ${where.join(' AND ')}
-     ORDER BY ${sort} DESC
+     ORDER BY u.${sort} DESC
      LIMIT $${idx}`,
     params
   );
@@ -200,7 +202,9 @@ async function handleUserDetail(tgId) {
   if (!id) return { ok: false, error: 'invalid_id' };
 
   const userRows = await sql(
-    `SELECT * FROM users WHERE tg_id = $1 LIMIT 1`,
+    `SELECT u.*, up.photo_url FROM users u
+     LEFT JOIN user_photos up ON up.user_id = u.id
+     WHERE u.tg_id = $1 LIMIT 1`,
     [id]
   );
   if (!userRows.length) return { ok: false, error: 'user_not_found' };
@@ -438,12 +442,14 @@ async function handleWithdrawalAction(body) {
 async function handleOnline() {
   const rows = await sql(`
     SELECT
-      id, tg_id, tg_username, tg_first_name,
-      points, level, is_banned, updated_at
-    FROM users
-    WHERE updated_at > NOW() - INTERVAL '5 minutes'
-      AND is_banned = FALSE
-    ORDER BY updated_at DESC
+      u.id, u.tg_id, u.tg_username, u.tg_first_name,
+      u.points, u.level, u.is_banned, u.updated_at,
+      up.photo_url
+    FROM users u
+    LEFT JOIN user_photos up ON up.user_id = u.id
+    WHERE u.updated_at > NOW() - INTERVAL '5 minutes'
+      AND u.is_banned = FALSE
+    ORDER BY u.updated_at DESC
     LIMIT 100
   `);
   return { ok: true, users: rows, count: rows.length };
@@ -504,6 +510,78 @@ async function handleSaveConfig(body) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// CHANNELS — إدارة قنوات المهمات
+// ══════════════════════════════════════════════════════════════════
+
+// GET /admin/channels
+async function handleGetChannels() {
+  const rows = await sql(
+    `SELECT id, title, url, tg_chat_id, reward, max_members, is_active, sort_order, created_at
+     FROM channels ORDER BY sort_order ASC, created_at ASC`
+  );
+  return { ok: true, channels: rows };
+}
+
+// POST /admin/channels  { title, url, tg_chat_id?, reward, max_members?, is_active? }
+async function handleAddChannel(body) {
+  const title       = (body?.title || '').trim();
+  const url         = (body?.url   || '').trim();
+  const tgChatId    = body?.tg_chat_id  || null;
+  const reward      = parseInt(body?.reward ?? 2500);
+  const maxMembers  = parseInt(body?.max_members ?? 0);
+  const isActive    = body?.is_active !== false;
+  const sortOrder   = parseInt(body?.sort_order ?? 0);
+
+  if (!title) return { ok: false, error: 'missing_title' };
+  if (!url)   return { ok: false, error: 'missing_url' };
+  if (isNaN(reward) || reward < 0) return { ok: false, error: 'invalid_reward' };
+
+  const r = await sql(
+    `INSERT INTO channels(title, url, tg_chat_id, reward, max_members, is_active, sort_order)
+     VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+    [title, url, tgChatId, reward, maxMembers, isActive, sortOrder]
+  );
+  return { ok: true, channel: r[0] };
+}
+
+// PUT /admin/channels/:id  — تعديل قناة
+async function handleUpdateChannel(id, body) {
+  const cid = parseInt(id);
+  if (!cid) return { ok: false, error: 'invalid_id' };
+
+  const fields = [];
+  const params = [];
+  let idx = 1;
+
+  if (body?.title      !== undefined) { fields.push(`title=$${idx++}`);       params.push(body.title); }
+  if (body?.url        !== undefined) { fields.push(`url=$${idx++}`);         params.push(body.url); }
+  if (body?.tg_chat_id !== undefined) { fields.push(`tg_chat_id=$${idx++}`);  params.push(body.tg_chat_id || null); }
+  if (body?.reward     !== undefined) { fields.push(`reward=$${idx++}`);      params.push(parseInt(body.reward)); }
+  if (body?.max_members!== undefined) { fields.push(`max_members=$${idx++}`); params.push(parseInt(body.max_members)); }
+  if (body?.is_active  !== undefined) { fields.push(`is_active=$${idx++}`);   params.push(!!body.is_active); }
+  if (body?.sort_order !== undefined) { fields.push(`sort_order=$${idx++}`);  params.push(parseInt(body.sort_order)); }
+
+  if (!fields.length) return { ok: false, error: 'nothing_to_update' };
+
+  params.push(cid);
+  const r = await sql(
+    `UPDATE channels SET ${fields.join(',')} WHERE id=$${idx} RETURNING *`,
+    params
+  );
+  if (!r.length) return { ok: false, error: 'channel_not_found' };
+  return { ok: true, channel: r[0] };
+}
+
+// DELETE /admin/channels/:id
+async function handleDeleteChannel(id) {
+  const cid = parseInt(id);
+  if (!cid) return { ok: false, error: 'invalid_id' };
+  const r = await sql(`DELETE FROM channels WHERE id=$1 RETURNING id`, [cid]);
+  if (!r.length) return { ok: false, error: 'channel_not_found' };
+  return { ok: true, deleted_id: cid };
+}
+
+// ══════════════════════════════════════════════════════════════════
 // URL PARSER
 // ══════════════════════════════════════════════════════════════════
 function parseUrl(rawUrl = '') {
@@ -560,6 +638,9 @@ module.exports = async function handler(req, res) {
       if (path.endsWith('/admin/risk') || path.includes('/admin/risk?'))
         return res.status(200).json(await handleRisk(query));
 
+      if (path.endsWith('/admin/channels') || path.includes('/admin/channels?'))
+        return res.status(200).json(await handleGetChannels());
+
       return res.status(404).json({ ok: false, error: 'not_found', path });
     }
 
@@ -568,6 +649,10 @@ module.exports = async function handler(req, res) {
       if (path.includes('/admin/user/')) {
         const tgId = path.split('/admin/user/')[1]?.split('/')[0];
         return res.status(200).json(await handleDeleteUser(tgId));
+      }
+      if (path.includes('/admin/channels/')) {
+        const chId = path.split('/admin/channels/')[1]?.split('/')[0];
+        return res.status(200).json(await handleDeleteChannel(chId));
       }
       return res.status(404).json({ ok: false, error: 'not_found' });
     }
@@ -586,6 +671,18 @@ module.exports = async function handler(req, res) {
       if (path.endsWith('/admin/config'))
         return res.status(200).json(await handleSaveConfig(body));
 
+      if (path.endsWith('/admin/channels'))
+        return res.status(200).json(await handleAddChannel(body));
+
+      return res.status(404).json({ ok: false, error: 'not_found', path });
+    }
+
+    // ── PUT ──────────────────────────────────────────────────────
+    if (req.method === 'PUT') {
+      if (path.includes('/admin/channels/')) {
+        const chId = path.split('/admin/channels/')[1]?.split('/')[0];
+        return res.status(200).json(await handleUpdateChannel(chId, body));
+      }
       return res.status(404).json({ ok: false, error: 'not_found', path });
     }
 
