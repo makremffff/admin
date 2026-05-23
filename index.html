@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>لوحة التحكم — Tomato Farm</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=DynaPuff:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Syne+Mono&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:        #0a0c0f;
@@ -38,9 +38,9 @@
 
   /* ── NUM FONT ── */
   .num {
-    font-family: 'DynaPuff', 'Cairo', sans-serif;
-    font-weight: 600;
-    letter-spacing: -.01em;
+    font-family: 'Rajdhani', 'Cairo', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.02em;
   }
 
   /* ── SIDEBAR OVERLAY ── */
@@ -162,7 +162,7 @@
     border-radius: 20px;
     min-width: 20px;
     text-align: center;
-    font-family: 'DynaPuff', sans-serif;
+    font-family: 'Rajdhani', sans-serif;
   }
 
   .sidebar-footer {
@@ -323,7 +323,7 @@
   .stat-card.gold   .stat-icon { background: rgba(255,214,10,.15); color: var(--gold); }
   .stat-card.purple .stat-icon { background: rgba(188,140,255,.15); color: var(--purple); }
 
-  .stat-value { font-family: 'DynaPuff', sans-serif; font-size: 26px; font-weight: 600; margin-bottom: 4px; }
+  .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.02em; }
   .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
   .stat-delta {
     font-size: 11px; font-weight: 600; margin-top: 8px;
@@ -405,7 +405,7 @@
   .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
   .user-name { font-weight: 600; font-size: 13px; }
-  .user-id   { font-size: 11px; color: var(--muted); direction: ltr; font-family: 'DynaPuff', sans-serif; }
+  .user-id   { font-size: 11px; color: var(--muted); direction: ltr; font-family: 'Rajdhani', sans-serif; }
 
   /* ── BADGES ── */
   .badge {
@@ -537,7 +537,7 @@
     padding: 11px 12px;
   }
   .detail-item-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
-  .detail-item-value { font-size: 14px; font-weight: 700; font-family: 'DynaPuff', sans-serif; }
+  .detail-item-value { font-size: 14px; font-weight: 700; font-family: 'Rajdhani', sans-serif; }
 
   .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 
@@ -569,8 +569,8 @@
   .wd-address { font-size: 11px; color: var(--muted); direction: ltr; font-family: monospace; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
   .wd-meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
 
-  .wd-amount { font-size: 15px; font-weight: 700; color: var(--gold); font-family: 'DynaPuff', sans-serif; }
-  .wd-pts    { font-size: 12px; color: var(--muted); font-family: 'DynaPuff', sans-serif; }
+  .wd-amount { font-size: 15px; font-weight: 700; color: var(--gold); font-family: 'Rajdhani', sans-serif; }
+  .wd-pts    { font-size: 12px; color: var(--muted); font-family: 'Rajdhani', sans-serif; }
   .wd-date   { font-size: 11px; color: var(--muted); }
 
   .wd-actions { display: flex; gap: 8px; align-items: center; }
@@ -622,7 +622,7 @@
     border: 1px solid var(--border);
     border-radius: 7px;
     color: var(--text);
-    font-family: 'DynaPuff', sans-serif;
+    font-family: 'Rajdhani', sans-serif;
     font-size: 13px; font-weight: 600;
     padding: 7px 10px;
     outline: none;
@@ -1377,7 +1377,9 @@
 // ══════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════
-const API_BASE = '/admin/api';
+// API_BASE: leave empty so paths like '/admin/stats' go directly to the server root.
+// If your Vercel function is at a custom prefix, set it here (e.g. '/api').
+const API_BASE = '';
 
 const ADMIN_TOKEN = (function() {
   let t = localStorage.getItem('admin_token');
@@ -1759,8 +1761,8 @@ function openWdModal(wdId) {
       <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
         <div>
           <div style="font-size:11px;color:var(--muted)">المبلغ</div>
-          <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:'DynaPuff',sans-serif">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
-          <div style="font-size:12px;color:var(--muted);font-family:'DynaPuff',sans-serif">${fmt(w.pts)} نقطة</div>
+          <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:'Rajdhani',sans-serif">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
+          <div style="font-size:12px;color:var(--muted);font-family:'Rajdhani',sans-serif">${fmt(w.pts)} نقطة</div>
         </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;color:var(--muted);margin-bottom:3px">عنوان المحفظة</div>
@@ -1787,9 +1789,17 @@ async function banUser(tgId, ban) {
 }
 
 async function deleteUser(tgId) {
+  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  toast('جاري الحذف...', 'success');
   const data = await apiFetch('/admin/user/' + tgId, { method: 'DELETE' });
-  if (data?.ok) { toast(`حُذف المستخدم #${tgId}`, 'success'); refreshData(); }
-  else toast('فشل الحذف', 'error');
+  if (data?.ok) {
+    allUsers = allUsers.filter(u => String(u.tg_id) !== String(tgId));
+    renderUsersFiltered();
+    toast('تم حذف المستخدم #' + tgId + ' بنجاح', 'success');
+    setTimeout(refreshData, 600);
+  } else {
+    toast(data?.error ? ('فشل الحذف: ' + data.error) : 'فشل الحذف', 'error');
+  }
 }
 
 async function doUpdateBalance() {
@@ -1803,10 +1813,15 @@ async function doUpdateBalance() {
     body: JSON.stringify({ tg_id: uid, action, amount, note }),
   });
   if (data?.ok) {
-    toast(`تم تعديل الرصيد — نقاط جديدة: ${fmt(data.new_points)}`, 'success');
+    toast('تم تعديل الرصيد — نقاط جديدة: ' + fmt(data.new_points), 'success');
     closeModal('modal-balance');
-    refreshData();
-  } else toast('فشل التعديل', 'error');
+    // update local cache immediately
+    const idx = allUsers.findIndex(u => String(u.tg_id) === String(uid));
+    if (idx !== -1) { allUsers[idx].points = data.new_points; renderUsersFiltered(); }
+    setTimeout(refreshData, 600);
+  } else {
+    toast(data?.error ? ('فشل التعديل: ' + data.error) : 'فشل التعديل — تحقق من الـ tg_id', 'error');
+  }
 }
 
 async function resolveWithdrawal(status) {
@@ -1846,9 +1861,13 @@ async function saveSettings() {
     risk_ban:          parseInt(document.getElementById('cfg-risk-ban').value),
     risk_shadow:       parseInt(document.getElementById('cfg-risk-shadow').value),
   };
+  // Validate required numbers
+  const nums = Object.entries(payload).filter(([k,v]) => k !== 'adsgram_block_id' && k !== 'channel_url' && k !== 'adsgram_enabled');
+  if (nums.some(([k,v]) => isNaN(v))) return toast('تأكد من إدخال أرقام صحيحة في جميع الحقول', 'error');
+
   const data = await apiFetch('/admin/config', { method: 'POST', body: JSON.stringify(payload) });
-  if (data?.ok) toast('تم حفظ الإعدادات', 'success');
-  else toast('فشل حفظ الإعدادات', 'error');
+  if (data?.ok) toast('تم حفظ الإعدادات بنجاح (' + (data.saved?.length || 0) + ' قيمة)', 'success');
+  else toast('فشل حفظ الإعدادات — تحقق من الاتصال', 'error');
 }
 
 function resetSettings() { toast('تم إعادة تعيين الإعدادات', 'success'); }
