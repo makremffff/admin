@@ -492,12 +492,17 @@ async function handleSaveConfig(body) {
 // ══════════════════════════════════════════════════════════════════
 function parseUrl(rawUrl = '') {
   const qIdx = rawUrl.indexOf('?');
-  const path = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
+  let path   = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
   const query = {};
   if (qIdx >= 0) {
     new URLSearchParams(rawUrl.slice(qIdx + 1)).forEach((v, k) => {
       query[k] = v;
     });
+  }
+  // strip /admin/api prefix اللي يضيفه vercel.json rewrite
+  // مثال: /admin/api/admin/stats → /admin/stats
+  if (path.startsWith('/admin/api')) {
+    path = path.slice('/admin/api'.length) || '/';
   }
   return { path, query };
 }
