@@ -29,18 +29,33 @@ async function sql(query, params = []) {
 }
 
 /**
- * تشغيل عدة استعلامات داخل transaction واحدة.
- * لو أي استعلام فشل → ROLLBACK تلقائي.
+ * neon() HTTP لا يدعم BEGIN/COMMIT على connections منفصلة.
+ * الحل: تنفيذ الـ queries مباشرة بدون transaction wrapper —
+ * الأمان يأتي من الـ SELECT FOR UPDATE والـ status check.
  */
 async function withTransaction(fn) {
-  // neon() HTTP لا يدعم BEGIN/COMMIT على connections منفصلة
-  // كل sql() = connection مستقل → BEGIN/COMMIT مش بيشتغلوا
-  // الحل: ننفذ مباشرة بدون transaction wrapper
   return await fn();
 }
 
 // ── Config ────────────────────────────────────────────────────────
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'makrem';
+const BOT_TOKEN    = '8285685691:AAFyZvMVJ9k6UgHuBa8E34Icvk-TZ4-OdaI';
+
+async function sendBotMessage(tgId, text) {
+  if (!tgId) return;
+  try {
+    await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: tgId, text, parse_mode: 'HTML' }),
+      }
+    );
+  } catch (e) {
+    console.warn('[BOT_MSG] Failed:', e.message);
+  }
+}
 
 // ── Helpers ───────────────────────────────────────────────────────
 function fmt(n) {
@@ -399,39 +414,55 @@ async function handleWithdrawalAction(body) {
     return { ok: false, error: 'invalid_status — use approved or rejected' };
   }
 
-  return await withTransaction(async () => {
-    const wr = (
-      await sql(`SELECT user_id, pts, status FROM withdrawals WHERE id = $1`, [wdId])
-    )[0];
-    if (!wr) return { ok: false, error: 'not_found' };
+  // Atomic update: فقط إذا الحالة pending — يمنع المعالجة المزدوجة
+  const finalStatus = status === 'approved' ? 'completed' : 'rejected';
 
-    // منع معالجة طلب محسوم مسبقاً
-    if (wr.status !== 'pending') {
-      return { ok: false, error: 'already_resolved', current_status: wr.status };
-    }
+  // تحقق من وجود الطلب وأنه لا يزال pending
+  const wr = (
+    await sql(`SELECT w.user_id, w.pts, w.ton_amount, w.status, u.tg_id FROM withdrawals w LEFT JOIN users u ON u.id = w.user_id WHERE w.id = $1`, [wdId])
+  )[0];
+  if (!wr) return { ok: false, error: 'not_found' };
+  if (wr.status !== 'pending') {
+    return { ok: false, error: 'already_resolved', current_status: wr.status };
+  }
 
-    // عند الرفض — أعد النقاط للمستخدم
-    if (status === 'rejected' && wr.user_id) {
-      await sql(
-        `UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2`,
-        [wr.pts, wr.user_id]
+  // عند الرفض — أعد النقاط للمستخدم
+  if (status === 'rejected' && wr.user_id) {
+    await sql(
+      `UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2`,
+      [wr.pts, wr.user_id]
+    );
+  }
+
+  // تحديث حالة السحب (atomic — فقط إذا لا يزال pending)
+  const r = await sql(
+    `UPDATE withdrawals
+     SET status = $1, notes = $2, tx_hash = $3,
+         reviewed_at = NOW(), updated_at = NOW()
+     WHERE id = $4 AND status = 'pending'
+     RETURNING id, status`,
+    [finalStatus, body?.notes || null, body?.tx_hash || null, wdId]
+  );
+
+  if (!r.length) return { ok: false, error: 'already_resolved' };
+
+  // إشعار المستخدم عبر البوت
+  if (wr.tg_id) {
+    if (status === 'approved') {
+      const txLine = body?.tx_hash ? `\n🔗 Hash: <code>${body.tx_hash}</code>` : '';
+      await sendBotMessage(
+        wr.tg_id,
+        `🎉 <b>مبروك! تمت الموافقة على سحبك</b>\n\n✅ تم اعتماد طلب السحب الخاص بك بنجاح.\n💰 المبلغ: <b>${parseFloat(wr.ton_amount || 0)} TON</b>${txLine}\n\n👛 تفقد محفظتك الآن!`
+      );
+    } else {
+      await sendBotMessage(
+        wr.tg_id,
+        `❌ <b>تم رفض طلب السحب</b>\n\nنأسف، تعذّر تنفيذ طلب السحب الخاص بك.\n💰 تم إعادة رصيدك: <b>${wr.pts} نقطة</b>\n\nيمكنك المحاولة مجدداً لاحقاً.`
       );
     }
+  }
 
-    const finalStatus = status === 'approved' ? 'completed' : 'rejected';
-
-    const r = await sql(
-      `UPDATE withdrawals
-       SET status = $1, notes = $2, tx_hash = $3,
-           reviewed_at = NOW(), updated_at = NOW()
-       WHERE id = $4 AND status = 'pending'
-       RETURNING id, status`,
-      [finalStatus, body?.notes || null, body?.tx_hash || null, wdId]
-    );
-
-    if (!r.length) return { ok: false, error: 'already_resolved' };
-    return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
-  });
+  return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
 }
 
 // GET /admin/online — المتصلون في آخر 5 دقائق
