@@ -29,19 +29,12 @@ async function sql(query, params = []) {
 }
 
 /**
- * تشغيل عدة استعلامات داخل transaction واحدة.
- * لو أي استعلام فشل → ROLLBACK تلقائي.
+ * neon() HTTP لا يدعم BEGIN/COMMIT على connections منفصلة.
+ * الحل: تنفيذ الـ queries مباشرة بدون transaction wrapper —
+ * الأمان يأتي من الـ SELECT FOR UPDATE والـ status check.
  */
 async function withTransaction(fn) {
-  await sql('BEGIN');
-  try {
-    const result = await fn();
-    await sql('COMMIT');
-    return result;
-  } catch (err) {
-    await sql('ROLLBACK');
-    throw err;
-  }
+  return await fn();
 }
 
 // ── Config ────────────────────────────────────────────────────────
@@ -404,38 +397,38 @@ async function handleWithdrawalAction(body) {
     return { ok: false, error: 'invalid_status — use approved or rejected' };
   }
 
-  return await withTransaction(async () => {
-    const wr = (
-      await sql(`SELECT user_id, pts, status FROM withdrawals WHERE id = $1`, [wdId])
-    )[0];
-    if (!wr) return { ok: false, error: 'not_found' };
+  // Atomic update: فقط إذا الحالة pending — يمنع المعالجة المزدوجة
+  const finalStatus = status === 'approved' ? 'completed' : 'rejected';
 
-    // منع معالجة طلب محسوم مسبقاً
-    if (wr.status !== 'pending') {
-      return { ok: false, error: 'already_resolved', current_status: wr.status };
-    }
+  // تحقق من وجود الطلب وأنه لا يزال pending
+  const wr = (
+    await sql(`SELECT user_id, pts, status FROM withdrawals WHERE id = $1`, [wdId])
+  )[0];
+  if (!wr) return { ok: false, error: 'not_found' };
+  if (wr.status !== 'pending') {
+    return { ok: false, error: 'already_resolved', current_status: wr.status };
+  }
 
-    // عند الرفض — أعد النقاط للمستخدم
-    if (status === 'rejected' && wr.user_id) {
-      await sql(
-        `UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2`,
-        [wr.pts, wr.user_id]
-      );
-    }
-
-    const finalStatus = status === 'approved' ? 'completed' : 'rejected';
-
-    const r = await sql(
-      `UPDATE withdrawals
-       SET status = $1, notes = $2, tx_hash = $3,
-           reviewed_at = NOW(), updated_at = NOW()
-       WHERE id = $4
-       RETURNING id, status`,
-      [finalStatus, body?.notes || null, body?.tx_hash || null, wdId]
+  // عند الرفض — أعد النقاط للمستخدم
+  if (status === 'rejected' && wr.user_id) {
+    await sql(
+      `UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2`,
+      [wr.pts, wr.user_id]
     );
+  }
 
-    return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
-  });
+  // تحديث حالة السحب (atomic — فقط إذا لا يزال pending)
+  const r = await sql(
+    `UPDATE withdrawals
+     SET status = $1, notes = $2, tx_hash = $3,
+         reviewed_at = NOW(), updated_at = NOW()
+     WHERE id = $4 AND status = 'pending'
+     RETURNING id, status`,
+    [finalStatus, body?.notes || null, body?.tx_hash || null, wdId]
+  );
+
+  if (!r.length) return { ok: false, error: 'already_resolved' };
+  return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
 }
 
 // GET /admin/online — المتصلون في آخر 5 دقائق
