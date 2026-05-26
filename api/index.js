@@ -41,19 +41,33 @@ async function withTransaction(fn) {
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'makrem';
 const BOT_TOKEN    = '8285685691:AAFyZvMVJ9k6UgHuBa8E34Icvk-TZ4-OdaI';
 
-async function sendBotMessage(tgId, text) {
-  if (!tgId) return;
+async function sendBotMessage(tgId, text, extra = {}) {
+  if (!tgId) return { ok: false };
   try {
-    await fetch(
-      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: tgId, text, parse_mode: 'HTML' }),
-      }
-    );
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: tgId, text, parse_mode: 'HTML', ...extra }),
+    });
+    return await res.json();
   } catch (e) {
     console.warn('[BOT_MSG] Failed:', e.message);
+    return { ok: false };
+  }
+}
+
+async function sendBotPhoto(tgId, photo, caption, extra = {}) {
+  if (!tgId) return { ok: false };
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: tgId, photo, caption, parse_mode: 'HTML', ...extra }),
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('[BOT_PHOTO] Failed:', e.message);
+    return { ok: false };
   }
 }
 
@@ -419,7 +433,7 @@ async function handleWithdrawalAction(body) {
 
   // تحقق من وجود الطلب وأنه لا يزال pending
   const wr = (
-    await sql(`SELECT w.user_id, w.pts, w.ton_amount, w.status, u.tg_id FROM withdrawals w LEFT JOIN users u ON u.id = w.user_id WHERE w.id = $1`, [wdId])
+    await sql(`SELECT user_id, pts, status FROM withdrawals WHERE id = $1`, [wdId])
   )[0];
   if (!wr) return { ok: false, error: 'not_found' };
   if (wr.status !== 'pending') {
@@ -445,24 +459,42 @@ async function handleWithdrawalAction(body) {
   );
 
   if (!r.length) return { ok: false, error: 'already_resolved' };
+  return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
+}
 
-  // إشعار المستخدم عبر البوت
-  if (wr.tg_id) {
-    if (status === 'approved') {
-      const txLine = body?.tx_hash ? `\n🔗 Hash: <code>${body.tx_hash}</code>` : '';
-      await sendBotMessage(
-        wr.tg_id,
-        `🎉 <b>مبروك! تمت الموافقة على سحبك</b>\n\n✅ تم اعتماد طلب السحب الخاص بك بنجاح.\n💰 المبلغ: <b>${parseFloat(wr.ton_amount || 0)} TON</b>${txLine}\n\n👛 تفقد محفظتك الآن!`
-      );
-    } else {
-      await sendBotMessage(
-        wr.tg_id,
-        `❌ <b>تم رفض طلب السحب</b>\n\nنأسف، تعذّر تنفيذ طلب السحب الخاص بك.\n💰 تم إعادة رصيدك: <b>${wr.pts} نقطة</b>\n\nيمكنك المحاولة مجدداً لاحقاً.`
-      );
-    }
+// POST /admin/broadcast
+async function handleBroadcast(body) {
+  const { text, image_url, button_label, button_url } = body || {};
+  if (!text) return { ok: false, error: 'missing_text' };
+
+  // جلب كل tg_id للمستخدمين النشطين
+  const users = await sql(`SELECT tg_id FROM users WHERE tg_id IS NOT NULL AND is_banned = FALSE`);
+  if (!users.length) return { ok: false, error: 'no_users' };
+
+  // بناء الـ inline keyboard لو في زر
+  const extra = {};
+  if (button_label && button_url) {
+    extra.reply_markup = {
+      inline_keyboard: [[{ text: button_label, url: button_url }]],
+    };
   }
 
-  return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
+  let sent = 0, failed = 0;
+  for (const u of users) {
+    try {
+      let r;
+      if (image_url) {
+        r = await sendBotPhoto(u.tg_id, image_url, text, extra);
+      } else {
+        r = await sendBotMessage(u.tg_id, text, extra);
+      }
+      if (r?.ok) sent++; else failed++;
+    } catch (_) { failed++; }
+    // تأخير بسيط لتجنب حد الـ rate limit
+    await new Promise(r => setTimeout(r, 35));
+  }
+
+  return { ok: true, total: users.length, sent, failed };
 }
 
 // GET /admin/online — المتصلون في آخر 5 دقائق
@@ -700,6 +732,9 @@ module.exports = async function handler(req, res) {
 
       if (path.endsWith('/admin/channels'))
         return res.status(200).json(await handleAddChannel(body));
+
+      if (path.endsWith('/admin/broadcast'))
+        return res.status(200).json(await handleBroadcast(body));
 
       return res.status(404).json({ ok: false, error: 'not_found', path });
     }
