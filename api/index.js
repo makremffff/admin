@@ -431,9 +431,16 @@ async function handleWithdrawalAction(body) {
   // Atomic update: فقط إذا الحالة pending — يمنع المعالجة المزدوجة
   const finalStatus = status === 'approved' ? 'completed' : 'rejected';
 
-  // تحقق من وجود الطلب وأنه لا يزال pending
+  // تحقق من وجود الطلب وأنه لا يزال pending — نجلب كل البيانات اللازمة للرسالة
   const wr = (
-    await sql(`SELECT user_id, pts, status FROM withdrawals WHERE id = $1`, [wdId])
+    await sql(
+      `SELECT w.user_id, w.pts, w.ton_amount, w.address, w.status,
+              u.tg_id
+       FROM withdrawals w
+       LEFT JOIN users u ON u.id = w.user_id
+       WHERE w.id = $1`,
+      [wdId]
+    )
   )[0];
   if (!wr) return { ok: false, error: 'not_found' };
   if (wr.status !== 'pending') {
@@ -459,6 +466,39 @@ async function handleWithdrawalAction(body) {
   );
 
   if (!r.length) return { ok: false, error: 'already_resolved' };
+
+  // ── إرسال إشعار للمستخدم عبر البوت ──────────────────────────────
+  if (wr.tg_id) {
+    const fee       = parseFloat(wr.ton_amount) * 0.10;
+    const netAmount = (parseFloat(wr.ton_amount) - fee).toFixed(4);
+    const grossStr  = parseFloat(wr.ton_amount).toFixed(4);
+    const feeStr    = fee.toFixed(4);
+    const shortAddr = wr.address
+      ? `${wr.address.slice(0, 6)}…${wr.address.slice(-4)}`
+      : '—';
+
+    if (finalStatus === 'completed') {
+      await sendBotMessage(
+        wr.tg_id,
+        `✅ <b>تم قبول طلب السحب</b>\n\n` +
+        `لقد تم قبول طلب سحبك من قبل الفريق 🎉\n\n` +
+        `💰 <b>الكمية:</b> ${grossStr} TON\n` +
+        `🔻 <b>رسوم (10%):</b> ${feeStr} TON\n` +
+        `📤 <b>المبلغ المُرسَل:</b> ${netAmount} TON\n` +
+        `👛 <b>المحفظة:</b> <code>${shortAddr}</code>\n\n` +
+        `سيصلك المبلغ خلال وقت قصير. شكراً لثقتك بنا! 🚀`
+      );
+    } else {
+      await sendBotMessage(
+        wr.tg_id,
+        `❌ <b>تم رفض طلب السحب</b>\n\n` +
+        `للأسف تم رفض طلب سحبك.\n` +
+        (body?.notes ? `📝 <b>السبب:</b> ${body.notes}\n` : '') +
+        `\nتمت إعادة <b>${wr.pts}</b> نقطة إلى رصيدك. يمكنك إعادة المحاولة في أي وقت.`
+      );
+    }
+  }
+
   return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
 }
 
