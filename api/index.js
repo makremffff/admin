@@ -220,6 +220,48 @@ async function handleUsers(query) {
   return { ok: true, users: enriched, total: enriched.length };
 }
 
+// GET /admin/users/all?sort=referrals&page=1&per_page=200
+async function handleAllUsers(query) {
+  const perPage = Math.min(parseInt(query.per_page || '200'), 1000);
+  const page    = Math.max(parseInt(query.page    || '1'),  1);
+  const offset  = (page - 1) * perPage;
+  const sortMap = {
+    referrals: 'total_referrals',
+    points:    'points',
+    ads:       'ads_watched_total',
+    created:   'created_at',
+  };
+  const sortCol = sortMap[query.sort] || 'total_referrals';
+
+  const countRow = (await sql(`SELECT COUNT(*) AS cnt FROM users`))[0];
+  const total    = parseInt(countRow.cnt);
+
+  const rows = await sql(
+    `SELECT
+       u.id, u.tg_id, u.tg_username, u.tg_first_name, u.tg_last_name,
+       u.tg_is_premium, u.points, u.level,
+       u.total_referrals, u.earned_from_refs,
+       u.ads_watched_total, u.usdt_balance,
+       u.is_banned, u.is_shadow_banned,
+       u.created_at,
+       up.photo_url
+     FROM users u
+     LEFT JOIN user_photos up ON up.user_id = u.id
+     ORDER BY u.${sortCol} DESC
+     LIMIT $1 OFFSET $2`,
+    [perPage, offset]
+  );
+
+  return {
+    ok:       true,
+    users:    rows,
+    total,
+    page,
+    per_page: perPage,
+    pages:    Math.ceil(total / perPage),
+  };
+}
+
 // GET /admin/user/:tgId — تفاصيل مستخدم واحد مع سجل نشاطه
 async function handleUserDetail(tgId) {
   const id = parseInt(tgId);
@@ -721,6 +763,9 @@ module.exports = async function handler(req, res) {
         const tgId = path.split('/admin/user/')[1]?.split('/')[0];
         return res.status(200).json(await handleUserDetail(tgId));
       }
+
+      if (path.endsWith('/admin/users/all') || path.includes('/admin/users/all?'))
+        return res.status(200).json(await handleAllUsers(query));
 
       if (path.endsWith('/admin/users') || path.includes('/admin/users?'))
         return res.status(200).json(await handleUsers(query));
