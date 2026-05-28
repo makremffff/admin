@@ -852,6 +852,10 @@
       المستخدمون
       <span class="nav-badge" id="badge-users">…</span>
     </div>
+    <div class="nav-item" onclick="showPage('leaderboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      ليدربورد الإحالات
+    </div>
     <div class="nav-item" onclick="showPage('online')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a13 13 0 0 0 0 17M20.5 3.5a13 13 0 0 1 0 17"/></svg>
       المتصلون الآن
@@ -1042,6 +1046,52 @@
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- ══════════════════════════ PAGE: LEADERBOARD -->
+    <div class="page" id="page-leaderboard">
+      <div class="section-header">
+        <div>
+          <div class="section-title">🏆 ليدربورد الإحالات</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">
+            إجمالي المستخدمين: <strong id="lb-total-count" class="num" style="color:var(--accent2)">…</strong>
+            &nbsp;|&nbsp; صفحة <strong id="lb-page-info" class="num">…</strong>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="lb-sort" class="form-select" style="width:auto;font-size:13px" onchange="loadLeaderboard(1)">
+            <option value="referrals">الأعلى إحالةً</option>
+            <option value="points">الأعلى نقاطاً</option>
+            <option value="ads">الأكثر مشاهدةً للإعلانات</option>
+            <option value="created">الأقدم تسجيلاً</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="loadLeaderboard(1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+            تحديث
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:50px">#</th>
+            <th>المستخدم</th>
+            <th>الإحالات</th>
+            <th>المكتسب من الإحالات</th>
+            <th>النقاط</th>
+            <th>الإعلانات</th>
+            <th>تاريخ التسجيل</th>
+            <th>إجراءات</th>
+          </tr></thead>
+          <tbody id="lb-body">
+            <tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted)">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div id="lb-pagination" style="display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap"></div>
     </div>
 
     <!-- ══════════════════════════ PAGE: ONLINE -->
@@ -1600,6 +1650,7 @@ function closeSidebarMobile() {
 const PAGE_TITLES = {
   dashboard:   ['نظرة عامة',         'إحصائيات عامة للمنصة'],
   users:       ['إدارة المستخدمين',  'بحث وتعديل وحظر وحذف'],
+  leaderboard: ['ليدربورد الإحالات',  'أكثر المستخدمين إحالةً — كل المستخدمين'],
   online:      ['المتصلون الآن',      'نشاط حي في الوقت الفعلي'],
   withdrawals: ['طلبات السحب',        'مراجعة وإدارة طلبات السحب'],
   channels:    ['القنوات والمهمات',   'إضافة وتعديل قنوات الاشتراك'],
@@ -1617,6 +1668,7 @@ function showPage(id) {
   document.querySelector('#topbar-info .page-title').textContent = title;
   document.querySelector('#topbar-info .page-sub').textContent   = sub;
 
+  if (id === 'leaderboard')  loadLeaderboard();
   if (id === 'users')       loadUsers();
   if (id === 'online')      loadOnline();
   if (id === 'withdrawals') loadWithdrawals();
@@ -1759,6 +1811,98 @@ function userActions(u) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     </div>
   `;
+}
+
+// ══════════════════════════════════════════
+// LEADERBOARD
+// ══════════════════════════════════════════
+let lbCurrentPage = 1;
+
+async function loadLeaderboard(page) {
+  if (page) lbCurrentPage = page;
+  const sort    = document.getElementById('lb-sort')?.value || 'referrals';
+  const perPage = 100;
+  const tbody   = document.getElementById('lb-body');
+  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted)">جاري التحميل…</td></tr>`;
+
+  const data = await apiFetch(`/admin/users/all?sort=${sort}&page=${lbCurrentPage}&per_page=${perPage}`);
+  if (!data?.users) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--red)">فشل التحميل</td></tr>`;
+    return;
+  }
+
+  setText('lb-total-count', fmt(data.total));
+  setText('lb-page-info', `${data.page} / ${data.pages}`);
+
+  const offset = (lbCurrentPage - 1) * perPage;
+
+  tbody.innerHTML = data.users.map((u, i) => {
+    const rank    = offset + i + 1;
+    const name    = u.tg_first_name || (u.tg_username ? '@'+u.tg_username : `#${u.tg_id}`);
+    const initial = name.charAt(0).toUpperCase();
+    const photoUrl = u.photo_url || '';
+    const avatarHtml = photoUrl
+      ? `<div class="avatar"><img src="${photoUrl}" alt="${initial}" onerror="this.parentElement.textContent='${initial}'"></div>`
+      : `<div class="avatar">${initial}</div>`;
+    const date  = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : '—';
+    const refs  = fmt(u.total_referrals ?? 0);
+    const earned = fmt(u.earned_from_refs ?? 0);
+    const pts   = fmt(u.points ?? 0);
+    const ads   = fmt(u.ads_watched_total ?? 0);
+    const premium = u.tg_is_premium
+      ? `<svg viewBox="0 0 24 24" width="10" height="10" fill="var(--purple)" style="margin-right:3px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` : '';
+    const banned = u.is_banned ? `<span class="badge badge-red" style="font-size:10px">محظور</span>` : '';
+
+    // Medal for top 3
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `<span class="num" style="color:var(--muted);font-size:12px">${rank}</span>`;
+
+    const tgLink = u.tg_username ? `https://t.me/${u.tg_username}` : `tg://user?id=${u.tg_id}`;
+    return `<tr>
+      <td style="text-align:center">${medal}</td>
+      <td><div class="user-cell">${avatarHtml}<div>
+        <div class="user-name">${premium}${name} ${banned}</div>
+        <div class="user-id">${u.tg_id}</div>
+      </div></div></td>
+      <td><strong class="num" style="color:var(--accent2);font-size:15px">${refs}</strong></td>
+      <td><span class="num" style="color:var(--gold)">${earned}</span></td>
+      <td><strong class="num">${pts}</strong></td>
+      <td><span class="num" style="color:var(--muted)">${ads}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${date}</td>
+      <td onclick="event.stopPropagation()"><div class="actions">
+        <div class="icon-btn" title="تيليجرام" onclick="window.open('${tgLink}','_blank')" style="color:var(--blue)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </div>
+        <div class="icon-btn" title="عرض التفاصيل" onclick="openUserModalById(${u.tg_id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  // Pagination buttons
+  const pgDiv = document.getElementById('lb-pagination');
+  pgDiv.innerHTML = '';
+  if (data.pages <= 1) return;
+
+  const makeBtn = (label, pg, active = false, disabled = false) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.className   = `btn btn-sm ${active ? 'btn-primary' : 'btn-ghost'}`;
+    b.disabled    = disabled;
+    if (!disabled) b.onclick = () => loadLeaderboard(pg);
+    pgDiv.appendChild(b);
+  };
+
+  makeBtn('«', 1,                 false, lbCurrentPage === 1);
+  makeBtn('‹', lbCurrentPage - 1, false, lbCurrentPage === 1);
+
+  // Show up to 5 page buttons around current
+  const start = Math.max(1, lbCurrentPage - 2);
+  const end   = Math.min(data.pages, start + 4);
+  for (let p = start; p <= end; p++) makeBtn(p, p, p === lbCurrentPage);
+
+  makeBtn('›', lbCurrentPage + 1, false, lbCurrentPage === data.pages);
+  makeBtn('»', data.pages,        false, lbCurrentPage === data.pages);
 }
 
 // ══════════════════════════════════════════
