@@ -138,6 +138,14 @@ async function handleStats() {
     `)
   )[0];
 
+  const taddyToday = (
+    await sql(`
+      SELECT COALESCE(SUM(count), 0) AS taddy_today
+      FROM taddy_ad_logs
+      WHERE log_date = CURRENT_DATE
+    `)
+  )[0];
+
   return {
     ok: true,
     total_users:               fmt(users.total_users),
@@ -153,13 +161,15 @@ async function handleStats() {
     pending_withdrawals:       fmt(wdStats.pending_withdrawals),
     completed_withdrawals:     fmt(wdStats.completed_withdrawals),
     total_ton_paid:            parseFloat(wdStats.total_ton_paid || 0).toFixed(4),
-    ads_today:                 fmt(adsToday.ads_today),
+    adsgram_today:             fmt(adsToday.ads_today),
+    taddy_today:               fmt(taddyToday.taddy_today),
+    ads_today:                 fmt(adsToday.ads_today) + fmt(taddyToday.taddy_today),
   };
 }
 
 // GET /admin/users?limit=100&sort=created_at&search=&filter=&online=true
 async function handleUsers(query) {
-  const limit  = Math.min(parseInt(query.limit  || '100'), 500);
+  const limit  = Math.min(parseInt(query.limit  || '500'), 5000);
   const search = (query.search || '').trim();
   const filter = (query.filter || '').trim(); // banned | shadow | premium | ''
   const online = query.online === 'true';
@@ -203,18 +213,30 @@ async function handleUsers(query) {
     params
   );
 
-  // جلب إعلانات اليوم لكل مستخدم دفعة واحدة
+  // Adsgram اليوم
   const adsToday = await sql(`
-    SELECT user_id, count AS ads_today, points_earned AS earned_today
+    SELECT user_id, count AS adsgram_today, points_earned AS adsgram_earned_today
     FROM ad_logs WHERE log_date = CURRENT_DATE
   `);
   const adsTodayMap = {};
   for (const a of adsToday) adsTodayMap[a.user_id] = a;
 
+  // Taddy اليوم
+  const taddyToday = await sql(`
+    SELECT user_id, count AS taddy_today, points_earned AS taddy_earned_today
+    FROM taddy_ad_logs WHERE log_date = CURRENT_DATE
+  `);
+  const taddyTodayMap = {};
+  for (const t of taddyToday) taddyTodayMap[t.user_id] = t;
+
   const enriched = rows.map(u => ({
     ...u,
-    ads_today:    fmt(adsTodayMap[u.id]?.ads_today   ?? 0),
-    earned_today: fmt(adsTodayMap[u.id]?.earned_today ?? 0),
+    adsgram_today:       fmt(adsTodayMap[u.id]?.adsgram_today        ?? 0),
+    adsgram_earned_today:fmt(adsTodayMap[u.id]?.adsgram_earned_today  ?? 0),
+    taddy_today:         fmt(taddyTodayMap[u.id]?.taddy_today         ?? 0),
+    taddy_earned_today:  fmt(taddyTodayMap[u.id]?.taddy_earned_today  ?? 0),
+    ads_today:           fmt(adsTodayMap[u.id]?.adsgram_today ?? 0) + fmt(taddyTodayMap[u.id]?.taddy_today ?? 0),
+    earned_today:        fmt(adsTodayMap[u.id]?.adsgram_earned_today ?? 0) + fmt(taddyTodayMap[u.id]?.taddy_earned_today ?? 0),
   }));
 
   return { ok: true, users: enriched, total: enriched.length };
@@ -222,7 +244,7 @@ async function handleUsers(query) {
 
 // GET /admin/users/all?sort=referrals&page=1&per_page=200
 async function handleAllUsers(query) {
-  const perPage = Math.min(parseInt(query.per_page || '200'), 1000);
+  const perPage = Math.min(parseInt(query.per_page || '500'), 5000);
   const page    = Math.max(parseInt(query.page    || '1'),  1);
   const offset  = (page - 1) * perPage;
   const sortMap = {
@@ -252,9 +274,35 @@ async function handleAllUsers(query) {
     [perPage, offset]
   );
 
+  // Adsgram اليوم
+  const adsToday = await sql(`
+    SELECT user_id, count AS adsgram_today, points_earned AS adsgram_earned_today
+    FROM ad_logs WHERE log_date = CURRENT_DATE
+  `);
+  const adsTodayMap = {};
+  for (const a of adsToday) adsTodayMap[a.user_id] = a;
+
+  // Taddy اليوم
+  const taddyToday = await sql(`
+    SELECT user_id, count AS taddy_today, points_earned AS taddy_earned_today
+    FROM taddy_ad_logs WHERE log_date = CURRENT_DATE
+  `);
+  const taddyTodayMap = {};
+  for (const t of taddyToday) taddyTodayMap[t.user_id] = t;
+
+  const enriched = rows.map(u => ({
+    ...u,
+    adsgram_today:        fmt(adsTodayMap[u.id]?.adsgram_today         ?? 0),
+    adsgram_earned_today: fmt(adsTodayMap[u.id]?.adsgram_earned_today   ?? 0),
+    taddy_today:          fmt(taddyTodayMap[u.id]?.taddy_today          ?? 0),
+    taddy_earned_today:   fmt(taddyTodayMap[u.id]?.taddy_earned_today   ?? 0),
+    ads_today:            fmt(adsTodayMap[u.id]?.adsgram_today ?? 0) + fmt(taddyTodayMap[u.id]?.taddy_today ?? 0),
+    earned_today:         fmt(adsTodayMap[u.id]?.adsgram_earned_today ?? 0) + fmt(taddyTodayMap[u.id]?.taddy_earned_today ?? 0),
+  }));
+
   return {
     ok:       true,
-    users:    rows,
+    users:    enriched,
     total,
     page,
     per_page: perPage,
@@ -294,11 +342,21 @@ async function handleUserDetail(tgId) {
     [u.id]
   );
 
-  // إعلانات اليوم
+  // إعلانات اليوم — Adsgram
   const adToday = (
     await sql(
       `SELECT count, points_earned
        FROM ad_logs
+       WHERE user_id = $1 AND log_date = CURRENT_DATE`,
+      [u.id]
+    )
+  )[0] || { count: 0, points_earned: 0 };
+
+  // إعلانات اليوم — Taddy
+  const taddyToday = (
+    await sql(
+      `SELECT count, points_earned
+       FROM taddy_ad_logs
        WHERE user_id = $1 AND log_date = CURRENT_DATE`,
       [u.id]
     )
@@ -318,8 +376,12 @@ async function handleUserDetail(tgId) {
     ok: true,
     user: {
       ...u,
-      ads_today:    fmt(adToday.count),
-      earned_today: fmt(adToday.points_earned),
+      adsgram_today:        fmt(adToday.count),
+      adsgram_earned_today: fmt(adToday.points_earned),
+      taddy_today:          fmt(taddyToday.count),
+      taddy_earned_today:   fmt(taddyToday.points_earned),
+      ads_today:            fmt(adToday.count) + fmt(taddyToday.count),
+      earned_today:         fmt(adToday.points_earned) + fmt(taddyToday.points_earned),
     },
     audit:       auditRows,
     withdrawals: wdRows,
