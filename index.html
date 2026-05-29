@@ -968,11 +968,20 @@
 
         <div class="stat-card blue">
           <div class="stat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
           </div>
-          <div class="stat-value" id="stat-ads">—</div>
-          <div class="stat-label">إعلانات شوهدت اليوم</div>
-          <div class="stat-delta up">إجمالي اليوم</div>
+          <div class="stat-value" id="stat-adsgram">—</div>
+          <div class="stat-label">Adsgram اليوم</div>
+          <div class="stat-delta up">إعلانات Adsgram</div>
+        </div>
+
+        <div class="stat-card" style="--card-accent:#a78bfa">
+          <div class="stat-icon" style="background:rgba(167,139,250,.15);color:#a78bfa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+          </div>
+          <div class="stat-value" id="stat-taddy">—</div>
+          <div class="stat-label">Taddy اليوم</div>
+          <div class="stat-delta up" style="color:#a78bfa">إعلانات Taddy</div>
         </div>
 
         <div class="stat-card purple">
@@ -1035,7 +1044,8 @@
             <th>المستخدم</th>
             <th>النقاط</th>
             <th>المستوى</th>
-            <th>إعلانات اليوم</th>
+            <th style="color:var(--blue)">Adsgram اليوم</th>
+            <th style="color:#a78bfa">Taddy اليوم</th>
             <th>إعلانات الكلية</th>
             <th>الإحالات</th>
             <th>الحالة</th>
@@ -1687,7 +1697,8 @@ async function loadDashboard() {
     setText('stat-online',     fmt(data.online           ?? '—'));
     setText('stat-banned',     fmt((data.banned ?? 0) + (data.shadow_banned ?? 0)));
     setText('stat-pending-wd', fmt(data.pending_withdrawals ?? '—'));
-    setText('stat-ads',        fmt(data.ads_today        ?? '—'));
+    setText('stat-adsgram',    fmt(data.adsgram_today    ?? '—'));
+    setText('stat-taddy',      fmt(data.taddy_today      ?? '—'));
     setText('stat-refs',       fmt(data.total_referrals  ?? '—'));
     setText('badge-users',     fmt(data.total_users ?? ''));
     setText('badge-online',    fmt(data.online ?? ''));
@@ -1757,7 +1768,8 @@ function renderUsersTable(tbodyId, users, cols) {
     const date = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : '—';
     const ads  = fmt(u.ads_watched_total ?? 0);
     const refs = fmt(u.total_referrals ?? 0);
-    const adsT = fmt(u.ads_today ?? 0);
+    const adsgramT = fmt(u.adsgram_today ?? 0);
+    const taddyT   = fmt(u.taddy_today   ?? 0);
 
     if (cols === 6) {
       return `<tr onclick="openUserModal(${JSON.stringify(u).replace(/"/g,"'")})">
@@ -1773,7 +1785,8 @@ function renderUsersTable(tbodyId, users, cols) {
       <td><div class="user-cell">${avatarHtml}<div><div class="user-name">${name}${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
       <td><strong class="num">${fmt(u.points)}</strong></td>
       <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
-      <td><span class="num" style="color:var(--accent2)">${u.ads_today ?? 0}</span></td>
+      <td><span class="num" style="color:var(--blue)">${adsgramT}</span></td>
+      <td><span class="num" style="color:#a78bfa">${taddyT}</span></td>
       <td class="num">${ads}</td>
       <td class="num">${refs}</td>
       <td>${status}</td>
@@ -2038,7 +2051,8 @@ function openUserModal(u) {
     <div class="detail-grid">
       <div class="detail-item"><div class="detail-item-label">النقاط</div><div class="detail-item-value" style="color:var(--gold)">${fmt(u.points)}</div></div>
       <div class="detail-item"><div class="detail-item-label">المستوى</div><div class="detail-item-value">${u.level}</div></div>
-      <div class="detail-item"><div class="detail-item-label">إعلانات اليوم</div><div class="detail-item-value" style="color:var(--accent2)">${u.ads_today ?? 0}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Adsgram اليوم</div><div class="detail-item-value" style="color:var(--blue)">${u.adsgram_today ?? 0}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Taddy اليوم</div><div class="detail-item-value" style="color:#a78bfa">${u.taddy_today ?? 0}</div></div>
       <div class="detail-item"><div class="detail-item-label">الإعلانات الكلية</div><div class="detail-item-value">${fmt(u.ads_watched_total)}</div></div>
       <div class="detail-item"><div class="detail-item-label">الإحالات</div><div class="detail-item-value">${u.total_referrals}</div></div>
       <div class="detail-item"><div class="detail-item-label">Risk Score</div><div class="detail-item-value" style="color:${u.risk_score>60?'var(--red)':'var(--green)'}">${u.risk_score}</div></div>
