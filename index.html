@@ -1712,7 +1712,7 @@ async function loadDashboard() {
 // USERS
 // ══════════════════════════════════════════
 async function loadUsers() {
-  const data = await apiFetch('/admin/users?limit=100');
+  const data = await apiFetch('/admin/users?limit=800');
   if (data?.users) {
     allUsers = data.users;
     renderUsersFiltered();
@@ -1834,7 +1834,7 @@ let lbCurrentPage = 1;
 async function loadLeaderboard(page) {
   if (page) lbCurrentPage = page;
   const sort    = document.getElementById('lb-sort')?.value || 'referrals';
-  const perPage = 100;
+  const perPage = 800;
   const tbody   = document.getElementById('lb-body');
   tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted)">جاري التحميل…</td></tr>`;
 
