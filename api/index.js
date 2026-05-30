@@ -38,7 +38,7 @@ async function withTransaction(fn) {
 }
 
 // ── Config ────────────────────────────────────────────────────────
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'makrem';
+const ADMIN_SECRET = process.env.ADMIN_SECRET || null;
 const BOT_TOKEN    = '8285685691:AAFyZvMVJ9k6UgHuBa8E34Icvk-TZ4-OdaI';
 
 async function sendBotMessage(tgId, text, extra = {}) {
@@ -86,6 +86,8 @@ function setCors(req, res) {
 
 // ── Auth check ────────────────────────────────────────────────────
 function checkAuth(req, res) {
+  // بدون auth — الموقع خاص
+  if (!ADMIN_SECRET) return true;
   const key =
     req.headers['x-admin-secret'] ||
     req.headers['x-admin-Secret'] ||
