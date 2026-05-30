@@ -2210,4 +2210,923 @@ async function loadOnline() {
     const ago     = timeAgo(u.updated_at);
     return `<tr>
       <td><div class="user-cell">${avatarHtml}<div><div class="user-name">${name}</div><div class="user-id">${u.tg_id}</div></div></div></td>
-      <td><
+      <td><strong class="num">${fmt(u.points)}</strong></td>
+      <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
+      <td><span class="badge badge-green"><span class="online-pulse" style="width:6px;height:6px;margin-left:3px"></span>${ago}</span></td>
+      <td><div class="actions">${userActions(u)}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// WITHDRAWALS
+// ══════════════════════════════════════════
+async function loadWithdrawals() {
+  const statusMap = { pending:'pending', approved:'completed', rejected:'rejected', all:'all' };
+  const s = statusMap[wdFilter] || 'pending';
+  const data = await apiFetch('/admin/withdrawals?status=' + s);
+  allWds = data?.withdrawals || [];
+  setText('badge-wd', allWds.filter(w=>w.status==='pending').length);
+  renderWithdrawals();
+}
+
+function setWdFilter(f, el) {
+  wdFilter = f;
+  document.querySelectorAll('#page-withdrawals .filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadWithdrawals();
+}
+
+function renderWithdrawals() {
+  const el = document.getElementById('withdrawals-list');
+  if (!allWds.length) {
+    el.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <p>لا توجد طلبات</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = allWds.map(w => {
+    const name    = w.tg_username ? `@${w.tg_username}` : `#${w.user_id}`;
+    const initial = (w.tg_first_name || name).charAt(0).toUpperCase();
+    const date    = new Date(w.created_at).toLocaleDateString('en-GB');
+    const statusBadge = {
+      pending:  '<span class="badge badge-orange">معلق</span>',
+      approved: '<span class="badge badge-green">مقبول</span>',
+      rejected: '<span class="badge badge-red">مرفوض</span>',
+    }[w.status] || `<span class="badge badge-muted">${w.status}</span>`;
+
+    const copyBtn = `<button class="btn btn-ghost btn-sm" title="نسخ عنوان المحفظة" onclick="navigator.clipboard.writeText('${w.address}');toast('تم نسخ العنوان','success')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      نسخ
+    </button>`;
+    const actions = w.status === 'pending'
+      ? `<div style="display:flex;flex-direction:column;gap:5px;align-items:stretch">
+          <button class="btn btn-success btn-sm" onclick="quickApprove(${w.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+            موافقة
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="quickReject(${w.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            رفض
+          </button>
+          ${copyBtn}
+          <button class="btn btn-ghost btn-sm" onclick="openWdModal(${w.id})">تفاصيل</button>
+        </div>`
+      : `<div style="display:flex;flex-direction:column;gap:5px">${copyBtn}<button class="btn btn-ghost btn-sm" onclick="openWdModal(${w.id})">عرض</button></div>`;
+
+    return `<div class="withdrawal-card">
+      <div class="wd-avatar">${initial}</div>
+      <div class="wd-info">
+        <div class="wd-name">${w.tg_first_name || ''} <span style="color:var(--muted);font-weight:400">${name}</span></div>
+        <div class="wd-address">${w.address}</div>
+        <div class="wd-meta">${statusBadge}<span class="wd-date">${date}</span></div>
+      </div>
+      <div style="text-align:left">
+        <div class="wd-amount">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
+        <div class="wd-pts">${fmt(w.pts)} نقطة</div>
+      </div>
+      <div class="wd-actions">${actions}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openUserModal(u) {
+  if (typeof u === 'string') u = JSON.parse(u.replace(/\\'/g,"'"));
+  const name   = u.tg_first_name || u.tg_username || `#${u.tg_id}`;
+  const status = u.is_banned
+    ? '<span class="badge badge-red">محظور</span>'
+    : u.is_shadow_banned
+    ? '<span class="badge badge-orange">شادو بان</span>'
+    : '<span class="badge badge-green">نشط</span>';
+
+  document.getElementById('user-detail-content').innerHTML = `
+    <div class="user-detail-header">
+      ${u.tg_photo_url || u.photo_url
+        ? `<div class="user-detail-avatar" style="padding:0;overflow:hidden"><img src="${u.tg_photo_url||u.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${name.charAt(0).toUpperCase()}'"></div>`
+        : `<div class="user-detail-avatar">${name.charAt(0).toUpperCase()}</div>`}
+      <div>
+        <div class="user-detail-name">${name} ${u.tg_is_premium ? `<span class="badge badge-purple"><svg viewBox="0 0 24 24" width="9" height="9" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>` : ''}</div>
+        <div class="user-detail-meta">${u.tg_username ? '@' + u.tg_username : ''} · ID: ${u.tg_id}</div>
+        <div style="margin-top:6px">${status}</div>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-item-label">النقاط</div><div class="detail-item-value" style="color:var(--gold)">${fmt(u.points)}</div></div>
+      <div class="detail-item"><div class="detail-item-label">المستوى</div><div class="detail-item-value">${u.level}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Adsgram اليوم</div><div class="detail-item-value" style="color:var(--blue)">${u.adsgram_today ?? 0}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Taddy اليوم</div><div class="detail-item-value" style="color:#a78bfa">${u.taddy_today ?? 0}</div></div>
+      <div class="detail-item"><div class="detail-item-label">الإعلانات الكلية</div><div class="detail-item-value">${fmt(u.ads_watched_total)}</div></div>
+      <div class="detail-item"><div class="detail-item-label">الإحالات</div><div class="detail-item-value">${u.total_referrals}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Risk Score</div><div class="detail-item-value" style="color:${u.risk_score>60?'var(--red)':'var(--green)'}">${u.risk_score}</div></div>
+      <div class="detail-item"><div class="detail-item-label">تاريخ التسجيل</div><div class="detail-item-value" style="font-size:12px;font-family:'Cairo',sans-serif">${u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : '—'}</div></div>
+      ${u.ban_reason ? `<div class="detail-item" style="grid-column:1/-1"><div class="detail-item-label">سبب الحظر</div><div class="detail-item-value" style="color:var(--red);font-size:13px;font-family:'Cairo',sans-serif">${u.ban_reason}</div></div>` : ''}
+    </div>
+  `;
+  document.getElementById('user-detail-actions').innerHTML = `
+    <a class="btn btn-ghost btn-sm" href="${u.tg_username ? 'https://t.me/'+u.tg_username : 'tg://user?id='+u.tg_id}" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      فتح محادثة
+    </a>
+    <button class="btn btn-ghost btn-sm" onclick="openBalanceModal(${u.tg_id});closeModal('modal-user')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      تعديل رصيد
+    </button>
+    ${u.is_banned
+      ? `<button class="btn btn-success btn-sm" onclick="banUser(${u.tg_id},false);closeModal('modal-user')">رفع الحظر</button>`
+      : `<button class="btn btn-danger btn-sm" onclick="confirmAction('حظر #${u.tg_id}?','danger',()=>{banUser(${u.tg_id},true);closeModal('modal-user')})">حظر</button>`}
+    <button class="btn btn-danger btn-sm" onclick="confirmAction('حذف #${u.tg_id} نهائياً؟','danger',()=>{deleteUser(${u.tg_id});closeModal('modal-user')})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      حذف
+    </button>
+  `;
+  openModal('modal-user');
+}
+
+async function openUserModalById(tgId) {
+  const data = await apiFetch('/admin/user/' + tgId);
+  if (data?.user) openUserModal(data.user);
+}
+
+function openBalanceModal(tgId) {
+  if (tgId) document.getElementById('bal-user-id').value = tgId;
+  openModal('modal-balance');
+}
+
+function openAddBalanceModal() { openModal('modal-balance'); }
+
+function openWdModal(wdId) {
+  currentWdId = wdId;
+  const w = allWds.find(x => x.id === wdId);
+  if (!w) return;
+  const name = w.tg_first_name || w.tg_username || `#${w.user_id}`;
+  document.getElementById('wd-detail-content').innerHTML = `
+    <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-weight:700;font-size:15px;margin-bottom:3px">${name}</div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:12px">ID: ${w.user_id}</div>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">المبلغ</div>
+          <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:'IBM Plex Mono',sans-serif">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
+          <div style="font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',sans-serif">${fmt(w.pts)} نقطة</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px">عنوان المحفظة</div>
+          <div style="font-family:monospace;font-size:11px;word-break:break-all;background:var(--bg);padding:8px;border-radius:6px;display:flex;gap:8px;align-items:flex-start">
+            <span style="flex:1">${w.address}</span>
+            <button class="btn btn-ghost btn-sm" style="flex-shrink:0;padding:3px 8px;font-size:10px" onclick="navigator.clipboard.writeText('${w.address}');toast('تم نسخ العنوان','success')">نسخ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  openModal('modal-wd');
+}
+
+// ══════════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════════
+async function banUser(tgId, ban) {
+  const data = await apiFetch('/admin/ban', {
+    method: 'POST',
+    body: JSON.stringify({ tg_id: tgId, ban, reason: ban ? 'admin_action' : null }),
+  });
+  if (data?.ok) {
+    toast(ban ? `تم حظر #${tgId}` : `رُفع الحظر عن #${tgId}`, ban ? 'error' : 'success');
+    refreshData();
+  } else toast('فشل الإجراء', 'error');
+}
+
+async function deleteUser(tgId) {
+  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  toast('جاري الحذف...', 'success');
+  const data = await apiFetch('/admin/user/' + tgId, { method: 'DELETE' });
+  if (data?.ok) {
+    allUsers = allUsers.filter(u => String(u.tg_id) !== String(tgId));
+    renderUsersFiltered();
+    toast('تم حذف المستخدم #' + tgId + ' بنجاح', 'success');
+    setTimeout(refreshData, 600);
+  } else {
+    toast(data?.error ? ('فشل الحذف: ' + data.error) : 'فشل الحذف', 'error');
+  }
+}
+
+async function doUpdateBalance() {
+  const uid    = document.getElementById('bal-user-id').value.trim();
+  const action = document.getElementById('bal-action').value;
+  const amount = parseInt(document.getElementById('bal-amount').value);
+  const note   = document.getElementById('bal-note').value.trim();
+  if (!uid || !amount) return toast('أدخل البيانات كاملة', 'error');
+  const data = await apiFetch('/admin/balance', {
+    method: 'POST',
+    body: JSON.stringify({ tg_id: uid, action, amount, note }),
+  });
+  if (data?.ok) {
+    toast('تم تعديل الرصيد — نقاط جديدة: ' + fmt(data.new_points), 'success');
+    closeModal('modal-balance');
+    // update local cache immediately
+    const idx = allUsers.findIndex(u => String(u.tg_id) === String(uid));
+    if (idx !== -1) { allUsers[idx].points = data.new_points; renderUsersFiltered(); }
+    setTimeout(refreshData, 600);
+  } else {
+    toast(data?.error ? ('فشل التعديل: ' + data.error) : 'فشل التعديل — تحقق من الـ tg_id', 'error');
+  }
+}
+
+async function quickApprove(wdId) {
+  if (!confirm('تأكيد الموافقة على طلب السحب #' + wdId + '?')) return;
+  const data = await apiFetch('/admin/withdrawal', {
+    method: 'POST',
+    body: JSON.stringify({ id: wdId, status: 'approved' }),
+  });
+  if (data?.ok) { toast('تم قبول السحب #' + wdId, 'success'); loadWithdrawals(); }
+  else toast(data?.error || 'فشل', 'error');
+}
+
+async function quickReject(wdId) {
+  const reason = prompt('سبب الرفض (اختياري):') ?? '';
+  const data = await apiFetch('/admin/withdrawal', {
+    method: 'POST',
+    body: JSON.stringify({ id: wdId, status: 'rejected', notes: reason }),
+  });
+  if (data?.ok) { toast('تم رفض السحب #' + wdId, 'error'); loadWithdrawals(); }
+  else toast(data?.error || 'فشل', 'error');
+}
+
+async function resolveWithdrawal(status) {
+  const note   = document.getElementById('wd-note').value.trim();
+  const txhash = document.getElementById('wd-txhash').value.trim();
+  const data = await apiFetch('/admin/withdrawal', {
+    method: 'POST',
+    body: JSON.stringify({ id: currentWdId, status, notes: note, tx_hash: txhash }),
+  });
+  if (data?.ok) {
+    toast(status === 'approved' ? 'تم قبول السحب' : 'تم رفض السحب', status === 'approved' ? 'success' : 'error');
+    closeModal('modal-wd');
+    loadWithdrawals();
+  } else toast('فشل الإجراء', 'error');
+}
+
+async function saveSettings() {
+  const payload = {
+    ads_daily_limit:   parseInt(document.getElementById('cfg-daily-limit').value),
+    points_per_ad:     parseInt(document.getElementById('cfg-pts-ad').value),
+    bonus_10:          parseInt(document.getElementById('cfg-bonus-10').value),
+    bonus_25:          parseInt(document.getElementById('cfg-bonus-25').value),
+    referral_pts:      parseInt(document.getElementById('cfg-ref-pts').value),
+    referral_3_bonus:  parseInt(document.getElementById('cfg-ref-3').value),
+    ref_min_ads:       parseInt(document.getElementById('cfg-ref-min-ads').value),
+    ref_min_pts:       parseInt(document.getElementById('cfg-ref-min-pts').value),
+    wd_first_min:      parseInt(document.getElementById('cfg-wd-first').value),
+    wd_normal_min:     parseInt(document.getElementById('cfg-wd-normal').value),
+    wd_normal_level:   parseInt(document.getElementById('cfg-wd-level').value),
+    adsgram_pts:       parseInt(document.getElementById('cfg-adsgram-pts').value),
+    adsgram_block_id:  document.getElementById('cfg-adsgram-block').value,
+    adsgram_enabled:   document.getElementById('cfg-adsgram-enabled').checked,
+    tg_task_pts:       parseInt(document.getElementById('cfg-tg-pts').value),
+    channel_url:       document.getElementById('cfg-channel-url').value,
+    max_per_ip:        parseInt(document.getElementById('cfg-max-ip').value),
+    max_per_fp:        parseInt(document.getElementById('cfg-max-fp').value),
+    risk_ban:          parseInt(document.getElementById('cfg-risk-ban').value),
+    risk_shadow:       parseInt(document.getElementById('cfg-risk-shadow').value),
+  };
+  // Validate required numbers
+  const nums = Object.entries(payload).filter(([k,v]) => k !== 'adsgram_block_id' && k !== 'channel_url' && k !== 'adsgram_enabled');
+  if (nums.some(([k,v]) => isNaN(v))) return toast('تأكد من إدخال أرقام صحيحة في جميع الحقول', 'error');
+
+  const data = await apiFetch('/admin/config', { method: 'POST', body: JSON.stringify(payload) });
+  if (data?.ok) toast('تم حفظ الإعدادات بنجاح (' + (data.saved?.length || 0) + ' قيمة)', 'success');
+  else toast('فشل حفظ الإعدادات — تحقق من الاتصال', 'error');
+}
+
+function resetSettings() { toast('تم إعادة تعيين الإعدادات', 'success'); }
+
+// ══════════════════════════════════════════
+// CONFIRM DIALOG
+// ══════════════════════════════════════════
+function confirmAction(msg, type, cb) {
+  const box = document.getElementById('confirm-icon-box');
+  const svg = document.getElementById('confirm-icon-svg');
+  box.className = `confirm-icon-box ${type}`;
+  if (type === 'danger') {
+    svg.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
+  } else {
+    svg.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+  }
+  document.getElementById('confirm-msg').textContent = msg;
+  const btn = document.getElementById('confirm-ok-btn');
+  btn.className = `btn ${type === 'danger' ? 'btn-danger' : 'btn-success'}`;
+  btn.onclick = () => { cb(); closeModal('modal-confirm'); };
+  openModal('modal-confirm');
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const iconSvg = type === 'success'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  el.innerHTML = `<span class="toast-icon">${iconSvg}</span>${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function setText(id, v) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = v ?? '—';
+}
+
+function fmt(n) {
+  if (n == null || n === '') return '—';
+  return Number(n).toLocaleString('en-US');
+}
+
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (diff < 60) return `منذ ${diff} ث`;
+  if (diff < 3600) return `منذ ${Math.floor(diff/60)} د`;
+  return `منذ ${Math.floor(diff/3600)} س`;
+}
+
+function refreshData() {
+  const active = document.querySelector('.page.active');
+  if (!active) return;
+  const id = active.id.replace('page-', '');
+  if (id === 'dashboard')   loadDashboard();
+  if (id === 'users')       loadUsers();
+  if (id === 'online')      loadOnline();
+  if (id === 'withdrawals') loadWithdrawals();
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ══════════════════════════════════════════
+// CHANNELS
+// ══════════════════════════════════════════
+let allChannels = [];
+
+async function loadChannels() {
+  const data = await apiFetch('/admin/channels');
+  allChannels = data?.channels || [];
+  renderChannels();
+}
+
+function renderChannels() {
+  const el = document.getElementById('channels-list');
+  if (!allChannels.length) {
+    el.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.65a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.5 16z"/></svg>
+      <p>لا توجد قنوات بعد</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = allChannels.map(ch => {
+    const statusBadge = ch.is_active
+      ? '<span class="badge badge-green"><span class="dot dot-green"></span>مفعّل</span>'
+      : '<span class="badge badge-red">معطّل</span>';
+    return `<div class="settings-card" style="margin:0">
+      <div class="settings-card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:2px">${ch.title}</div>
+          <a href="${ch.url}" target="_blank" style="color:var(--blue);font-size:12px;direction:ltr;word-break:break-all">${ch.url}</a>
+          ${ch.tg_chat_id ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;direction:ltr">Chat ID: ${ch.tg_chat_id}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;flex-shrink:0">
+          <div style="text-align:center">
+            <div style="font-size:18px;font-weight:700;color:var(--gold)">${fmt(ch.reward)}</div>
+            <div style="font-size:11px;color:var(--muted)">نقطة</div>
+          </div>
+          ${statusBadge}
+          <div class="actions">
+            <div class="icon-btn" title="تعديل" onclick="openEditChannelModal(${ch.id})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <div class="icon-btn danger" title="حذف" onclick="confirmAction('حذف قناة ${ch.title.replace(/'/g,"\\'")}?','danger',()=>deleteChannel(${ch.id}))">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddChannelModal() {
+  document.getElementById('channel-modal-title').textContent = 'إضافة قناة جديدة';
+  document.getElementById('ch-edit-id').value = '';
+  document.getElementById('ch-title').value = '';
+  document.getElementById('ch-url').value = '';
+  document.getElementById('ch-chat-id').value = '';
+  document.getElementById('ch-reward').value = '2500';
+  document.getElementById('ch-order').value = '0';
+  document.getElementById('ch-active').checked = true;
+  openModal('modal-channel');
+}
+
+function openEditChannelModal(id) {
+  const ch = allChannels.find(c => c.id === id);
+  if (!ch) return;
+  document.getElementById('channel-modal-title').textContent = 'تعديل القناة';
+  document.getElementById('ch-edit-id').value = ch.id;
+  document.getElementById('ch-title').value = ch.title;
+  document.getElementById('ch-url').value = ch.url;
+  document.getElementById('ch-chat-id').value = ch.tg_chat_id || '';
+  document.getElementById('ch-reward').value = ch.reward;
+  document.getElementById('ch-order').value = ch.sort_order ?? 0;
+  document.getElementById('ch-active').checked = !!ch.is_active;
+  openModal('modal-channel');
+}
+
+async function saveChannel() {
+  const editId  = document.getElementById('ch-edit-id').value;
+  const payload = {
+    title:       document.getElementById('ch-title').value.trim(),
+    url:         document.getElementById('ch-url').value.trim(),
+    tg_chat_id:  document.getElementById('ch-chat-id').value.trim() || null,
+    reward:      parseInt(document.getElementById('ch-reward').value) || 0,
+    sort_order:  parseInt(document.getElementById('ch-order').value) || 0,
+    is_active:   document.getElementById('ch-active').checked,
+  };
+  if (!payload.title) { toast('يجب إدخال اسم القناة', 'error'); return; }
+  if (!payload.url)   { toast('يجب إدخال رابط القناة', 'error'); return; }
+
+  let data;
+  if (editId) {
+    data = await apiFetch('/admin/channels/' + editId, { method: 'PUT', body: JSON.stringify(payload) });
+  } else {
+    data = await apiFetch('/admin/channels', { method: 'POST', body: JSON.stringify(payload) });
+  }
+  if (data?.ok) {
+    toast(editId ? 'تم تحديث القناة' : 'تمت إضافة القناة', 'success');
+    closeModal('modal-channel');
+    loadChannels();
+  } else {
+    toast('خطأ: ' + (data?.error || 'فشل الحفظ'), 'error');
+  }
+}
+
+async function deleteChannel(id) {
+  const data = await apiFetch('/admin/channels/' + id, { method: 'DELETE' });
+  if (data?.ok) {
+    toast('تم حذف القناة', 'success');
+    loadChannels();
+  } else {
+    toast('خطأ في الحذف', 'error');
+  }
+}
+
+// ── INIT ──
+loadDashboard();
+setInterval(refreshData, 30000);
+
+// ══════════════════════════════════════════
+// BROADCAST
+// ══════════════════════════════════════════
+(function() {
+  const ta = () => document.getElementById('bc-text');
+
+  // معاينة لحظية
+  function bcUpdatePreview() {
+    const raw     = ta()?.value || '';
+    const imgUrl  = document.getElementById('bc-image')?.value?.trim();
+    const btnLbl  = document.getElementById('bc-btn-label')?.value?.trim();
+    const prev    = document.getElementById('bc-preview');
+    const prevImg = document.getElementById('bc-preview-img');
+    const prevBtn = document.getElementById('bc-preview-btn');
+    if (prev) prev.innerHTML = raw || '<span style="color:#5d7a8a">ستظهر الرسالة هنا...</span>';
+    if (prevImg) {
+      prevImg.style.display = imgUrl ? '' : 'none';
+      const img = document.getElementById('bc-img-thumb');
+      if (img && imgUrl) img.src = imgUrl;
+    }
+    if (prevBtn) {
+      prevBtn.style.display = btnLbl ? '' : 'none';
+      const lbl = document.getElementById('bc-preview-btn-label');
+      if (lbl) lbl.textContent = btnLbl || '—';
+    }
+  }
+
+  // لف النص المحدد
+  window.bcWrap = function(before, after) {
+    const t = ta();
+    if (!t) return;
+    const s = t.selectionStart, e = t.selectionEnd;
+    const selected = t.value.slice(s, e);
+    t.value = t.value.slice(0, s) + before + selected + after + t.value.slice(e);
+    t.selectionStart = s + before.length;
+    t.selectionEnd   = e + before.length;
+    t.focus();
+    bcUpdatePreview();
+  };
+
+  // إرسال
+  window.bcSend = async function() {
+    const text     = ta()?.value?.trim();
+    const imageUrl = document.getElementById('bc-image')?.value?.trim();
+    const btnLabel = document.getElementById('bc-btn-label')?.value?.trim();
+    const btnUrl   = document.getElementById('bc-btn-url')?.value?.trim();
+    const resultEl = document.getElementById('bc-result');
+    const sendBtn  = document.getElementById('bc-send-btn');
+
+    if (!text) { alert('اكتب نص الرسالة أولاً'); return; }
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = '⏳ جاري الإرسال...';
+    if (resultEl) resultEl.style.display = 'none';
+
+    try {
+      const body = { text };
+      if (imageUrl) body.image_url = imageUrl;
+      if (btnLabel && btnUrl) { body.button_label = btnLabel; body.button_url = btnUrl; }
+
+      const d = await apiFetch('/admin/broadcast', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      if (resultEl) {
+        resultEl.style.display = '';
+        if (d.ok) {
+          resultEl.style.background = 'rgba(34,197,94,0.1)';
+          resultEl.style.border = '1px solid rgba(34,197,94,0.25)';
+          resultEl.style.color = 'rgba(34,197,94,0.9)';
+          resultEl.textContent = `✅ تم الإرسال — ${d.sent} نجح / ${d.failed} فشل من ${d.total} مستخدم`;
+        } else {
+          resultEl.style.background = 'rgba(239,68,68,0.1)';
+          resultEl.style.border = '1px solid rgba(239,68,68,0.25)';
+          resultEl.style.color = 'rgba(239,68,68,0.9)';
+          resultEl.textContent = `❌ خطأ: ${d.error}`;
+        }
+      }
+    } catch (e) {
+      if (resultEl) {
+        resultEl.style.display = '';
+        resultEl.textContent = '❌ فشل الاتصال بالسيرفر';
+      }
+    }
+
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> إرسال للجميع';
+  };
+
+  // ربط الـ events
+  document.addEventListener('DOMContentLoaded', () => {
+    const t = document.getElementById('bc-text');
+    const img = document.getElementById('bc-image');
+    const bl = document.getElementById('bc-btn-label');
+    if (t)   t.addEventListener('input', bcUpdatePreview);
+    if (img) img.addEventListener('input', bcUpdatePreview);
+    if (bl)  bl.addEventListener('input', bcUpdatePreview);
+  });
+})();
+
+
+// ══════════════════════════════════════════
+// SOCIAL TASKS — State
+// ══════════════════════════════════════════
+let socialProofs       = [];
+let socialTasksList    = [];
+let socialProofFilter  = 'pending';
+let currentProofId     = null;
+let socialActiveTab    = 'proofs';
+
+const SOCIAL_ICON_SVG = {
+  facebook:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(42,171,238,.85)"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`,
+  twitter:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(42,171,238,.85)"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.261 5.635zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+  tiktok:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(42,171,238,.85)"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.86 4.86 0 01-1.01-.07z"/></svg>`,
+  telegram:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(42,171,238,.85)"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.236 7.262l-1.69 7.966c-.127.567-.461.706-.934.44l-2.582-1.903-1.246 1.2c-.138.137-.253.253-.52.253l.185-2.641 4.8-4.336c.209-.185-.045-.288-.324-.103l-5.932 3.732-2.554-.797c-.555-.173-.567-.554.116-.82l9.97-3.843c.463-.168.868.103.711.852z"/></svg>`,
+  instagram: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(42,171,238,.85)" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.2" fill="rgba(42,171,238,.85)" stroke="none"/></svg>`,
+  youtube:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(42,171,238,.85)"><path d="M21.543 6.498C22 8.28 22 12 22 12s0 3.72-.457 5.502c-.254.985-.997 1.76-1.938 2.022C17.896 20 12 20 12 20s-5.893 0-7.605-.476c-.945-.266-1.687-1.04-1.938-2.022C2 15.72 2 12 2 12s0-3.72.457-5.502c.254-.985.997-1.76 1.938-2.022C6.107 4 12 4 12 4s5.896 0 7.605.476c.945.266 1.687 1.04 1.938 2.022zM10 15.5l6-3.5-6-3.5v7z"/></svg>`,
+  default:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(42,171,238,.85)" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>`,
+};
+
+const SOCIAL_PLATFORM_NAMES = {
+  facebook:'فيسبوك', twitter:'تويتر / X', tiktok:'تيك توك',
+  telegram:'تيليجرام', instagram:'إنستغرام', youtube:'يوتيوب', default:'عام',
+};
+
+// ── Tab switcher ──────────────────────────────────────────────────
+function switchSocialTab(tab) {
+  socialActiveTab = tab;
+  document.getElementById('stab-proofs').classList.toggle('active', tab === 'proofs');
+  document.getElementById('stab-tasks').classList.toggle('active',  tab === 'tasks');
+  document.getElementById('social-panel-proofs').style.display = tab === 'proofs' ? '' : 'none';
+  document.getElementById('social-panel-tasks').style.display  = tab === 'tasks'  ? '' : 'none';
+  if (tab === 'proofs' && !socialProofs.length)    loadSocialProofs();
+  if (tab === 'tasks'  && !socialTasksList.length) loadSocialTasks();
+}
+
+// ══════════════════════════════════════════
+// PROOFS
+// ══════════════════════════════════════════
+async function loadSocialProofs() {
+  const list = document.getElementById('social-proofs-list');
+  list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">جارٍ التحميل…</div>';
+  const data = await apiFetch(`/social/proofs?status=${socialProofFilter}&limit=100`);
+  if (!data) { list.innerHTML = '<div style="color:var(--red);text-align:center;padding:24px">خطأ في التحميل</div>'; return; }
+  socialProofs = data.proofs || [];
+
+  // update badge
+  const badge = document.getElementById('proofs-pending-count');
+  if (socialProofFilter === 'pending' && socialProofs.length) {
+    badge.textContent = socialProofs.length;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  renderProofsUI();
+}
+
+function filterProofs(status) {
+  socialProofFilter = status;
+  document.querySelectorAll('.proof-filter-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.s === status)
+  );
+  loadSocialProofs();
+}
+
+function renderProofsUI() {
+  const list = document.getElementById('social-proofs-list');
+  if (!socialProofs.length) {
+    list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">لا توجد إثباتات بهذه الحالة</div>';
+    return;
+  }
+  list.innerHTML = socialProofs.map(p => proofCardHTML(p)).join('');
+}
+
+function proofCardHTML(p) {
+  const ico   = SOCIAL_ICON_SVG[p.task_icon] || SOCIAL_ICON_SVG.default;
+  const plat  = SOCIAL_PLATFORM_NAMES[p.task_icon] || p.task_icon;
+  const date  = new Date(p.created_at).toLocaleString('ar-EG', {dateStyle:'short', timeStyle:'short'});
+  const statusColor = { pending:'var(--gold)', approved:'#22c55e', rejected:'var(--red)' }[p.status] || 'var(--muted)';
+  const statusLabel = { pending:'⏳ انتظار', approved:'✅ مقبول', rejected:'❌ مرفوض' }[p.status] || p.status;
+  const hasImg = p.proof_image && p.proof_image.startsWith('data:');
+
+  const actionsHTML = p.status === 'pending' ? `
+    <div class="proof-actions">
+      <button class="btn btn-sm btn-danger"  onclick="openProofModal(${p.id})">مراجعة / قبول أو رفض</button>
+    </div>
+  ` : '';
+
+  return `
+  <div class="proof-card" id="proof-card-${p.id}">
+    <div class="proof-card-head">
+      <div class="proof-platform-ico">${ico}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px">${esc(p.task_title)}</div>
+        <div style="font-size:12px;color:var(--muted)">${plat} — ${date}</div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:${statusColor}">${statusLabel}</div>
+    </div>
+    <div class="proof-card-body">
+      ${hasImg ? `
+        <div class="proof-img-wrap" onclick="openProofImg('${p.id}', \`${p.proof_image}\`)">
+          <img src="${p.proof_image}" alt="إثبات">
+        </div>` : `<div class="proof-img-wrap" style="color:var(--muted);font-size:11px">لا توجد صورة</div>`}
+      <div class="proof-meta">
+        <div class="proof-meta-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span>${esc(p.tg_first_name || '')} ${p.tg_username ? '(@' + esc(p.tg_username) + ')' : ''}</span>
+        </div>
+        <div class="proof-meta-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>المكافأة: <b>${Number(p.reward).toLocaleString('ar')} نقطة</b></span>
+        </div>
+        <div class="proof-meta-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <span style="font-size:11px;color:var(--muted)">tg_id: ${p.tg_id}</span>
+        </div>
+        ${actionsHTML}
+      </div>
+    </div>
+  </div>`;
+}
+
+function openProofImg(id, dataUrl) {
+  document.getElementById('proof-img-modal-img').src = dataUrl;
+  document.getElementById('proof-img-modal').classList.add('open');
+}
+function closeProofImg() {
+  document.getElementById('proof-img-modal').classList.remove('open');
+  document.getElementById('proof-img-modal-img').src = '';
+}
+
+function openProofModal(proofId) {
+  currentProofId = proofId;
+  const p = socialProofs.find(x => x.id === proofId);
+  if (!p) return;
+  const plat = SOCIAL_PLATFORM_NAMES[p.task_icon] || p.task_icon;
+  const ico  = SOCIAL_ICON_SVG[p.task_icon]       || SOCIAL_ICON_SVG.default;
+  const hasImg = p.proof_image && p.proof_image.startsWith('data:');
+
+  document.getElementById('proof-detail-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div class="proof-platform-ico">${ico}</div>
+      <div>
+        <div style="font-weight:700">${esc(p.task_title)}</div>
+        <div style="font-size:12px;color:var(--muted)">${esc(p.tg_first_name || '')} ${p.tg_username ? '(@' + esc(p.tg_username) + ')' : ''}</div>
+      </div>
+    </div>
+    ${hasImg ? `
+      <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;max-height:260px;display:flex;align-items:center;justify-content:center;background:var(--bg)"
+           onclick="openProofImg(${p.id}, \`${p.proof_image}\`)">
+        <img src="${p.proof_image}" style="width:100%;max-height:260px;object-fit:contain">
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">اضغط على الصورة للتكبير</div>
+    ` : '<div style="color:var(--muted);text-align:center;padding:16px">لا توجد صورة إثبات</div>'}
+    <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px">
+      💰 سيُضاف <b>${Number(p.reward).toLocaleString('ar')}</b> نقطة عند القبول
+    </div>
+  `;
+  document.getElementById('proof-reject-reason').value = '';
+  document.getElementById('modal-proof').classList.add('open');
+}
+
+async function reviewProof(action) {
+  if (!currentProofId) return;
+  const reason = document.getElementById('proof-reject-reason').value.trim();
+  const data = await apiFetch('/social/review', {
+    method: 'POST',
+    body: JSON.stringify({ proof_id: currentProofId, action, reason }),
+  });
+  if (!data?.ok) { toast(data?.error || 'خطأ', 'error'); return; }
+
+  toast(action === 'approve' ? '✅ تم القبول وإرسال الإشعار' : '❌ تم الرفض وإرسال الإشعار', 'success');
+  closeModal('modal-proof');
+  // Update card in UI
+  const card = document.getElementById(`proof-card-${currentProofId}`);
+  if (card) card.remove();
+  socialProofs = socialProofs.filter(p => p.id !== currentProofId);
+  currentProofId = null;
+  if (!socialProofs.length) renderProofsUI();
+}
+
+// ══════════════════════════════════════════
+// SOCIAL TASKS LIST
+// ══════════════════════════════════════════
+async function loadSocialTasks() {
+  const list = document.getElementById('social-tasks-list');
+  list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">جارٍ التحميل…</div>';
+  const data = await apiFetch('/social/tasks');
+  if (!data) return;
+  socialTasksList = data.tasks || [];
+  renderSocialTasksUI();
+}
+
+function renderSocialTasksUI() {
+  const list = document.getElementById('social-tasks-list');
+  if (!socialTasksList.length) {
+    list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">لا توجد مهمات — أضف مهمة جديدة</div>';
+    return;
+  }
+  list.innerHTML = socialTasksList.map(t => socialTaskCardHTML(t)).join('');
+}
+
+function socialTaskCardHTML(t) {
+  const ico   = SOCIAL_ICON_SVG[t.icon] || SOCIAL_ICON_SVG.default;
+  const plat  = SOCIAL_PLATFORM_NAMES[t.icon] || t.icon;
+  const badge = t.is_active
+    ? '<span style="font-size:11px;background:rgba(34,197,94,.15);color:#22c55e;padding:2px 8px;border-radius:99px">مفعّل</span>'
+    : '<span style="font-size:11px;background:rgba(248,81,73,.12);color:var(--red);padding:2px 8px;border-radius:99px">معطّل</span>';
+
+  return `
+  <div class="social-task-card">
+    <div class="task-ico">${ico}</div>
+    <div class="task-info">
+      <div class="task-title">${esc(t.title)} ${badge}</div>
+      <div class="task-sub">${plat} — ${Number(t.reward).toLocaleString('ar')} نقطة${t.proof_required ? ' — يتطلب إثباتاً' : ''}</div>
+    </div>
+    <div class="task-actions">
+      <button class="btn btn-sm btn-ghost" onclick="openEditSocialModal(${t.id})" title="تعديل">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+      <button class="btn btn-sm" style="background:rgba(248,81,73,.1);color:var(--red);border:1px solid rgba(248,81,73,.2)"
+              onclick="deleteSocialTask(${t.id},'${esc(t.title)}')" title="حذف">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// SOCIAL TASK MODAL
+// ══════════════════════════════════════════
+let selectedSocialIcon = 'facebook';
+
+function pickSocialIcon(btn, icon) {
+  selectedSocialIcon = icon;
+  document.getElementById('st-icon').value = icon;
+  document.querySelectorAll('#st-icon-picker .icon-pick-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.icon === icon)
+  );
+}
+
+function openAddSocialModal() {
+  document.getElementById('social-task-modal-title').textContent = 'إضافة مهمة اجتماعية';
+  document.getElementById('st-edit-id').value  = '';
+  document.getElementById('st-title').value    = '';
+  document.getElementById('st-reward').value   = '500';
+  document.getElementById('st-desc').value     = '';
+  document.getElementById('st-url').value      = '';
+  document.getElementById('st-note').value     = '';
+  document.getElementById('st-promo').value    = '';
+  document.getElementById('st-order').value    = '0';
+  document.getElementById('st-proof-req').checked = true;
+  document.getElementById('st-active').checked    = true;
+  pickSocialIcon(null, 'facebook');
+  document.getElementById('modal-social-task').classList.add('open');
+}
+
+function openEditSocialModal(id) {
+  const t = socialTasksList.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('social-task-modal-title').textContent = 'تعديل المهمة';
+  document.getElementById('st-edit-id').value  = t.id;
+  document.getElementById('st-title').value    = t.title || '';
+  document.getElementById('st-reward').value   = t.reward || 500;
+  document.getElementById('st-desc').value     = t.description || '';
+  document.getElementById('st-url').value      = t.task_url || '';
+  document.getElementById('st-note').value     = t.note || '';
+  document.getElementById('st-promo').value    = t.promo_text || '';
+  document.getElementById('st-order').value    = t.sort_order ?? 0;
+  document.getElementById('st-proof-req').checked = t.proof_required !== false;
+  document.getElementById('st-active').checked    = t.is_active    !== false;
+  pickSocialIcon(null, t.icon || 'facebook');
+  document.getElementById('modal-social-task').classList.add('open');
+}
+
+async function saveSocialTask() {
+  const editId = document.getElementById('st-edit-id').value;
+  const payload = {
+    title:         document.getElementById('st-title').value.trim(),
+    reward:        parseInt(document.getElementById('st-reward').value),
+    icon:          document.getElementById('st-icon').value || 'facebook',
+    description:   document.getElementById('st-desc').value.trim(),
+    task_url:      document.getElementById('st-url').value.trim(),
+    note:          document.getElementById('st-note').value.trim(),
+    promo_text:    document.getElementById('st-promo').value.trim(),
+    sort_order:    parseInt(document.getElementById('st-order').value),
+    proof_required:document.getElementById('st-proof-req').checked,
+    is_active:     document.getElementById('st-active').checked,
+  };
+  if (!payload.title)            { toast('أدخل عنوان المهمة', 'error'); return; }
+  if (isNaN(payload.reward)||payload.reward < 0) { toast('أدخل مكافأة صحيحة', 'error'); return; }
+
+  let data;
+  if (editId) {
+    data = await apiFetch(`/social/tasks/${editId}`, { method: 'PUT', body: JSON.stringify(payload) });
+  } else {
+    data = await apiFetch('/social/tasks', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  if (!data?.ok) { toast(data?.error || 'فشل الحفظ', 'error'); return; }
+  toast(editId ? '✅ تم تحديث المهمة' : '✅ تمت إضافة المهمة', 'success');
+  closeModal('modal-social-task');
+  await loadSocialTasks();
+}
+
+async function deleteSocialTask(id, title) {
+  if (!confirm(`حذف مهمة "${title}"؟`)) return;
+  const data = await apiFetch(`/social/tasks/${id}`, { method: 'DELETE' });
+  if (!data?.ok) { toast(data?.error || 'فشل الحذف', 'error'); return; }
+  toast('🗑️ تم حذف المهمة', 'success');
+  socialTasksList = socialTasksList.filter(t => t.id !== id);
+  renderSocialTasksUI();
+}
+
+// ── Utility ───────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Auto-load when social page shown ─────────────────────────────
+const _origShowPage = showPage;
+// Patch showPage to load data when social page opens
+(function() {
+  const orig = window.showPage;
+  window.showPage = function(id) {
+    orig(id);
+    if (id === 'social') {
+      if (socialActiveTab === 'proofs') loadSocialProofs();
+      else loadSocialTasks();
+    }
+  };
+})();
+</script>
