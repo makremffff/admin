@@ -1813,26 +1813,30 @@
 
 <!-- Proof Review Modal -->
 <div class="modal-overlay" id="modal-proof">
-  <div class="modal" style="max-width:460px">
+  <div class="modal" style="max-width:480px">
     <button class="modal-close" onclick="closeModal('modal-proof')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <div class="modal-title">
+    <div class="modal-title" id="proof-modal-title">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="18" height="18"><path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      مراجعة الإثبات
+      <span id="proof-modal-title-text">مراجعة الإثبات</span>
     </div>
     <div id="proof-detail-content" style="margin-top:14px">—</div>
-    <div class="form-group" style="margin-top:12px">
-      <label class="form-label">سبب الرفض (اختياري)</label>
-      <input class="form-input" type="text" id="proof-reject-reason" placeholder="الصورة غير واضحة / لا تثبت التنفيذ...">
+    <div class="form-group" style="margin-top:14px">
+      <label class="form-label" id="proof-note-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="display:inline;vertical-align:middle;margin-left:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        ملاحظة ترسل للمستخدم عبر البوت <span style="color:var(--muted);font-weight:400">(اختياري)</span>
+      </label>
+      <textarea class="form-textarea" id="proof-note" rows="3"
+        placeholder="اكتب ملاحظتك هنا... تُضاف لرسالة البوت تلقائياً"></textarea>
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions" style="gap:8px">
       <button class="btn btn-ghost" onclick="closeModal('modal-proof')">إلغاء</button>
-      <button class="btn btn-danger" onclick="reviewProof('reject')">
+      <button class="btn btn-danger" id="proof-btn-reject" onclick="reviewProof('reject')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        رفض
+        رفض وإشعار
       </button>
-      <button class="btn btn-success" onclick="reviewProof('approve')">
+      <button class="btn btn-success" id="proof-btn-approve" onclick="reviewProof('approve')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
         قبول وإضافة نقاط
       </button>
@@ -2877,11 +2881,22 @@ function proofCardHTML(p) {
   const date  = new Date(p.created_at).toLocaleString('ar-EG', {dateStyle:'short', timeStyle:'short'});
   const statusColor = { pending:'var(--gold)', approved:'#22c55e', rejected:'var(--red)' }[p.status] || 'var(--muted)';
   const statusLabel = { pending:'⏳ انتظار', approved:'✅ مقبول', rejected:'❌ مرفوض' }[p.status] || p.status;
-  const hasImg = p.proof_image && p.proof_image.startsWith('data:');
+  const hasImg = p.proof_image && (p.proof_image.startsWith('data:') || p.proof_image.startsWith('http'));
 
   const actionsHTML = p.status === 'pending' ? `
     <div class="proof-actions">
-      <button class="btn btn-sm btn-danger"  onclick="openProofModal(${p.id})">مراجعة / قبول أو رفض</button>
+      <button class="btn btn-sm btn-success" onclick="event.stopPropagation();openProofModal(${p.id},'approve')" title="قبول الإثبات">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
+        قبول
+      </button>
+      <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();openProofModal(${p.id},'reject')" title="رفض الإثبات">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        رفض
+      </button>
+      ${hasImg ? `<button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();openProofImg(${p.id},\`${p.proof_image}\`)" title="عرض الصورة">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        عرض
+      </button>` : ''}
     </div>
   ` : '';
 
@@ -2897,9 +2912,12 @@ function proofCardHTML(p) {
     </div>
     <div class="proof-card-body">
       ${hasImg ? `
-        <div class="proof-img-wrap" onclick="openProofImg('${p.id}', \`${p.proof_image}\`)">
+        <div class="proof-img-wrap" onclick="openProofImg(${p.id}, \`${p.proof_image}\`)">
           <img src="${p.proof_image}" alt="إثبات">
-        </div>` : `<div class="proof-img-wrap" style="color:var(--muted);font-size:11px">لا توجد صورة</div>`}
+        </div>` : `<div class="proof-img-wrap" style="color:var(--muted);font-size:11px;flex-direction:column;gap:4px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24" style="opacity:.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span>لا صورة</span>
+        </div>`}
       <div class="proof-meta">
         <div class="proof-meta-row">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -2928,13 +2946,42 @@ function closeProofImg() {
   document.getElementById('proof-img-modal-img').src = '';
 }
 
-function openProofModal(proofId) {
+function openProofModal(proofId, preAction) {
   currentProofId = proofId;
   const p = socialProofs.find(x => x.id === proofId);
   if (!p) return;
   const plat = SOCIAL_PLATFORM_NAMES[p.task_icon] || p.task_icon;
   const ico  = SOCIAL_ICON_SVG[p.task_icon]       || SOCIAL_ICON_SVG.default;
-  const hasImg = p.proof_image && p.proof_image.startsWith('data:');
+  const hasImg = p.proof_image && (p.proof_image.startsWith('data:') || p.proof_image.startsWith('http'));
+
+  // ── تحديث عنوان الموودال حسب الإجراء ──
+  const titleEl  = document.getElementById('proof-modal-title-text');
+  const titleSvg = document.querySelector('#proof-modal-title svg');
+  if (preAction === 'approve') {
+    titleEl.textContent = '✅ تأكيد قبول الإثبات';
+    if (titleSvg) titleSvg.setAttribute('stroke', 'var(--green)');
+    document.getElementById('proof-note-label').innerHTML =
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="display:inline;vertical-align:middle;margin-left:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      ملاحظة للمستخدم مع رسالة القبول <span style="color:var(--muted);font-weight:400">(اختياري)</span>`;
+    document.getElementById('proof-note').placeholder = 'أحسنت! واصل تفاعلك مع المنصة...';
+    document.getElementById('proof-btn-approve').style.display = '';
+    document.getElementById('proof-btn-reject').style.display  = 'none';
+  } else if (preAction === 'reject') {
+    titleEl.textContent = '❌ تأكيد رفض الإثبات';
+    if (titleSvg) titleSvg.setAttribute('stroke', 'var(--red)');
+    document.getElementById('proof-note-label').innerHTML =
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="display:inline;vertical-align:middle;margin-left:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      سبب الرفض / ملاحظة ترسل للمستخدم <span style="color:var(--muted);font-weight:400">(اختياري)</span>`;
+    document.getElementById('proof-note').placeholder = 'الصورة غير واضحة / لا تثبت التنفيذ...';
+    document.getElementById('proof-btn-reject').style.display  = '';
+    document.getElementById('proof-btn-approve').style.display = 'none';
+  } else {
+    titleEl.textContent = 'مراجعة الإثبات';
+    if (titleSvg) titleSvg.setAttribute('stroke', 'var(--accent)');
+    document.getElementById('proof-note').placeholder = 'ملاحظة ترسل للمستخدم...';
+    document.getElementById('proof-btn-approve').style.display = '';
+    document.getElementById('proof-btn-reject').style.display  = '';
+  }
 
   document.getElementById('proof-detail-content').innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -2950,21 +2997,21 @@ function openProofModal(proofId) {
         <img src="${p.proof_image}" style="width:100%;max-height:260px;object-fit:contain">
       </div>
       <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">اضغط على الصورة للتكبير</div>
-    ` : '<div style="color:var(--muted);text-align:center;padding:16px">لا توجد صورة إثبات</div>'}
+    ` : '<div style="color:var(--muted);text-align:center;padding:16px;background:var(--bg);border-radius:8px;font-size:13px">⚠️ لا توجد صورة إثبات</div>'}
     <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px">
       💰 سيُضاف <b>${Number(p.reward).toLocaleString('ar')}</b> نقطة عند القبول
     </div>
   `;
-  document.getElementById('proof-reject-reason').value = '';
+  document.getElementById('proof-note').value = '';
   document.getElementById('modal-proof').classList.add('open');
 }
 
 async function reviewProof(action) {
   if (!currentProofId) return;
-  const reason = document.getElementById('proof-reject-reason').value.trim();
+  const note = document.getElementById('proof-note').value.trim();
   const data = await apiFetch('/social/review', {
     method: 'POST',
-    body: JSON.stringify({ proof_id: currentProofId, action, reason }),
+    body: JSON.stringify({ proof_id: currentProofId, action, note }),
   });
   if (!data?.ok) { toast(data?.error || 'خطأ', 'error'); return; }
 
