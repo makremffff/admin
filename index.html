@@ -811,6 +811,91 @@
     .stats-grid { grid-template-columns: 1fr; }
     .filter-tabs .filter-tab { font-size: 11px; padding: 5px 10px; }
   }
+
+  /* ── Social Tabs ── */
+  .social-tab {
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:8px 8px 0 0;
+    background:none;border:none;border-bottom:2px solid transparent;
+    font-family:Tajawal,sans-serif;font-size:13px;font-weight:600;
+    color:var(--muted);cursor:pointer;transition:all .2s;position:relative;
+  }
+  .social-tab.active { color:var(--accent);border-bottom-color:var(--accent); }
+  .social-tab:hover:not(.active) { color:var(--text);background:var(--card); }
+  .badge-count {
+    background:var(--red);color:#fff;border-radius:99px;
+    font-size:10px;font-weight:700;padding:1px 6px;
+  }
+  .proof-filter-btn.active { background:var(--accent);color:#fff;border-color:var(--accent); }
+
+  /* ── Proof Card ── */
+  .proof-card {
+    background:var(--card);border:1px solid var(--border);border-radius:12px;
+    overflow:hidden;transition:border-color .2s;
+  }
+  .proof-card:hover { border-color:var(--accent); }
+  .proof-card-head {
+    display:flex;align-items:center;gap:10px;padding:12px 14px;
+    border-bottom:1px solid var(--border);
+  }
+  .proof-platform-ico {
+    width:34px;height:34px;border-radius:8px;display:flex;
+    align-items:center;justify-content:center;flex-shrink:0;
+    background:rgba(42,171,238,.12);
+  }
+  .proof-card-body { padding:12px 14px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap; }
+  .proof-img-wrap {
+    width:120px;height:90px;border-radius:8px;overflow:hidden;
+    border:1px solid var(--border);flex-shrink:0;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .proof-img-wrap img { width:100%;height:100%;object-fit:cover; }
+  .proof-meta { flex:1;min-width:160px; }
+  .proof-meta-row { display:flex;gap:6px;align-items:center;margin-bottom:6px;font-size:13px; }
+  .proof-meta-row svg { flex-shrink:0;opacity:.6; }
+  .proof-actions { display:flex;gap:8px;margin-top:10px;flex-wrap:wrap; }
+
+  /* ── Social Task Card ── */
+  .social-task-card {
+    background:var(--card);border:1px solid var(--border);border-radius:12px;
+    padding:14px 16px;display:flex;align-items:center;gap:12px;
+  }
+  .social-task-card .task-ico {
+    width:36px;height:36px;border-radius:8px;display:flex;
+    align-items:center;justify-content:center;flex-shrink:0;
+    background:rgba(42,171,238,.12);
+  }
+  .social-task-card .task-info { flex:1;min-width:0; }
+  .social-task-card .task-title { font-size:14px;font-weight:700;margin-bottom:2px; }
+  .social-task-card .task-sub { font-size:12px;color:var(--muted); }
+  .social-task-card .task-actions { display:flex;gap:6px;flex-shrink:0; }
+
+  /* Proof Image Modal */
+  #proof-img-modal {
+    position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;
+    display:none;align-items:center;justify-content:center;
+  }
+  #proof-img-modal.open { display:flex; }
+  #proof-img-modal img { max-width:90vw;max-height:90vh;border-radius:10px; }
+  #proof-img-modal-close {
+    position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);
+    border:none;color:#fff;border-radius:99px;width:34px;height:34px;
+    font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+
+
+  /* ── Icon Picker ── */
+  .icon-pick-btn {
+    display:flex;align-items:center;gap:6px;padding:7px 12px;
+    border-radius:8px;border:1.5px solid var(--border);background:var(--bg);
+    color:var(--muted);font-family:Tajawal,sans-serif;font-size:12px;
+    cursor:pointer;transition:all .2s;
+  }
+  .icon-pick-btn.active {
+    border-color:var(--accent);background:rgba(42,171,238,.12);color:var(--accent);
+  }
+  .icon-pick-btn:hover:not(.active) { border-color:var(--text);color:var(--text); }
+
 </style>
 </head>
 <body>
@@ -878,7 +963,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.65a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.5 16z"/><path d="M16 2l2 2-8 8"/><path d="M18 4l2-2"/></svg>
       القنوات والمهمات
     </div>
-    <div class="nav-item" onclick="showPage('settings')">
+    <div class="nav-item" onclick="showPage('social')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      مهمات سوشيال
+    </div>
+        <div class="nav-item" onclick="showPage('settings')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       الإعدادات
     </div>
@@ -1163,6 +1252,54 @@
         </button>
       </div>
       <div id="channels-list" style="display:flex;flex-direction:column;gap:10px;margin-top:16px"></div>
+    </div>
+
+
+    <!-- ══════════════════════════ PAGE: SOCIAL TASKS -->
+    <div class="page" id="page-social">
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">مهمات سوشيال</h2>
+          <p class="page-sub">مراجعة الإثباتات وإدارة المهمات الاجتماعية</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAddSocialModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          إضافة مهمة
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0">
+        <button class="social-tab active" id="stab-proofs" onclick="switchSocialTab('proofs')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          مراجعة الإثباتات
+          <span class="badge-count" id="proofs-pending-count" style="display:none"></span>
+        </button>
+        <button class="social-tab" id="stab-tasks" onclick="switchSocialTab('tasks')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          إدارة المهمات
+        </button>
+      </div>
+
+      <!-- Proofs Panel -->
+      <div id="social-panel-proofs">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-ghost proof-filter-btn active" data-s="pending"  onclick="filterProofs('pending')">⏳ انتظار</button>
+          <button class="btn btn-sm btn-ghost proof-filter-btn"        data-s="approved" onclick="filterProofs('approved')">✅ مقبولة</button>
+          <button class="btn btn-sm btn-ghost proof-filter-btn"        data-s="rejected" onclick="filterProofs('rejected')">❌ مرفوضة</button>
+          <button class="btn btn-sm btn-ghost proof-filter-btn"        data-s="all"      onclick="filterProofs('all')">كل الإثباتات</button>
+          <button class="btn btn-sm btn-ghost" style="margin-right:auto" onclick="loadSocialProofs()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+            تحديث
+          </button>
+        </div>
+        <div id="social-proofs-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+
+      <!-- Tasks Panel -->
+      <div id="social-panel-tasks" style="display:none">
+        <div id="social-tasks-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+      </div>
     </div>
 
     <!-- ══════════════════════════ PAGE: BROADCAST -->
@@ -1577,6 +1714,138 @@
   </div>
 </div>
 
+
+<!-- Social Task Modal (Add/Edit) -->
+<div class="modal-overlay" id="modal-social-task">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" onclick="closeModal('modal-social-task')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span id="social-task-modal-title">إضافة مهمة اجتماعية</span>
+    </div>
+    <input type="hidden" id="st-edit-id">
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">عنوان المهمة *</label>
+          <input class="form-input" type="text" id="st-title" placeholder="مثال: تابعنا على تويتر">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">المكافأة (نقطة) *</label>
+          <input class="form-input" type="number" id="st-reward" value="500" min="0">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin-bottom:6px;display:block">المنصة / الأيقونة *</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="st-icon-picker">
+          <button type="button" class="icon-pick-btn active" data-icon="facebook" onclick="pickSocialIcon(this,'facebook')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            فيسبوك
+          </button>
+          <button type="button" class="icon-pick-btn" data-icon="twitter" onclick="pickSocialIcon(this,'twitter')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.261 5.635zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            تويتر
+          </button>
+          <button type="button" class="icon-pick-btn" data-icon="tiktok" onclick="pickSocialIcon(this,'tiktok')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.86 4.86 0 01-1.01-.07z"/></svg>
+            تيك توك
+          </button>
+          <button type="button" class="icon-pick-btn" data-icon="telegram" onclick="pickSocialIcon(this,'telegram')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.236 7.262l-1.69 7.966c-.127.567-.461.706-.934.44l-2.582-1.903-1.246 1.2c-.138.137-.253.253-.52.253l.185-2.641 4.8-4.336c.209-.185-.045-.288-.324-.103l-5.932 3.732-2.554-.797c-.555-.173-.567-.554.116-.82l9.97-3.843c.463-.168.868.103.711.852z"/></svg>
+            تيليجرام
+          </button>
+          <button type="button" class="icon-pick-btn" data-icon="instagram" onclick="pickSocialIcon(this,'instagram')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+            إنستغرام
+          </button>
+          <button type="button" class="icon-pick-btn" data-icon="youtube" onclick="pickSocialIcon(this,'youtube')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.543 6.498C22 8.28 22 12 22 12s0 3.72-.457 5.502c-.254.985-.997 1.76-1.938 2.022C17.896 20 12 20 12 20s-5.893 0-7.605-.476c-.945-.266-1.687-1.04-1.938-2.022C2 15.72 2 12 2 12s0-3.72.457-5.502c.254-.985.997-1.76 1.938-2.022C6.107 4 12 4 12 4s5.896 0 7.605.476c.945.266 1.687 1.04 1.938 2.022zM10 15.5l6-3.5-6-3.5v7z"/></svg>
+            يوتيوب
+          </button>
+        </div>
+        <input type="hidden" id="st-icon" value="facebook">
+      </div>
+
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">وصف قصير</label>
+        <input class="form-input" type="text" id="st-desc" placeholder="وصف ما يجب على المستخدم فعله">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">رابط المهمة</label>
+        <input class="form-input" type="text" id="st-url" placeholder="https://..." style="direction:ltr">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">ملاحظة (تظهر للمستخدم)</label>
+        <input class="form-input" type="text" id="st-note" placeholder="مثال: تأكد من تفعيل الإشعارات">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">نص ترويجي (اختياري)</label>
+        <textarea class="form-input" id="st-promo" rows="2" placeholder="النص الذي يشاركه المستخدم" style="resize:vertical"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">الترتيب</label>
+          <input class="form-input" type="number" id="st-order" value="0" min="0">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding-top:20px">
+          <label class="toggle"><input type="checkbox" id="st-proof-req" checked><span class="toggle-slider"></span></label>
+          <span style="font-size:12px">يتطلب إثباتاً</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding-top:20px">
+          <label class="toggle"><input type="checkbox" id="st-active" checked><span class="toggle-slider"></span></label>
+          <span style="font-size:12px">مفعّل</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-social-task')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveSocialTask()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+        حفظ
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Proof Review Modal -->
+<div class="modal-overlay" id="modal-proof">
+  <div class="modal" style="max-width:460px">
+    <button class="modal-close" onclick="closeModal('modal-proof')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="18" height="18"><path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      مراجعة الإثبات
+    </div>
+    <div id="proof-detail-content" style="margin-top:14px">—</div>
+    <div class="form-group" style="margin-top:12px">
+      <label class="form-label">سبب الرفض (اختياري)</label>
+      <input class="form-input" type="text" id="proof-reject-reason" placeholder="الصورة غير واضحة / لا تثبت التنفيذ...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-proof')">إلغاء</button>
+      <button class="btn btn-danger" onclick="reviewProof('reject')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        رفض
+      </button>
+      <button class="btn btn-success" onclick="reviewProof('approve')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
+        قبول وإضافة نقاط
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Proof Image Full View -->
+<div id="proof-img-modal" onclick="closeProofImg()">
+  <button id="proof-img-modal-close" onclick="closeProofImg()">✕</button>
+  <img id="proof-img-modal-img" src="" alt="">
+</div>
+
 <!-- TOAST CONTAINER -->
 <div class="toast-container" id="toasts"></div>
 
@@ -1941,589 +2210,4 @@ async function loadOnline() {
     const ago     = timeAgo(u.updated_at);
     return `<tr>
       <td><div class="user-cell">${avatarHtml}<div><div class="user-name">${name}</div><div class="user-id">${u.tg_id}</div></div></div></td>
-      <td><strong class="num">${fmt(u.points)}</strong></td>
-      <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
-      <td><span class="badge badge-green"><span class="online-pulse" style="width:6px;height:6px;margin-left:3px"></span>${ago}</span></td>
-      <td><div class="actions">${userActions(u)}</div></td>
-    </tr>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════
-// WITHDRAWALS
-// ══════════════════════════════════════════
-async function loadWithdrawals() {
-  const statusMap = { pending:'pending', approved:'completed', rejected:'rejected', all:'all' };
-  const s = statusMap[wdFilter] || 'pending';
-  const data = await apiFetch('/admin/withdrawals?status=' + s);
-  allWds = data?.withdrawals || [];
-  setText('badge-wd', allWds.filter(w=>w.status==='pending').length);
-  renderWithdrawals();
-}
-
-function setWdFilter(f, el) {
-  wdFilter = f;
-  document.querySelectorAll('#page-withdrawals .filter-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  loadWithdrawals();
-}
-
-function renderWithdrawals() {
-  const el = document.getElementById('withdrawals-list');
-  if (!allWds.length) {
-    el.innerHTML = `<div class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      <p>لا توجد طلبات</p>
-    </div>`;
-    return;
-  }
-  el.innerHTML = allWds.map(w => {
-    const name    = w.tg_username ? `@${w.tg_username}` : `#${w.user_id}`;
-    const initial = (w.tg_first_name || name).charAt(0).toUpperCase();
-    const date    = new Date(w.created_at).toLocaleDateString('en-GB');
-    const statusBadge = {
-      pending:  '<span class="badge badge-orange">معلق</span>',
-      approved: '<span class="badge badge-green">مقبول</span>',
-      rejected: '<span class="badge badge-red">مرفوض</span>',
-    }[w.status] || `<span class="badge badge-muted">${w.status}</span>`;
-
-    const copyBtn = `<button class="btn btn-ghost btn-sm" title="نسخ عنوان المحفظة" onclick="navigator.clipboard.writeText('${w.address}');toast('تم نسخ العنوان','success')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-      نسخ
-    </button>`;
-    const actions = w.status === 'pending'
-      ? `<div style="display:flex;flex-direction:column;gap:5px;align-items:stretch">
-          <button class="btn btn-success btn-sm" onclick="quickApprove(${w.id})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
-            موافقة
-          </button>
-          <button class="btn btn-danger btn-sm" onclick="quickReject(${w.id})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            رفض
-          </button>
-          ${copyBtn}
-          <button class="btn btn-ghost btn-sm" onclick="openWdModal(${w.id})">تفاصيل</button>
-        </div>`
-      : `<div style="display:flex;flex-direction:column;gap:5px">${copyBtn}<button class="btn btn-ghost btn-sm" onclick="openWdModal(${w.id})">عرض</button></div>`;
-
-    return `<div class="withdrawal-card">
-      <div class="wd-avatar">${initial}</div>
-      <div class="wd-info">
-        <div class="wd-name">${w.tg_first_name || ''} <span style="color:var(--muted);font-weight:400">${name}</span></div>
-        <div class="wd-address">${w.address}</div>
-        <div class="wd-meta">${statusBadge}<span class="wd-date">${date}</span></div>
-      </div>
-      <div style="text-align:left">
-        <div class="wd-amount">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
-        <div class="wd-pts">${fmt(w.pts)} نقطة</div>
-      </div>
-      <div class="wd-actions">${actions}</div>
-    </div>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════
-// MODALS
-// ══════════════════════════════════════════
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function openUserModal(u) {
-  if (typeof u === 'string') u = JSON.parse(u.replace(/\\'/g,"'"));
-  const name   = u.tg_first_name || u.tg_username || `#${u.tg_id}`;
-  const status = u.is_banned
-    ? '<span class="badge badge-red">محظور</span>'
-    : u.is_shadow_banned
-    ? '<span class="badge badge-orange">شادو بان</span>'
-    : '<span class="badge badge-green">نشط</span>';
-
-  document.getElementById('user-detail-content').innerHTML = `
-    <div class="user-detail-header">
-      ${u.tg_photo_url || u.photo_url
-        ? `<div class="user-detail-avatar" style="padding:0;overflow:hidden"><img src="${u.tg_photo_url||u.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${name.charAt(0).toUpperCase()}'"></div>`
-        : `<div class="user-detail-avatar">${name.charAt(0).toUpperCase()}</div>`}
-      <div>
-        <div class="user-detail-name">${name} ${u.tg_is_premium ? `<span class="badge badge-purple"><svg viewBox="0 0 24 24" width="9" height="9" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>` : ''}</div>
-        <div class="user-detail-meta">${u.tg_username ? '@' + u.tg_username : ''} · ID: ${u.tg_id}</div>
-        <div style="margin-top:6px">${status}</div>
-      </div>
-    </div>
-    <div class="detail-grid">
-      <div class="detail-item"><div class="detail-item-label">النقاط</div><div class="detail-item-value" style="color:var(--gold)">${fmt(u.points)}</div></div>
-      <div class="detail-item"><div class="detail-item-label">المستوى</div><div class="detail-item-value">${u.level}</div></div>
-      <div class="detail-item"><div class="detail-item-label">Adsgram اليوم</div><div class="detail-item-value" style="color:var(--blue)">${u.adsgram_today ?? 0}</div></div>
-      <div class="detail-item"><div class="detail-item-label">Taddy اليوم</div><div class="detail-item-value" style="color:#a78bfa">${u.taddy_today ?? 0}</div></div>
-      <div class="detail-item"><div class="detail-item-label">الإعلانات الكلية</div><div class="detail-item-value">${fmt(u.ads_watched_total)}</div></div>
-      <div class="detail-item"><div class="detail-item-label">الإحالات</div><div class="detail-item-value">${u.total_referrals}</div></div>
-      <div class="detail-item"><div class="detail-item-label">Risk Score</div><div class="detail-item-value" style="color:${u.risk_score>60?'var(--red)':'var(--green)'}">${u.risk_score}</div></div>
-      <div class="detail-item"><div class="detail-item-label">تاريخ التسجيل</div><div class="detail-item-value" style="font-size:12px;font-family:'Cairo',sans-serif">${u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : '—'}</div></div>
-      ${u.ban_reason ? `<div class="detail-item" style="grid-column:1/-1"><div class="detail-item-label">سبب الحظر</div><div class="detail-item-value" style="color:var(--red);font-size:13px;font-family:'Cairo',sans-serif">${u.ban_reason}</div></div>` : ''}
-    </div>
-  `;
-  document.getElementById('user-detail-actions').innerHTML = `
-    <a class="btn btn-ghost btn-sm" href="${u.tg_username ? 'https://t.me/'+u.tg_username : 'tg://user?id='+u.tg_id}" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      فتح محادثة
-    </a>
-    <button class="btn btn-ghost btn-sm" onclick="openBalanceModal(${u.tg_id});closeModal('modal-user')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      تعديل رصيد
-    </button>
-    ${u.is_banned
-      ? `<button class="btn btn-success btn-sm" onclick="banUser(${u.tg_id},false);closeModal('modal-user')">رفع الحظر</button>`
-      : `<button class="btn btn-danger btn-sm" onclick="confirmAction('حظر #${u.tg_id}?','danger',()=>{banUser(${u.tg_id},true);closeModal('modal-user')})">حظر</button>`}
-    <button class="btn btn-danger btn-sm" onclick="confirmAction('حذف #${u.tg_id} نهائياً؟','danger',()=>{deleteUser(${u.tg_id});closeModal('modal-user')})">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-      حذف
-    </button>
-  `;
-  openModal('modal-user');
-}
-
-async function openUserModalById(tgId) {
-  const data = await apiFetch('/admin/user/' + tgId);
-  if (data?.user) openUserModal(data.user);
-}
-
-function openBalanceModal(tgId) {
-  if (tgId) document.getElementById('bal-user-id').value = tgId;
-  openModal('modal-balance');
-}
-
-function openAddBalanceModal() { openModal('modal-balance'); }
-
-function openWdModal(wdId) {
-  currentWdId = wdId;
-  const w = allWds.find(x => x.id === wdId);
-  if (!w) return;
-  const name = w.tg_first_name || w.tg_username || `#${w.user_id}`;
-  document.getElementById('wd-detail-content').innerHTML = `
-    <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:14px">
-      <div style="font-weight:700;font-size:15px;margin-bottom:3px">${name}</div>
-      <div style="color:var(--muted);font-size:12px;margin-bottom:12px">ID: ${w.user_id}</div>
-      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
-        <div>
-          <div style="font-size:11px;color:var(--muted)">المبلغ</div>
-          <div style="font-size:20px;font-weight:700;color:var(--gold);font-family:'IBM Plex Mono',sans-serif">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
-          <div style="font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',sans-serif">${fmt(w.pts)} نقطة</div>
-        </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:3px">عنوان المحفظة</div>
-          <div style="font-family:monospace;font-size:11px;word-break:break-all;background:var(--bg);padding:8px;border-radius:6px;display:flex;gap:8px;align-items:flex-start">
-            <span style="flex:1">${w.address}</span>
-            <button class="btn btn-ghost btn-sm" style="flex-shrink:0;padding:3px 8px;font-size:10px" onclick="navigator.clipboard.writeText('${w.address}');toast('تم نسخ العنوان','success')">نسخ</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  openModal('modal-wd');
-}
-
-// ══════════════════════════════════════════
-// ACTIONS
-// ══════════════════════════════════════════
-async function banUser(tgId, ban) {
-  const data = await apiFetch('/admin/ban', {
-    method: 'POST',
-    body: JSON.stringify({ tg_id: tgId, ban, reason: ban ? 'admin_action' : null }),
-  });
-  if (data?.ok) {
-    toast(ban ? `تم حظر #${tgId}` : `رُفع الحظر عن #${tgId}`, ban ? 'error' : 'success');
-    refreshData();
-  } else toast('فشل الإجراء', 'error');
-}
-
-async function deleteUser(tgId) {
-  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
-  toast('جاري الحذف...', 'success');
-  const data = await apiFetch('/admin/user/' + tgId, { method: 'DELETE' });
-  if (data?.ok) {
-    allUsers = allUsers.filter(u => String(u.tg_id) !== String(tgId));
-    renderUsersFiltered();
-    toast('تم حذف المستخدم #' + tgId + ' بنجاح', 'success');
-    setTimeout(refreshData, 600);
-  } else {
-    toast(data?.error ? ('فشل الحذف: ' + data.error) : 'فشل الحذف', 'error');
-  }
-}
-
-async function doUpdateBalance() {
-  const uid    = document.getElementById('bal-user-id').value.trim();
-  const action = document.getElementById('bal-action').value;
-  const amount = parseInt(document.getElementById('bal-amount').value);
-  const note   = document.getElementById('bal-note').value.trim();
-  if (!uid || !amount) return toast('أدخل البيانات كاملة', 'error');
-  const data = await apiFetch('/admin/balance', {
-    method: 'POST',
-    body: JSON.stringify({ tg_id: uid, action, amount, note }),
-  });
-  if (data?.ok) {
-    toast('تم تعديل الرصيد — نقاط جديدة: ' + fmt(data.new_points), 'success');
-    closeModal('modal-balance');
-    // update local cache immediately
-    const idx = allUsers.findIndex(u => String(u.tg_id) === String(uid));
-    if (idx !== -1) { allUsers[idx].points = data.new_points; renderUsersFiltered(); }
-    setTimeout(refreshData, 600);
-  } else {
-    toast(data?.error ? ('فشل التعديل: ' + data.error) : 'فشل التعديل — تحقق من الـ tg_id', 'error');
-  }
-}
-
-async function quickApprove(wdId) {
-  if (!confirm('تأكيد الموافقة على طلب السحب #' + wdId + '?')) return;
-  const data = await apiFetch('/admin/withdrawal', {
-    method: 'POST',
-    body: JSON.stringify({ id: wdId, status: 'approved' }),
-  });
-  if (data?.ok) { toast('تم قبول السحب #' + wdId, 'success'); loadWithdrawals(); }
-  else toast(data?.error || 'فشل', 'error');
-}
-
-async function quickReject(wdId) {
-  const reason = prompt('سبب الرفض (اختياري):') ?? '';
-  const data = await apiFetch('/admin/withdrawal', {
-    method: 'POST',
-    body: JSON.stringify({ id: wdId, status: 'rejected', notes: reason }),
-  });
-  if (data?.ok) { toast('تم رفض السحب #' + wdId, 'error'); loadWithdrawals(); }
-  else toast(data?.error || 'فشل', 'error');
-}
-
-async function resolveWithdrawal(status) {
-  const note   = document.getElementById('wd-note').value.trim();
-  const txhash = document.getElementById('wd-txhash').value.trim();
-  const data = await apiFetch('/admin/withdrawal', {
-    method: 'POST',
-    body: JSON.stringify({ id: currentWdId, status, notes: note, tx_hash: txhash }),
-  });
-  if (data?.ok) {
-    toast(status === 'approved' ? 'تم قبول السحب' : 'تم رفض السحب', status === 'approved' ? 'success' : 'error');
-    closeModal('modal-wd');
-    loadWithdrawals();
-  } else toast('فشل الإجراء', 'error');
-}
-
-async function saveSettings() {
-  const payload = {
-    ads_daily_limit:   parseInt(document.getElementById('cfg-daily-limit').value),
-    points_per_ad:     parseInt(document.getElementById('cfg-pts-ad').value),
-    bonus_10:          parseInt(document.getElementById('cfg-bonus-10').value),
-    bonus_25:          parseInt(document.getElementById('cfg-bonus-25').value),
-    referral_pts:      parseInt(document.getElementById('cfg-ref-pts').value),
-    referral_3_bonus:  parseInt(document.getElementById('cfg-ref-3').value),
-    ref_min_ads:       parseInt(document.getElementById('cfg-ref-min-ads').value),
-    ref_min_pts:       parseInt(document.getElementById('cfg-ref-min-pts').value),
-    wd_first_min:      parseInt(document.getElementById('cfg-wd-first').value),
-    wd_normal_min:     parseInt(document.getElementById('cfg-wd-normal').value),
-    wd_normal_level:   parseInt(document.getElementById('cfg-wd-level').value),
-    adsgram_pts:       parseInt(document.getElementById('cfg-adsgram-pts').value),
-    adsgram_block_id:  document.getElementById('cfg-adsgram-block').value,
-    adsgram_enabled:   document.getElementById('cfg-adsgram-enabled').checked,
-    tg_task_pts:       parseInt(document.getElementById('cfg-tg-pts').value),
-    channel_url:       document.getElementById('cfg-channel-url').value,
-    max_per_ip:        parseInt(document.getElementById('cfg-max-ip').value),
-    max_per_fp:        parseInt(document.getElementById('cfg-max-fp').value),
-    risk_ban:          parseInt(document.getElementById('cfg-risk-ban').value),
-    risk_shadow:       parseInt(document.getElementById('cfg-risk-shadow').value),
-  };
-  // Validate required numbers
-  const nums = Object.entries(payload).filter(([k,v]) => k !== 'adsgram_block_id' && k !== 'channel_url' && k !== 'adsgram_enabled');
-  if (nums.some(([k,v]) => isNaN(v))) return toast('تأكد من إدخال أرقام صحيحة في جميع الحقول', 'error');
-
-  const data = await apiFetch('/admin/config', { method: 'POST', body: JSON.stringify(payload) });
-  if (data?.ok) toast('تم حفظ الإعدادات بنجاح (' + (data.saved?.length || 0) + ' قيمة)', 'success');
-  else toast('فشل حفظ الإعدادات — تحقق من الاتصال', 'error');
-}
-
-function resetSettings() { toast('تم إعادة تعيين الإعدادات', 'success'); }
-
-// ══════════════════════════════════════════
-// CONFIRM DIALOG
-// ══════════════════════════════════════════
-function confirmAction(msg, type, cb) {
-  const box = document.getElementById('confirm-icon-box');
-  const svg = document.getElementById('confirm-icon-svg');
-  box.className = `confirm-icon-box ${type}`;
-  if (type === 'danger') {
-    svg.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
-  } else {
-    svg.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
-  }
-  document.getElementById('confirm-msg').textContent = msg;
-  const btn = document.getElementById('confirm-ok-btn');
-  btn.className = `btn ${type === 'danger' ? 'btn-danger' : 'btn-success'}`;
-  btn.onclick = () => { cb(); closeModal('modal-confirm'); };
-  openModal('modal-confirm');
-}
-
-// ══════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════
-function toast(msg, type = 'success') {
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  const iconSvg = type === 'success'
-    ? '<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  el.innerHTML = `<span class="toast-icon">${iconSvg}</span>${msg}`;
-  document.getElementById('toasts').appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-// ══════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════
-function setText(id, v) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = v ?? '—';
-}
-
-function fmt(n) {
-  if (n == null || n === '') return '—';
-  return Number(n).toLocaleString('en-US');
-}
-
-function timeAgo(ts) {
-  if (!ts) return '—';
-  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
-  if (diff < 60) return `منذ ${diff} ث`;
-  if (diff < 3600) return `منذ ${Math.floor(diff/60)} د`;
-  return `منذ ${Math.floor(diff/3600)} س`;
-}
-
-function refreshData() {
-  const active = document.querySelector('.page.active');
-  if (!active) return;
-  const id = active.id.replace('page-', '');
-  if (id === 'dashboard')   loadDashboard();
-  if (id === 'users')       loadUsers();
-  if (id === 'online')      loadOnline();
-  if (id === 'withdrawals') loadWithdrawals();
-}
-
-// Close modal on overlay click
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
-
-// ══════════════════════════════════════════
-// CHANNELS
-// ══════════════════════════════════════════
-let allChannels = [];
-
-async function loadChannels() {
-  const data = await apiFetch('/admin/channels');
-  allChannels = data?.channels || [];
-  renderChannels();
-}
-
-function renderChannels() {
-  const el = document.getElementById('channels-list');
-  if (!allChannels.length) {
-    el.innerHTML = `<div class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.65a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.5 16z"/></svg>
-      <p>لا توجد قنوات بعد</p>
-    </div>`;
-    return;
-  }
-  el.innerHTML = allChannels.map(ch => {
-    const statusBadge = ch.is_active
-      ? '<span class="badge badge-green"><span class="dot dot-green"></span>مفعّل</span>'
-      : '<span class="badge badge-red">معطّل</span>';
-    return `<div class="settings-card" style="margin:0">
-      <div class="settings-card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-        <div style="flex:1;min-width:160px">
-          <div style="font-weight:700;font-size:14px;margin-bottom:2px">${ch.title}</div>
-          <a href="${ch.url}" target="_blank" style="color:var(--blue);font-size:12px;direction:ltr;word-break:break-all">${ch.url}</a>
-          ${ch.tg_chat_id ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;direction:ltr">Chat ID: ${ch.tg_chat_id}</div>` : ''}
-        </div>
-        <div style="display:flex;align-items:center;gap:16px;flex-shrink:0">
-          <div style="text-align:center">
-            <div style="font-size:18px;font-weight:700;color:var(--gold)">${fmt(ch.reward)}</div>
-            <div style="font-size:11px;color:var(--muted)">نقطة</div>
-          </div>
-          ${statusBadge}
-          <div class="actions">
-            <div class="icon-btn" title="تعديل" onclick="openEditChannelModal(${ch.id})">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </div>
-            <div class="icon-btn danger" title="حذف" onclick="confirmAction('حذف قناة ${ch.title.replace(/'/g,"\\'")}?','danger',()=>deleteChannel(${ch.id}))">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function openAddChannelModal() {
-  document.getElementById('channel-modal-title').textContent = 'إضافة قناة جديدة';
-  document.getElementById('ch-edit-id').value = '';
-  document.getElementById('ch-title').value = '';
-  document.getElementById('ch-url').value = '';
-  document.getElementById('ch-chat-id').value = '';
-  document.getElementById('ch-reward').value = '2500';
-  document.getElementById('ch-order').value = '0';
-  document.getElementById('ch-active').checked = true;
-  openModal('modal-channel');
-}
-
-function openEditChannelModal(id) {
-  const ch = allChannels.find(c => c.id === id);
-  if (!ch) return;
-  document.getElementById('channel-modal-title').textContent = 'تعديل القناة';
-  document.getElementById('ch-edit-id').value = ch.id;
-  document.getElementById('ch-title').value = ch.title;
-  document.getElementById('ch-url').value = ch.url;
-  document.getElementById('ch-chat-id').value = ch.tg_chat_id || '';
-  document.getElementById('ch-reward').value = ch.reward;
-  document.getElementById('ch-order').value = ch.sort_order ?? 0;
-  document.getElementById('ch-active').checked = !!ch.is_active;
-  openModal('modal-channel');
-}
-
-async function saveChannel() {
-  const editId  = document.getElementById('ch-edit-id').value;
-  const payload = {
-    title:       document.getElementById('ch-title').value.trim(),
-    url:         document.getElementById('ch-url').value.trim(),
-    tg_chat_id:  document.getElementById('ch-chat-id').value.trim() || null,
-    reward:      parseInt(document.getElementById('ch-reward').value) || 0,
-    sort_order:  parseInt(document.getElementById('ch-order').value) || 0,
-    is_active:   document.getElementById('ch-active').checked,
-  };
-  if (!payload.title) { toast('يجب إدخال اسم القناة', 'error'); return; }
-  if (!payload.url)   { toast('يجب إدخال رابط القناة', 'error'); return; }
-
-  let data;
-  if (editId) {
-    data = await apiFetch('/admin/channels/' + editId, { method: 'PUT', body: JSON.stringify(payload) });
-  } else {
-    data = await apiFetch('/admin/channels', { method: 'POST', body: JSON.stringify(payload) });
-  }
-  if (data?.ok) {
-    toast(editId ? 'تم تحديث القناة' : 'تمت إضافة القناة', 'success');
-    closeModal('modal-channel');
-    loadChannels();
-  } else {
-    toast('خطأ: ' + (data?.error || 'فشل الحفظ'), 'error');
-  }
-}
-
-async function deleteChannel(id) {
-  const data = await apiFetch('/admin/channels/' + id, { method: 'DELETE' });
-  if (data?.ok) {
-    toast('تم حذف القناة', 'success');
-    loadChannels();
-  } else {
-    toast('خطأ في الحذف', 'error');
-  }
-}
-
-// ── INIT ──
-loadDashboard();
-setInterval(refreshData, 30000);
-
-// ══════════════════════════════════════════
-// BROADCAST
-// ══════════════════════════════════════════
-(function() {
-  const ta = () => document.getElementById('bc-text');
-
-  // معاينة لحظية
-  function bcUpdatePreview() {
-    const raw     = ta()?.value || '';
-    const imgUrl  = document.getElementById('bc-image')?.value?.trim();
-    const btnLbl  = document.getElementById('bc-btn-label')?.value?.trim();
-    const prev    = document.getElementById('bc-preview');
-    const prevImg = document.getElementById('bc-preview-img');
-    const prevBtn = document.getElementById('bc-preview-btn');
-    if (prev) prev.innerHTML = raw || '<span style="color:#5d7a8a">ستظهر الرسالة هنا...</span>';
-    if (prevImg) {
-      prevImg.style.display = imgUrl ? '' : 'none';
-      const img = document.getElementById('bc-img-thumb');
-      if (img && imgUrl) img.src = imgUrl;
-    }
-    if (prevBtn) {
-      prevBtn.style.display = btnLbl ? '' : 'none';
-      const lbl = document.getElementById('bc-preview-btn-label');
-      if (lbl) lbl.textContent = btnLbl || '—';
-    }
-  }
-
-  // لف النص المحدد
-  window.bcWrap = function(before, after) {
-    const t = ta();
-    if (!t) return;
-    const s = t.selectionStart, e = t.selectionEnd;
-    const selected = t.value.slice(s, e);
-    t.value = t.value.slice(0, s) + before + selected + after + t.value.slice(e);
-    t.selectionStart = s + before.length;
-    t.selectionEnd   = e + before.length;
-    t.focus();
-    bcUpdatePreview();
-  };
-
-  // إرسال
-  window.bcSend = async function() {
-    const text     = ta()?.value?.trim();
-    const imageUrl = document.getElementById('bc-image')?.value?.trim();
-    const btnLabel = document.getElementById('bc-btn-label')?.value?.trim();
-    const btnUrl   = document.getElementById('bc-btn-url')?.value?.trim();
-    const resultEl = document.getElementById('bc-result');
-    const sendBtn  = document.getElementById('bc-send-btn');
-
-    if (!text) { alert('اكتب نص الرسالة أولاً'); return; }
-
-    sendBtn.disabled = true;
-    sendBtn.textContent = '⏳ جاري الإرسال...';
-    if (resultEl) resultEl.style.display = 'none';
-
-    try {
-      const body = { text };
-      if (imageUrl) body.image_url = imageUrl;
-      if (btnLabel && btnUrl) { body.button_label = btnLabel; body.button_url = btnUrl; }
-
-      const d = await apiFetch('/admin/broadcast', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-
-      if (resultEl) {
-        resultEl.style.display = '';
-        if (d.ok) {
-          resultEl.style.background = 'rgba(34,197,94,0.1)';
-          resultEl.style.border = '1px solid rgba(34,197,94,0.25)';
-          resultEl.style.color = 'rgba(34,197,94,0.9)';
-          resultEl.textContent = `✅ تم الإرسال — ${d.sent} نجح / ${d.failed} فشل من ${d.total} مستخدم`;
-        } else {
-          resultEl.style.background = 'rgba(239,68,68,0.1)';
-          resultEl.style.border = '1px solid rgba(239,68,68,0.25)';
-          resultEl.style.color = 'rgba(239,68,68,0.9)';
-          resultEl.textContent = `❌ خطأ: ${d.error}`;
-        }
-      }
-    } catch (e) {
-      if (resultEl) {
-        resultEl.style.display = '';
-        resultEl.textContent = '❌ فشل الاتصال بالسيرفر';
-      }
-    }
-
-    sendBtn.disabled = false;
-    sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> إرسال للجميع';
-  };
-
-  // ربط الـ events
-  document.addEventListener('DOMContentLoaded', () => {
-    const t = document.getElementById('bc-text');
-    const img = document.getElementById('bc-image');
-    const bl = document.getElementById('bc-btn-label');
-    if (t)   t.addEventListener('input', bcUpdatePreview);
-    if (img) img.addEventListener('input', bcUpdatePreview);
-    if (bl)  bl.addEventListener('input', bcUpdatePreview);
-  });
-})();
-</script>
+      <td><
