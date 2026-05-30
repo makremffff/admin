@@ -1859,7 +1859,7 @@
 // ══════════════════════════════════════════
 const API_BASE = '/admin/api';
 
-const ADMIN_TOKEN = (function() {
+let ADMIN_TOKEN = (function() {
   let t = localStorage.getItem('admin_token');
   if (!t) {
     t = prompt('أدخل ADMIN_SECRET:') || '';
@@ -1887,9 +1887,24 @@ async function apiFetch(path, opts = {}) {
       throw new Error(`Non-JSON response: HTTP ${res.status}`);
     }
     const data = await res.json();
+    // لو forbidden — اطلب token جديد وأعد المحاولة مرة واحدة
+    if (res.status === 403) {
+      const newToken = prompt('كلمة السر غلط أو منتهية — أدخل ADMIN_SECRET:') || '';
+      if (newToken) {
+        ADMIN_TOKEN = newToken;
+        localStorage.setItem('admin_token', newToken);
+        // retry
+        const res2 = await fetch(url, {
+          headers: { 'Content-Type': 'application/json', 'x-admin-secret': newToken, ...(opts.headers || {}) },
+          ...opts,
+        });
+        return await res2.json();
+      }
+      return data;
+    }
     if (!res.ok) {
       console.warn('API error:', res.status, data);
-      return null;
+      return data;
     }
     return data;
   } catch (e) {
