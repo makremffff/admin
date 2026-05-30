@@ -940,6 +940,7 @@ async function handleSocialReview(body) {
       telegram: 'تيليجرام', instagram: 'إنستغرام', youtube: 'يوتيوب',
     };
     const platform = platformLabels[proof.task_icon] || proof.task_title;
+    const adminNote = body?.note || body?.reason || '';
 
     if (action === 'approve') {
       await sendBotMessage(
@@ -947,6 +948,7 @@ async function handleSocialReview(body) {
         `🎉 <b>تهانينا!</b>\n\n` +
         `تم مراجعة مهمتك على <b>${platform}</b> وتم قبولها بنجاح ✅\n\n` +
         `💰 تم إضافة <b>${Number(proof.reward).toLocaleString('ar')}</b> نقطة إلى حسابك!\n\n` +
+        (adminNote ? `📝 <b>ملاحظة من الإدارة:</b> ${adminNote}\n\n` : '') +
         `شكراً لتفاعلك مع المنصة 🚀`
       );
     } else {
@@ -954,7 +956,7 @@ async function handleSocialReview(body) {
         proof.tg_id,
         `❌ <b>تم رفض المهمة</b>\n\n` +
         `للأسف تم رفض إثبات مهمتك على <b>${platform}</b>.\n` +
-        (body?.reason ? `📝 <b>السبب:</b> ${body.reason}\n` : '') +
+        (adminNote ? `📝 <b>السبب:</b> ${adminNote}\n` : '') +
         `\nيمكنك إعادة المحاولة وإرسال لقطة شاشة واضحة.`
       );
     }
