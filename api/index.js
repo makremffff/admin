@@ -785,6 +785,192 @@ async function handleDeleteChannel(id) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// SOCIAL TASKS — إدارة المهمات الاجتماعية
+// ══════════════════════════════════════════════════════════════════
+
+// GET /admin/social/tasks — جلب كل المهمات
+async function handleGetSocialTasks() {
+  const rows = await sql(
+    `SELECT id, title, description, reward, icon, note, promo_text,
+            promo_optional, task_url, proof_required, is_active, sort_order, created_at
+     FROM social_tasks ORDER BY sort_order ASC, id ASC`
+  );
+  return { ok: true, tasks: rows };
+}
+
+// POST /admin/social/tasks — إضافة مهمة جديدة
+async function handleAddSocialTask(body) {
+  const d = body || {};
+  const title        = (d.title || '').trim();
+  const icon         = (d.icon  || 'default').trim();
+  const reward       = parseInt(d.reward ?? 500);
+  const description  = (d.description  || '').trim();
+  const note         = (d.note         || '').trim();
+  const promoText    = (d.promo_text   || '').trim();
+  const taskUrl      = (d.task_url     || '').trim();
+  const proofReq     = d.proof_required !== false;
+  const isActive     = d.is_active     !== false;
+  const sortOrder    = parseInt(d.sort_order ?? 0);
+
+  if (!title)  return { ok: false, error: 'missing_title' };
+  if (isNaN(reward) || reward < 0) return { ok: false, error: 'invalid_reward' };
+
+  const r = await sql(
+    `INSERT INTO social_tasks(title, description, reward, icon, note, promo_text,
+                              promo_optional, task_url, proof_required, is_active, sort_order)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+    [title, description, reward, icon, note, promoText,
+     d.promo_optional !== false, taskUrl, proofReq, isActive, sortOrder]
+  );
+  return { ok: true, task: r[0] };
+}
+
+// PUT /admin/social/tasks/:id — تعديل مهمة
+async function handleUpdateSocialTask(id, body) {
+  const tid = parseInt(id);
+  if (!tid) return { ok: false, error: 'invalid_id' };
+  const d = body || {};
+
+  const fields = []; const params = []; let idx = 1;
+  const set = (col, val) => { fields.push(`${col}=$${idx++}`); params.push(val); };
+
+  if (d.title        !== undefined) set('title',         d.title);
+  if (d.description  !== undefined) set('description',   d.description);
+  if (d.reward       !== undefined) set('reward',        parseInt(d.reward));
+  if (d.icon         !== undefined) set('icon',          d.icon);
+  if (d.note         !== undefined) set('note',          d.note);
+  if (d.promo_text   !== undefined) set('promo_text',    d.promo_text);
+  if (d.promo_optional!==undefined) set('promo_optional',!!d.promo_optional);
+  if (d.task_url     !== undefined) set('task_url',      d.task_url);
+  if (d.proof_required!==undefined) set('proof_required',!!d.proof_required);
+  if (d.is_active    !== undefined) set('is_active',     !!d.is_active);
+  if (d.sort_order   !== undefined) set('sort_order',    parseInt(d.sort_order));
+
+  if (!fields.length) return { ok: false, error: 'nothing_to_update' };
+  params.push(tid);
+  const r = await sql(
+    `UPDATE social_tasks SET ${fields.join(',')} WHERE id=$${idx} RETURNING *`, params
+  );
+  if (!r.length) return { ok: false, error: 'task_not_found' };
+  return { ok: true, task: r[0] };
+}
+
+// DELETE /admin/social/tasks/:id
+async function handleDeleteSocialTask(id) {
+  const tid = parseInt(id);
+  if (!tid) return { ok: false, error: 'invalid_id' };
+  const r = await sql(`DELETE FROM social_tasks WHERE id=$1 RETURNING id`, [tid]);
+  if (!r.length) return { ok: false, error: 'task_not_found' };
+  return { ok: true, deleted_id: tid };
+}
+
+// GET /admin/social/proofs?status=pending&limit=50 — جلب الإثباتات
+async function handleGetSocialProofs(query) {
+  const status = query.status || 'pending';
+  const limit  = Math.min(parseInt(query.limit || '50'), 200);
+  const offset = parseInt(query.offset || '0');
+  const hasFilter = status && status !== 'all';
+
+  const where  = hasFilter ? `WHERE sp.status = $1` : `WHERE 1=1`;
+  const params = hasFilter ? [status, limit, offset] : [limit, offset];
+  const lIdx   = hasFilter ? 2 : 1;
+
+  const rows = await sql(
+    `SELECT sp.id, sp.user_id, sp.task_id, sp.proof_image, sp.status,
+            sp.created_at, sp.reviewed_by, sp.reviewed_at,
+            u.tg_id, u.tg_first_name, u.tg_username,
+            st.title AS task_title, st.reward, st.icon AS task_icon
+     FROM social_proofs sp
+     JOIN users        u  ON u.id  = sp.user_id
+     JOIN social_tasks st ON st.id = sp.task_id
+     ${where}
+     ORDER BY sp.created_at ASC
+     LIMIT $${lIdx} OFFSET $${lIdx + 1}`,
+    params
+  );
+
+  const [{ cnt }] = await sql(
+    `SELECT COUNT(*) AS cnt FROM social_proofs ${hasFilter ? `WHERE status = '${status}'` : ''}`
+  );
+
+  return { ok: true, proofs: rows, total: parseInt(cnt), limit, offset };
+}
+
+// POST /admin/social/review — قبول أو رفض إثبات مع إشعار بوت
+async function handleSocialReview(body) {
+  const proofId  = parseInt(body?.proof_id);
+  const action   = body?.action; // 'approve' | 'reject'
+  const reviewer = body?.reviewer || 'admin';
+
+  if (!proofId || !['approve', 'reject'].includes(action)) {
+    return { ok: false, error: 'invalid_params' };
+  }
+
+  const [proof] = await sql(
+    `SELECT sp.id, sp.user_id, sp.status, sp.task_id,
+            st.reward, st.title AS task_title, st.icon AS task_icon,
+            u.tg_id, u.tg_first_name
+     FROM social_proofs sp
+     JOIN social_tasks  st ON st.id = sp.task_id
+     JOIN users         u  ON u.id  = sp.user_id
+     WHERE sp.id = $1`,
+    [proofId]
+  );
+  if (!proof)                   return { ok: false, error: 'proof_not_found' };
+  if (proof.status !== 'pending') return { ok: false, error: 'already_reviewed' };
+
+  const newStatus = action === 'approve' ? 'approved' : 'rejected';
+
+  // Transaction
+  await sql(`BEGIN`);
+  try {
+    await sql(
+      `UPDATE social_proofs SET status=$1, reviewed_by=$2, reviewed_at=NOW() WHERE id=$3`,
+      [newStatus, reviewer, proofId]
+    );
+    if (action === 'approve') {
+      await sql(
+        `UPDATE users SET balance = balance + $1 WHERE id = $2`,
+        [proof.reward, proof.user_id]
+      );
+    }
+    await sql(`COMMIT`);
+  } catch (err) {
+    await sql(`ROLLBACK`);
+    throw err;
+  }
+
+  // إشعار البوت
+  if (proof.tg_id) {
+    const platformLabels = {
+      facebook: 'فيسبوك', twitter: 'تويتر / X', tiktok: 'تيك توك',
+      telegram: 'تيليجرام', instagram: 'إنستغرام', youtube: 'يوتيوب',
+    };
+    const platform = platformLabels[proof.task_icon] || proof.task_title;
+
+    if (action === 'approve') {
+      await sendBotMessage(
+        proof.tg_id,
+        `🎉 <b>تهانينا!</b>\n\n` +
+        `تم مراجعة مهمتك على <b>${platform}</b> وتم قبولها بنجاح ✅\n\n` +
+        `💰 تم إضافة <b>${Number(proof.reward).toLocaleString('ar')}</b> نقطة إلى حسابك!\n\n` +
+        `شكراً لتفاعلك مع المنصة 🚀`
+      );
+    } else {
+      await sendBotMessage(
+        proof.tg_id,
+        `❌ <b>تم رفض المهمة</b>\n\n` +
+        `للأسف تم رفض إثبات مهمتك على <b>${platform}</b>.\n` +
+        (body?.reason ? `📝 <b>السبب:</b> ${body.reason}\n` : '') +
+        `\nيمكنك إعادة المحاولة وإرسال لقطة شاشة واضحة.`
+      );
+    }
+  }
+
+  return { ok: true, proof_id: proofId, new_status: newStatus };
+}
+
+// ══════════════════════════════════════════════════════════════════
 // URL PARSER
 // ══════════════════════════════════════════════════════════════════
 function parseUrl(rawUrl = '') {
@@ -847,6 +1033,12 @@ module.exports = async function handler(req, res) {
       if (path.endsWith('/admin/channels') || path.includes('/admin/channels?'))
         return res.status(200).json(await handleGetChannels());
 
+      if (path.endsWith('/admin/social/tasks') || path.includes('/admin/social/tasks?'))
+        return res.status(200).json(await handleGetSocialTasks());
+
+      if (path.endsWith('/admin/social/proofs') || path.includes('/admin/social/proofs?'))
+        return res.status(200).json(await handleGetSocialProofs(query));
+
       return res.status(404).json({ ok: false, error: 'not_found', path });
     }
 
@@ -859,6 +1051,10 @@ module.exports = async function handler(req, res) {
       if (path.includes('/admin/channels/')) {
         const chId = path.split('/admin/channels/')[1]?.split('/')[0];
         return res.status(200).json(await handleDeleteChannel(chId));
+      }
+      if (path.includes('/admin/social/tasks/')) {
+        const tid = path.split('/admin/social/tasks/')[1]?.split('/')[0];
+        return res.status(200).json(await handleDeleteSocialTask(tid));
       }
       return res.status(404).json({ ok: false, error: 'not_found' });
     }
@@ -880,6 +1076,12 @@ module.exports = async function handler(req, res) {
       if (path.endsWith('/admin/channels'))
         return res.status(200).json(await handleAddChannel(body));
 
+      if (path.endsWith('/admin/social/tasks'))
+        return res.status(200).json(await handleAddSocialTask(body));
+
+      if (path.endsWith('/admin/social/review'))
+        return res.status(200).json(await handleSocialReview(body));
+
       if (path.endsWith('/admin/broadcast'))
         return res.status(200).json(await handleBroadcast(body));
 
@@ -891,6 +1093,10 @@ module.exports = async function handler(req, res) {
       if (path.includes('/admin/channels/')) {
         const chId = path.split('/admin/channels/')[1]?.split('/')[0];
         return res.status(200).json(await handleUpdateChannel(chId, body));
+      }
+      if (path.includes('/admin/social/tasks/')) {
+        const tid = path.split('/admin/social/tasks/')[1]?.split('/')[0];
+        return res.status(200).json(await handleUpdateSocialTask(tid, body));
       }
       return res.status(404).json({ ok: false, error: 'not_found', path });
     }
