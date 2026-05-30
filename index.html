@@ -2947,80 +2947,102 @@ function closeProofImg() {
 }
 
 function openProofModal(proofId, preAction) {
-  currentProofId = proofId;
-  const p = socialProofs.find(x => x.id === proofId);
-  if (!p) return;
-  const plat = SOCIAL_PLATFORM_NAMES[p.task_icon] || p.task_icon;
-  const ico  = SOCIAL_ICON_SVG[p.task_icon]       || SOCIAL_ICON_SVG.default;
-  const hasImg = p.proof_image && (p.proof_image.startsWith('data:') || p.proof_image.startsWith('http'));
-
-  // ── تحديث عنوان الموودال حسب الإجراء ──
-  const titleEl  = document.getElementById('proof-modal-title-text');
-  const titleSvg = document.querySelector('#proof-modal-title svg');
-  if (preAction === 'approve') {
-    titleEl.textContent = '✅ تأكيد قبول الإثبات';
-    if (titleSvg) titleSvg.setAttribute('stroke', 'var(--green)');
-    document.getElementById('proof-note-label').innerHTML =
-      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="display:inline;vertical-align:middle;margin-left:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      ملاحظة للمستخدم مع رسالة القبول <span style="color:var(--muted);font-weight:400">(اختياري)</span>`;
-    document.getElementById('proof-note').placeholder = 'أحسنت! واصل تفاعلك مع المنصة...';
-    document.getElementById('proof-btn-approve').style.display = '';
-    document.getElementById('proof-btn-reject').style.display  = 'none';
-  } else if (preAction === 'reject') {
-    titleEl.textContent = '❌ تأكيد رفض الإثبات';
-    if (titleSvg) titleSvg.setAttribute('stroke', 'var(--red)');
-    document.getElementById('proof-note-label').innerHTML =
-      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="display:inline;vertical-align:middle;margin-left:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      سبب الرفض / ملاحظة ترسل للمستخدم <span style="color:var(--muted);font-weight:400">(اختياري)</span>`;
-    document.getElementById('proof-note').placeholder = 'الصورة غير واضحة / لا تثبت التنفيذ...';
-    document.getElementById('proof-btn-reject').style.display  = '';
-    document.getElementById('proof-btn-approve').style.display = 'none';
-  } else {
-    titleEl.textContent = 'مراجعة الإثبات';
-    if (titleSvg) titleSvg.setAttribute('stroke', 'var(--accent)');
-    document.getElementById('proof-note').placeholder = 'ملاحظة ترسل للمستخدم...';
-    document.getElementById('proof-btn-approve').style.display = '';
-    document.getElementById('proof-btn-reject').style.display  = '';
+  // تحويل لـ integer لضمان المطابقة
+  currentProofId = parseInt(proofId);
+  const p = socialProofs.find(x => parseInt(x.id) === currentProofId);
+  if (!p) {
+    toast('لم يُعثر على الإثبات', 'error');
+    return;
   }
+
+  const ico    = SOCIAL_ICON_SVG[p.task_icon] || SOCIAL_ICON_SVG.default;
+  const hasImg = !!(p.proof_image && (p.proof_image.startsWith('data:') || p.proof_image.startsWith('http')));
+
+  // عنوان المودال
+  const titleEl = document.getElementById('proof-modal-title-text');
+  const approveBtn = document.getElementById('proof-btn-approve');
+  const rejectBtn  = document.getElementById('proof-btn-reject');
+  const noteEl     = document.getElementById('proof-note');
+  const noteLbl    = document.getElementById('proof-note-label');
+
+  if (preAction === 'approve') {
+    titleEl.textContent      = '✅ تأكيد قبول الإثبات';
+    noteLbl.textContent      = 'ملاحظة للمستخدم مع رسالة القبول (اختياري)';
+    noteEl.placeholder       = 'أحسنت! واصل تفاعلك مع المنصة...';
+    approveBtn.style.display = '';
+    rejectBtn.style.display  = 'none';
+  } else if (preAction === 'reject') {
+    titleEl.textContent      = '❌ تأكيد رفض الإثبات';
+    noteLbl.textContent      = 'سبب الرفض (اختياري — يُرسل للمستخدم)';
+    noteEl.placeholder       = 'الصورة غير واضحة / لا تثبت التنفيذ...';
+    rejectBtn.style.display  = '';
+    approveBtn.style.display = 'none';
+  } else {
+    titleEl.textContent      = 'مراجعة الإثبات';
+    noteLbl.textContent      = 'ملاحظة ترسل للمستخدم (اختياري)';
+    noteEl.placeholder       = 'اكتب ملاحظتك هنا...';
+    approveBtn.style.display = '';
+    rejectBtn.style.display  = '';
+  }
+
+  noteEl.value = '';
 
   document.getElementById('proof-detail-content').innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <div class="proof-platform-ico">${ico}</div>
       <div>
         <div style="font-weight:700">${esc(p.task_title)}</div>
-        <div style="font-size:12px;color:var(--muted)">${esc(p.tg_first_name || '')} ${p.tg_username ? '(@' + esc(p.tg_username) + ')' : ''}</div>
+        <div style="font-size:12px;color:var(--muted)">
+          ${esc(p.tg_first_name || '')}${p.tg_username ? ' (@' + esc(p.tg_username) + ')' : ''}
+          &nbsp;·&nbsp; tg_id: ${p.tg_id}
+        </div>
       </div>
     </div>
-    ${hasImg ? `
-      <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;max-height:260px;display:flex;align-items:center;justify-content:center;background:var(--bg)"
-           onclick="openProofImg(${p.id}, \`${p.proof_image}\`)">
-        <img src="${p.proof_image}" style="width:100%;max-height:260px;object-fit:contain">
-      </div>
-      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">اضغط على الصورة للتكبير</div>
-    ` : '<div style="color:var(--muted);text-align:center;padding:16px;background:var(--bg);border-radius:8px;font-size:13px">⚠️ لا توجد صورة إثبات</div>'}
+    ${hasImg
+      ? `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;max-height:260px;display:flex;align-items:center;justify-content:center;background:var(--bg)"
+             onclick="openProofImg(${currentProofId},'${p.proof_image}')">
+           <img src="${p.proof_image}" style="width:100%;max-height:260px;object-fit:contain">
+         </div>
+         <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">اضغط على الصورة للتكبير</div>`
+      : `<div style="color:var(--muted);text-align:center;padding:16px;background:var(--bg);border-radius:8px;font-size:13px">⚠️ لا توجد صورة إثبات</div>`
+    }
     <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px">
       💰 سيُضاف <b>${Number(p.reward).toLocaleString('ar')}</b> نقطة عند القبول
     </div>
   `;
-  document.getElementById('proof-note').value = '';
+
   document.getElementById('modal-proof').classList.add('open');
 }
 
 async function reviewProof(action) {
-  if (!currentProofId) return;
-  const note = document.getElementById('proof-note').value.trim();
+  if (!currentProofId) { toast('لم يتم تحديد الإثبات', 'error'); return; }
+
+  const note    = document.getElementById('proof-note').value.trim();
+  const btn     = action === 'approve'
+    ? document.getElementById('proof-btn-approve')
+    : document.getElementById('proof-btn-reject');
+
+  // تعطيل الزر أثناء الإرسال
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ...'; }
+
   const data = await apiFetch('/admin/social/review', {
-    method: 'POST',
-    body: JSON.stringify({ proof_id: currentProofId, action, note }),
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ proof_id: currentProofId, action, note }),
   });
-  if (!data?.ok) { toast(data?.error || 'خطأ', 'error'); return; }
+
+  if (btn) { btn.disabled = false; btn.textContent = action === 'approve' ? 'قبول وإضافة نقاط' : 'رفض وإشعار'; }
+
+  if (!data) { toast('فشل الاتصال بالسيرفر', 'error'); return; }
+  if (!data.ok) { toast(data.error || 'خطأ من السيرفر', 'error'); return; }
 
   toast(action === 'approve' ? '✅ تم القبول وإرسال الإشعار' : '❌ تم الرفض وإرسال الإشعار', 'success');
   closeModal('modal-proof');
-  // Update card in UI
-  const card = document.getElementById(`proof-card-${currentProofId}`);
+
+  // إزالة الكارد من الـ UI فوراً
+  const card = document.getElementById('proof-card-' + currentProofId);
   if (card) card.remove();
-  socialProofs = socialProofs.filter(p => p.id !== currentProofId);
+  socialProofs = socialProofs.filter(p => parseInt(p.id) !== currentProofId);
   currentProofId = null;
   if (!socialProofs.length) renderProofsUI();
 }
