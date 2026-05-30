@@ -921,23 +921,16 @@ async function handleSocialReview(body) {
 
   const newStatus = action === 'approve' ? 'approved' : 'rejected';
 
-  // Transaction
-  await sql(`BEGIN`);
-  try {
+  // Update proof status
+  await sql(
+    `UPDATE social_proofs SET status=$1, reviewed_by=$2, reviewed_at=NOW() WHERE id=$3`,
+    [newStatus, reviewer, proofId]
+  );
+  if (action === 'approve') {
     await sql(
-      `UPDATE social_proofs SET status=$1, reviewed_by=$2, reviewed_at=NOW() WHERE id=$3`,
-      [newStatus, reviewer, proofId]
+      `UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2`,
+      [proof.reward, proof.user_id]
     );
-    if (action === 'approve') {
-      await sql(
-        `UPDATE users SET balance = balance + $1 WHERE id = $2`,
-        [proof.reward, proof.user_id]
-      );
-    }
-    await sql(`COMMIT`);
-  } catch (err) {
-    await sql(`ROLLBACK`);
-    throw err;
   }
 
   // إشعار البوت
@@ -999,7 +992,10 @@ module.exports = async function handler(req, res) {
     try { body = JSON.parse(body); } catch (_) { body = {}; }
   }
 
-  const { path, query } = parseUrl(req.url || '');
+  const _parsed = parseUrl(req.url || '');
+  // Normalize: /admin/api/... → /admin/... (frontend uses API_BASE = '/admin/api')
+  const path  = _parsed.path.replace(/^\/admin\/api\//, '/admin/').replace(/^\/admin\/api$/, '/admin');
+  const query = _parsed.query;
 
   try {
     // ── GET ──────────────────────────────────────────────────────
