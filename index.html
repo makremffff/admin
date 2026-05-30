@@ -2842,7 +2842,7 @@ function switchSocialTab(tab) {
 async function loadSocialProofs() {
   const list = document.getElementById('social-proofs-list');
   list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">جارٍ التحميل…</div>';
-  const data = await apiFetch(`/social/proofs?status=${socialProofFilter}&limit=100`);
+  const data = await apiFetch(`/admin/social/proofs?status=${socialProofFilter}&limit=100`);
   if (!data) { list.innerHTML = '<div style="color:var(--red);text-align:center;padding:24px">خطأ في التحميل</div>'; return; }
   socialProofs = data.proofs || [];
 
@@ -3009,7 +3009,7 @@ function openProofModal(proofId, preAction) {
 async function reviewProof(action) {
   if (!currentProofId) return;
   const note = document.getElementById('proof-note').value.trim();
-  const data = await apiFetch('/social/review', {
+  const data = await apiFetch('/admin/social/review', {
     method: 'POST',
     body: JSON.stringify({ proof_id: currentProofId, action, note }),
   });
@@ -3031,7 +3031,7 @@ async function reviewProof(action) {
 async function loadSocialTasks() {
   const list = document.getElementById('social-tasks-list');
   list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">جارٍ التحميل…</div>';
-  const data = await apiFetch('/social/tasks');
+  const data = await apiFetch('/admin/social/tasks');
   if (!data) return;
   socialTasksList = data.tasks || [];
   renderSocialTasksUI();
@@ -3138,9 +3138,9 @@ async function saveSocialTask() {
 
   let data;
   if (editId) {
-    data = await apiFetch(`/social/tasks/${editId}`, { method: 'PUT', body: JSON.stringify(payload) });
+    data = await apiFetch(`/admin/social/tasks/${editId}`, { method: 'PUT', body: JSON.stringify(payload) });
   } else {
-    data = await apiFetch('/social/tasks', { method: 'POST', body: JSON.stringify(payload) });
+    data = await apiFetch('/admin/social/tasks', { method: 'POST', body: JSON.stringify(payload) });
   }
 
   if (!data?.ok) { toast(data?.error || 'فشل الحفظ', 'error'); return; }
@@ -3151,7 +3151,7 @@ async function saveSocialTask() {
 
 async function deleteSocialTask(id, title) {
   if (!confirm(`حذف مهمة "${title}"؟`)) return;
-  const data = await apiFetch(`/social/tasks/${id}`, { method: 'DELETE' });
+  const data = await apiFetch(`/admin/social/tasks/${id}`, { method: 'DELETE' });
   if (!data?.ok) { toast(data?.error || 'فشل الحذف', 'error'); return; }
   toast('🗑️ تم حذف المهمة', 'success');
   socialTasksList = socialTasksList.filter(t => t.id !== id);
