@@ -1859,19 +1859,11 @@
 // ══════════════════════════════════════════
 const API_BASE = '/admin/api';
 
-let ADMIN_TOKEN = (function() {
-  let t = localStorage.getItem('admin_token');
-  if (!t) {
-    t = prompt('أدخل ADMIN_SECRET:') || '';
-    if (t) localStorage.setItem('admin_token', t);
-  }
-  return t;
-})();
+const ADMIN_TOKEN = '';
 
 function apiHeaders() {
   return {
     'Content-Type': 'application/json',
-    'x-admin-secret': ADMIN_TOKEN,
   };
 }
 
