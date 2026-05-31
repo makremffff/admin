@@ -1145,6 +1145,8 @@
           </tbody>
         </table>
       </div>
+      <!-- Users Pagination -->
+      <div id="users-pagination" style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap"></div>
     </div>
 
     <!-- ══════════════════════════ PAGE: LEADERBOARD -->
@@ -1991,37 +1993,75 @@ async function loadDashboard() {
 // ══════════════════════════════════════════
 // USERS
 // ══════════════════════════════════════════
-async function loadUsers() {
-  const data = await apiFetch('/admin/users?limit=800');
-  if (data?.users) {
-    allUsers = data.users;
-    renderUsersFiltered();
+let usersCurrentPage = 1;
+let usersTotalPages  = 1;
+let usersTotalCount  = 0;
+let usersSearchTimer = null;
+
+async function loadUsers(page) {
+  if (page != null) usersCurrentPage = page;
+  const search = document.getElementById('users-search')?.value || '';
+  const filter = userFilter !== 'all' ? userFilter : '';
+  const url = `/admin/users?page=${usersCurrentPage}&search=${encodeURIComponent(search)}&filter=${filter}`;
+
+  const tbody = document.getElementById('users-body');
+  tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل…</td></tr>`;
+
+  const data = await apiFetch(url);
+  if (!data?.users) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--red)">خطأ في التحميل</td></tr>`;
+    return;
   }
+  allUsers         = data.users;
+  usersTotalPages  = data.pages  || 1;
+  usersTotalCount  = data.total  || data.users.length;
+  usersCurrentPage = data.page   || 1;
+
+  renderUsersTable('users-body', allUsers, 8);
+  renderUsersPagination();
+}
+
+function renderUsersPagination() {
+  const container = document.getElementById('users-pagination');
+  if (!container) return;
+
+  if (usersTotalPages <= 1) { container.innerHTML = ''; return; }
+
+  const totalCount = usersTotalCount.toLocaleString('ar');
+  let html = `<span style="font-size:12px;color:var(--muted);margin-left:8px">إجمالي: ${totalCount} مستخدم &nbsp;|&nbsp; صفحة ${usersCurrentPage} من ${usersTotalPages}</span>`;
+
+  const makeBtn = (label, targetPage, disabled) => {
+    const style = disabled ? 'opacity:.4;cursor:default' : 'cursor:pointer';
+    const active = targetPage === usersCurrentPage ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '';
+    return `<button class="btn btn-sm btn-ghost" style="${style};min-width:34px;${active}" ${disabled ? 'disabled' : `onclick="loadUsers(${targetPage})"`}>${label}</button>`;
+  };
+
+  html += makeBtn('«', 1, usersCurrentPage === 1);
+  html += makeBtn('‹', usersCurrentPage - 1, usersCurrentPage === 1);
+
+  const start = Math.max(1, usersCurrentPage - 2);
+  const end   = Math.min(usersTotalPages, start + 4);
+  for (let i = start; i <= end; i++) html += makeBtn(i, i, false);
+
+  html += makeBtn('›', usersCurrentPage + 1, usersCurrentPage === usersTotalPages);
+  html += makeBtn('»', usersTotalPages,       usersCurrentPage === usersTotalPages);
+
+  container.innerHTML = html;
 }
 
 function setUserFilter(f, el) {
   userFilter = f;
   document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  renderUsersFiltered();
+  loadUsers(1);
 }
 
-function filterUsers() { renderUsersFiltered(); }
-
-function renderUsersFiltered() {
-  const q = document.getElementById('users-search')?.value.toLowerCase() || '';
-  let list = allUsers.filter(u => {
-    const match = !q || (u.tg_username||'').toLowerCase().includes(q)
-      || (u.tg_first_name||'').toLowerCase().includes(q)
-      || String(u.tg_id).includes(q);
-    if (!match) return false;
-    if (userFilter === 'banned')  return u.is_banned;
-    if (userFilter === 'shadow')  return u.is_shadow_banned;
-    if (userFilter === 'premium') return u.tg_is_premium;
-    return true;
-  });
-  renderUsersTable('users-body', list, 8);
+function filterUsers() {
+  clearTimeout(usersSearchTimer);
+  usersSearchTimer = setTimeout(() => loadUsers(1), 400);
 }
+
+function renderUsersFiltered() { loadUsers(1); }
 
 function renderUsersTable(tbodyId, users, cols) {
   const tbody = document.getElementById(tbodyId);
@@ -2841,11 +2881,25 @@ function switchSocialTab(tab) {
   document.getElementById('social-panel-tasks').style.display  = tab === 'tasks'  ? '' : 'none';
   if (tab === 'proofs' && !socialProofs.length)    loadSocialProofs();
   if (tab === 'tasks'  && !socialTasksList.length) loadSocialTasks();
+  if (tab === 'tasks') refreshPendingBadge();
 }
 
 // ══════════════════════════════════════════
-// PROOFS
-// ══════════════════════════════════════════
+let pendingProofsTotal = 0;
+
+async function refreshPendingBadge() {
+  const d = await apiFetch('/admin/social/proofs?status=pending&limit=1');
+  if (!d) return;
+  pendingProofsTotal = d.total || 0;
+  const badge = document.getElementById('proofs-pending-count');
+  if (pendingProofsTotal > 0) {
+    badge.textContent = pendingProofsTotal;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 async function loadSocialProofs() {
   const list = document.getElementById('social-proofs-list');
   list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">جارٍ التحميل…</div>';
@@ -2853,13 +2907,19 @@ async function loadSocialProofs() {
   if (!data) { list.innerHTML = '<div style="color:var(--red);text-align:center;padding:24px">خطأ في التحميل</div>'; return; }
   socialProofs = data.proofs || [];
 
-  // update badge
+  // update badge — استخدم الإجمالي الفعلي من API
   const badge = document.getElementById('proofs-pending-count');
-  if (socialProofFilter === 'pending' && socialProofs.length) {
-    badge.textContent = socialProofs.length;
-    badge.style.display = '';
+  if (socialProofFilter === 'pending') {
+    pendingProofsTotal = data.total || 0;
+    if (pendingProofsTotal > 0) {
+      badge.textContent = pendingProofsTotal;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
   } else {
-    badge.style.display = 'none';
+    // حدّث العدد في الخلفية بدون انتظار
+    refreshPendingBadge();
   }
 
   renderProofsUI();
