@@ -39,7 +39,7 @@ async function withTransaction(fn) {
 
 // ── Config ────────────────────────────────────────────────────────
 const ADMIN_SECRET = process.env.ADMIN_SECRET || null;
-const BOT_TOKEN    = '8285685691:AAFyZvMVJ9k6UgHuBa8E34Icvk-TZ4-OdaI';
+const BOT_TOKEN    = process.env.BOT_TOKEN || '';
 
 async function sendBotMessage(tgId, text, extra = {}) {
   if (!tgId) return { ok: false };
@@ -169,13 +169,15 @@ async function handleStats() {
   };
 }
 
-// GET /admin/users?limit=100&sort=created_at&search=&filter=&online=true
+// GET /admin/users?page=1&sort=created_at&search=&filter=&online=true
 async function handleUsers(query) {
-  const limit  = Math.min(parseInt(query.limit  || '500'), 5000);
-  const search = (query.search || '').trim();
-  const filter = (query.filter || '').trim(); // banned | shadow | premium | ''
-  const online = query.online === 'true';
-  const sort   = query.sort === 'points' ? 'points' : 'created_at';
+  const perPage = 200;
+  const page    = Math.max(parseInt(query.page || '1'), 1);
+  const offset  = (page - 1) * perPage;
+  const search  = (query.search || '').trim();
+  const filter  = (query.filter || '').trim(); // banned | shadow | premium | ''
+  const online  = query.online === 'true';
+  const sort    = query.sort === 'points' ? 'points' : 'created_at';
 
   const where  = ['1=1'];
   const params = [];
@@ -193,7 +195,14 @@ async function handleUsers(query) {
   if (filter === 'premium') where.push('tg_is_premium = TRUE');
   if (online)               where.push(`updated_at > NOW() - INTERVAL '5 minutes'`);
 
-  params.push(limit);
+  // إجمالي السجلات لحساب عدد الصفحات
+  const countRow = (await sql(
+    `SELECT COUNT(*) AS cnt FROM users WHERE ${where.join(' AND ')}`,
+    params
+  ))[0];
+  const total = parseInt(countRow.cnt);
+
+  params.push(perPage, offset);
 
   const rows = await sql(
     `SELECT
@@ -211,7 +220,7 @@ async function handleUsers(query) {
      LEFT JOIN user_photos up ON up.user_id = u.id
      WHERE ${where.join(' AND ')}
      ORDER BY u.${sort} DESC
-     LIMIT $${idx}`,
+     LIMIT $${idx} OFFSET $${idx + 1}`,
     params
   );
 
@@ -241,7 +250,14 @@ async function handleUsers(query) {
     earned_today:        fmt(adsTodayMap[u.id]?.adsgram_earned_today ?? 0) + fmt(taddyTodayMap[u.id]?.taddy_earned_today ?? 0),
   }));
 
-  return { ok: true, users: enriched, total: enriched.length };
+  return {
+    ok:       true,
+    users:    enriched,
+    total,
+    page,
+    per_page: perPage,
+    pages:    Math.ceil(total / perPage),
+  };
 }
 
 // GET /admin/users/all?sort=referrals&page=1&per_page=200
