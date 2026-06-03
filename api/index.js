@@ -140,10 +140,10 @@ async function handleStats() {
     `)
   )[0];
 
-  const taddyToday = (
+  const monetagToday = (
     await sql(`
-      SELECT COALESCE(SUM(count), 0) AS taddy_today
-      FROM taddy_ad_logs
+      SELECT COALESCE(SUM(count), 0) AS monetag_today
+      FROM monetag_logs
       WHERE log_date = CURRENT_DATE
     `)
   )[0];
@@ -164,8 +164,8 @@ async function handleStats() {
     completed_withdrawals:     fmt(wdStats.completed_withdrawals),
     total_ton_paid:            parseFloat(wdStats.total_ton_paid || 0).toFixed(4),
     adsgram_today:             fmt(adsToday.ads_today),
-    taddy_today:               fmt(taddyToday.taddy_today),
-    ads_today:                 fmt(adsToday.ads_today) + fmt(taddyToday.taddy_today),
+    monetag_today:               fmt(monetagToday.monetag_today),
+    ads_today:                 fmt(adsToday.ads_today) + fmt(monetagToday.monetag_today),
   };
 }
 
@@ -224,29 +224,29 @@ async function handleUsers(query) {
   for (const a of adsToday) adsTodayMap[a.user_id] = a;
 
   // Taddy اليوم
-  const taddyToday = await sql(`
-    SELECT user_id, count AS taddy_today, points_earned AS taddy_earned_today
-    FROM taddy_ad_logs WHERE log_date = CURRENT_DATE
+  const monetagToday = await sql(`
+    SELECT user_id, count AS monetag_today, points_earned AS monetag_earned_today
+    FROM monetag_logs WHERE log_date = CURRENT_DATE
   `);
-  const taddyTodayMap = {};
-  for (const t of taddyToday) taddyTodayMap[t.user_id] = t;
+  const monetagTodayMap = {};
+  for (const t of monetagToday) monetagTodayMap[t.user_id] = t;
 
   const enriched = rows.map(u => ({
     ...u,
     adsgram_today:       fmt(adsTodayMap[u.id]?.adsgram_today        ?? 0),
     adsgram_earned_today:fmt(adsTodayMap[u.id]?.adsgram_earned_today  ?? 0),
-    taddy_today:         fmt(taddyTodayMap[u.id]?.taddy_today         ?? 0),
-    taddy_earned_today:  fmt(taddyTodayMap[u.id]?.taddy_earned_today  ?? 0),
-    ads_today:           fmt(adsTodayMap[u.id]?.adsgram_today ?? 0) + fmt(taddyTodayMap[u.id]?.taddy_today ?? 0),
-    earned_today:        fmt(adsTodayMap[u.id]?.adsgram_earned_today ?? 0) + fmt(taddyTodayMap[u.id]?.taddy_earned_today ?? 0),
+    monetag_today:         fmt(monetagTodayMap[u.id]?.monetag_today         ?? 0),
+    monetag_earned_today:  fmt(monetagTodayMap[u.id]?.monetag_earned_today  ?? 0),
+    ads_today:           fmt(adsTodayMap[u.id]?.adsgram_today ?? 0) + fmt(monetagTodayMap[u.id]?.monetag_today ?? 0),
+    earned_today:        fmt(adsTodayMap[u.id]?.adsgram_earned_today ?? 0) + fmt(monetagTodayMap[u.id]?.monetag_earned_today ?? 0),
   }));
 
   return { ok: true, users: enriched, total: enriched.length };
 }
 
-// GET /admin/users/all?sort=referrals&page=1&per_page=200
+// GET /admin/users/all?sort=referrals&page=1&per_page=200&search=&filter=
 async function handleAllUsers(query) {
-  const perPage = Math.min(parseInt(query.per_page || '500'), 5000);
+  const perPage = Math.min(parseInt(query.per_page || '200'), 500);
   const page    = Math.max(parseInt(query.page    || '1'),  1);
   const offset  = (page - 1) * perPage;
   const sortMap = {
@@ -256,10 +256,27 @@ async function handleAllUsers(query) {
     created:   'created_at',
   };
   const sortCol = sortMap[query.sort] || 'total_referrals';
+  const search  = (query.search || '').trim();
+  const filter  = (query.filter || '').trim();
 
-  const countRow = (await sql(`SELECT COUNT(*) AS cnt FROM users`))[0];
+  const where  = ['1=1'];
+  const cntParams = [];
+  let   idx    = 1;
+
+  if (search) {
+    where.push(`(u.tg_username ILIKE $${idx} OR u.tg_first_name ILIKE $${idx} OR CAST(u.tg_id AS TEXT) LIKE $${idx})`);
+    cntParams.push(`%${search}%`);
+    idx++;
+  }
+  if (filter === 'banned')  where.push('u.is_banned = TRUE');
+  if (filter === 'shadow')  where.push('u.is_shadow_banned = TRUE AND u.is_banned = FALSE');
+  if (filter === 'premium') where.push('u.tg_is_premium = TRUE');
+
+  const whereStr = where.join(' AND ');
+  const countRow = (await sql(`SELECT COUNT(*) AS cnt FROM users u WHERE ${whereStr}`, cntParams))[0];
   const total    = parseInt(countRow.cnt);
 
+  const rowParams = [...cntParams, perPage, offset];
   const rows = await sql(
     `SELECT
        u.id, u.tg_id, u.tg_username, u.tg_first_name, u.tg_last_name,
@@ -271,9 +288,10 @@ async function handleAllUsers(query) {
        up.photo_url
      FROM users u
      LEFT JOIN user_photos up ON up.user_id = u.id
+     WHERE ${whereStr}
      ORDER BY u.${sortCol} DESC
-     LIMIT $1 OFFSET $2`,
-    [perPage, offset]
+     LIMIT $${idx} OFFSET $${idx+1}`,
+    rowParams
   );
 
   // Adsgram اليوم
@@ -285,21 +303,21 @@ async function handleAllUsers(query) {
   for (const a of adsToday) adsTodayMap[a.user_id] = a;
 
   // Taddy اليوم
-  const taddyToday = await sql(`
-    SELECT user_id, count AS taddy_today, points_earned AS taddy_earned_today
-    FROM taddy_ad_logs WHERE log_date = CURRENT_DATE
+  const monetagToday = await sql(`
+    SELECT user_id, count AS monetag_today, points_earned AS monetag_earned_today
+    FROM monetag_logs WHERE log_date = CURRENT_DATE
   `);
-  const taddyTodayMap = {};
-  for (const t of taddyToday) taddyTodayMap[t.user_id] = t;
+  const monetagTodayMap = {};
+  for (const t of monetagToday) monetagTodayMap[t.user_id] = t;
 
   const enriched = rows.map(u => ({
     ...u,
     adsgram_today:        fmt(adsTodayMap[u.id]?.adsgram_today         ?? 0),
     adsgram_earned_today: fmt(adsTodayMap[u.id]?.adsgram_earned_today   ?? 0),
-    taddy_today:          fmt(taddyTodayMap[u.id]?.taddy_today          ?? 0),
-    taddy_earned_today:   fmt(taddyTodayMap[u.id]?.taddy_earned_today   ?? 0),
-    ads_today:            fmt(adsTodayMap[u.id]?.adsgram_today ?? 0) + fmt(taddyTodayMap[u.id]?.taddy_today ?? 0),
-    earned_today:         fmt(adsTodayMap[u.id]?.adsgram_earned_today ?? 0) + fmt(taddyTodayMap[u.id]?.taddy_earned_today ?? 0),
+    monetag_today:          fmt(monetagTodayMap[u.id]?.monetag_today          ?? 0),
+    monetag_earned_today:   fmt(monetagTodayMap[u.id]?.monetag_earned_today   ?? 0),
+    ads_today:            fmt(adsTodayMap[u.id]?.adsgram_today ?? 0) + fmt(monetagTodayMap[u.id]?.monetag_today ?? 0),
+    earned_today:         fmt(adsTodayMap[u.id]?.adsgram_earned_today ?? 0) + fmt(monetagTodayMap[u.id]?.monetag_earned_today ?? 0),
   }));
 
   return {
@@ -355,10 +373,10 @@ async function handleUserDetail(tgId) {
   )[0] || { count: 0, points_earned: 0 };
 
   // إعلانات اليوم — Taddy
-  const taddyToday = (
+  const monetagToday = (
     await sql(
       `SELECT count, points_earned
-       FROM taddy_ad_logs
+       FROM monetag_logs
        WHERE user_id = $1 AND log_date = CURRENT_DATE`,
       [u.id]
     )
@@ -380,10 +398,10 @@ async function handleUserDetail(tgId) {
       ...u,
       adsgram_today:        fmt(adToday.count),
       adsgram_earned_today: fmt(adToday.points_earned),
-      taddy_today:          fmt(taddyToday.count),
-      taddy_earned_today:   fmt(taddyToday.points_earned),
-      ads_today:            fmt(adToday.count) + fmt(taddyToday.count),
-      earned_today:         fmt(adToday.points_earned) + fmt(taddyToday.points_earned),
+      monetag_today:          fmt(monetagToday.count),
+      monetag_earned_today:   fmt(monetagToday.points_earned),
+      ads_today:            fmt(adToday.count) + fmt(monetagToday.count),
+      earned_today:         fmt(adToday.points_earned) + fmt(monetagToday.points_earned),
     },
     audit:       auditRows,
     withdrawals: wdRows,
@@ -967,6 +985,153 @@ async function handleSocialReview(body) {
   return { ok: true, proof_id: proofId, new_status: newStatus };
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// COMPETITION MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+
+// GET /admin/competition?page=1&per_page=50
+async function handleCompetitionGet(query) {
+  const page    = Math.max(parseInt(query.page || '1'), 1);
+  const perPage = Math.min(parseInt(query.per_page || '50'), 200);
+  const offset  = (page - 1) * perPage;
+
+  // Ensure tables exist
+  await sql(`CREATE TABLE IF NOT EXISTS competition_seasons (
+    id BIGSERIAL PRIMARY KEY, start_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    end_date TIMESTAMPTZ NOT NULL, prize_text TEXT DEFAULT '10$',
+    is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW()
+  )`).catch(()=>{});
+  await sql(`CREATE TABLE IF NOT EXISTS competition_tickets (
+    id BIGSERIAL PRIMARY KEY, season_id BIGINT NOT NULL, user_id BIGINT NOT NULL,
+    tickets BIGINT DEFAULT 0, updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(season_id, user_id)
+  )`).catch(()=>{});
+
+  // Active season
+  let season = (await sql(`SELECT * FROM competition_seasons WHERE is_active=TRUE ORDER BY id DESC LIMIT 1`))[0] || null;
+  // All seasons
+  const seasons = await sql(`SELECT * FROM competition_seasons ORDER BY id DESC LIMIT 20`);
+
+  let leaderboard = [], total = 0, pages = 0;
+  if (season) {
+    const cntRow = (await sql(`SELECT COUNT(*) AS cnt FROM competition_tickets WHERE season_id=$1`, [season.id]))[0];
+    total = parseInt(cntRow.cnt);
+    pages = Math.ceil(total / perPage);
+
+    leaderboard = await sql(
+      `SELECT ct.user_id, ct.tickets, ct.updated_at,
+              COALESCE(u.tg_first_name, u.tg_username, '#'||u.tg_id::text) AS name,
+              u.tg_id, u.tg_username,
+              up.photo_url
+       FROM competition_tickets ct
+       LEFT JOIN users u ON u.id = ct.user_id
+       LEFT JOIN user_photos up ON up.user_id = ct.user_id
+       WHERE ct.season_id = $1
+       ORDER BY ct.tickets DESC
+       LIMIT $2 OFFSET $3`,
+      [season.id, perPage, offset]
+    );
+  }
+
+  return {
+    ok: true,
+    season,
+    seasons: seasons.map(s => ({ ...s, is_ended: new Date(s.end_date) < new Date() })),
+    leaderboard: leaderboard.map((r, i) => ({
+      rank: offset + i + 1,
+      user_id:    r.user_id,
+      tg_id:      r.tg_id,
+      name:       r.name,
+      tg_username: r.tg_username,
+      tickets:    parseInt(r.tickets) || 0,
+      photo_url:  r.photo_url || null,
+      updated_at: r.updated_at,
+    })),
+    total, page, per_page: perPage, pages,
+  };
+}
+
+// POST /admin/competition/season { end_date, prize_text }
+async function handleCreateSeason(body) {
+  const endDate   = body?.end_date;
+  const prizeText = body?.prize_text || '10$';
+  if (!endDate) return { ok: false, error: 'missing_end_date' };
+
+  // Deactivate old seasons
+  await sql(`UPDATE competition_seasons SET is_active=FALSE WHERE is_active=TRUE`).catch(()=>{});
+
+  const r = await sql(
+    `INSERT INTO competition_seasons(start_date, end_date, prize_text, is_active)
+     VALUES(NOW(),$1,$2,TRUE) RETURNING *`,
+    [endDate, prizeText]
+  );
+  return { ok: true, season: r[0] };
+}
+
+// PUT /admin/competition/season/:id { end_date?, prize_text?, is_active? }
+async function handleUpdateSeason(id, body) {
+  const sid = parseInt(id);
+  if (!sid) return { ok: false, error: 'invalid_id' };
+
+  const fields = []; const params = []; let idx = 1;
+  if (body?.end_date   !== undefined) { fields.push(`end_date=$${idx++}`);   params.push(body.end_date); }
+  if (body?.prize_text !== undefined) { fields.push(`prize_text=$${idx++}`); params.push(body.prize_text); }
+  if (body?.is_active  !== undefined) { fields.push(`is_active=$${idx++}`);  params.push(!!body.is_active); }
+  if (!fields.length) return { ok: false, error: 'nothing_to_update' };
+
+  params.push(sid);
+  const r = await sql(
+    `UPDATE competition_seasons SET ${fields.join(',')} WHERE id=$${idx} RETURNING *`, params
+  );
+  if (!r.length) return { ok: false, error: 'season_not_found' };
+  return { ok: true, season: r[0] };
+}
+
+// POST /admin/competition/grant { user_id_or_tg_id, count }
+async function handleGrantTicket(body) {
+  let userId = parseInt(body?.user_id);
+  const tgId  = parseInt(body?.tg_id);
+  const count = parseInt(body?.count || '1');
+
+  if (!userId && tgId) {
+    const u = (await sql(`SELECT id FROM users WHERE tg_id=$1`, [tgId]))[0];
+    if (!u) return { ok: false, error: 'user_not_found' };
+    userId = u.id;
+  }
+  if (!userId) return { ok: false, error: 'missing_user_id' };
+  if (count < 1) return { ok: false, error: 'invalid_count' };
+
+  const season = (await sql(`SELECT * FROM competition_seasons WHERE is_active=TRUE ORDER BY id DESC LIMIT 1`))[0];
+  if (!season)  return { ok: false, error: 'no_active_season' };
+
+  const r = await sql(
+    `INSERT INTO competition_tickets(season_id, user_id, tickets)
+     VALUES($1,$2,$3)
+     ON CONFLICT(season_id, user_id) DO UPDATE
+       SET tickets=competition_tickets.tickets+$3, updated_at=NOW()
+     RETURNING tickets`,
+    [season.id, userId, count]
+  );
+  return { ok: true, user_id: userId, tickets: parseInt(r[0]?.tickets) || 0 };
+}
+
+// DELETE /admin/competition/ticket/:userId  (DB internal id)
+async function handleRemoveFromCompetition(userId) {
+  const uid = parseInt(userId);
+  if (!uid) return { ok: false, error: 'invalid_user_id' };
+
+  const season = (await sql(`SELECT id FROM competition_seasons WHERE is_active=TRUE ORDER BY id DESC LIMIT 1`))[0];
+  if (!season)  return { ok: false, error: 'no_active_season' };
+
+  const r = await sql(
+    `DELETE FROM competition_tickets WHERE season_id=$1 AND user_id=$2 RETURNING id`,
+    [season.id, uid]
+  );
+  if (!r.length) return { ok: false, error: 'ticket_not_found' };
+  return { ok: true, removed_user_id: uid };
+}
+
 // ══════════════════════════════════════════════════════════════════
 // URL PARSER
 // ══════════════════════════════════════════════════════════════════
@@ -1030,6 +1195,9 @@ module.exports = async function handler(req, res) {
       if (path.endsWith('/admin/risk') || path.includes('/admin/risk?'))
         return res.status(200).json(await handleRisk(query));
 
+      if (path.endsWith('/admin/competition') || path.includes('/admin/competition?'))
+        return res.status(200).json(await handleCompetitionGet(query));
+
       if (path.endsWith('/admin/channels') || path.includes('/admin/channels?'))
         return res.status(200).json(await handleGetChannels());
 
@@ -1048,6 +1216,11 @@ module.exports = async function handler(req, res) {
         const tgId = path.split('/admin/user/')[1]?.split('/')[0];
         return res.status(200).json(await handleDeleteUser(tgId));
       }
+      if (path.includes('/admin/competition/ticket/')) {
+        const uid = path.split('/admin/competition/ticket/')[1]?.split('/')[0];
+        return res.status(200).json(await handleRemoveFromCompetition(uid));
+      }
+
       if (path.includes('/admin/channels/')) {
         const chId = path.split('/admin/channels/')[1]?.split('/')[0];
         return res.status(200).json(await handleDeleteChannel(chId));
@@ -1085,11 +1258,27 @@ module.exports = async function handler(req, res) {
       if (path.endsWith('/admin/broadcast'))
         return res.status(200).json(await handleBroadcast(body));
 
+      if (path.endsWith('/admin/competition/season'))
+        return res.status(200).json(await handleCreateSeason(body));
+
+      if (path.endsWith('/admin/competition/grant'))
+        return res.status(200).json(await handleGrantTicket(body));
+
+      if (path.includes('/admin/competition/season/')) {
+        const sid = path.split('/admin/competition/season/')[1]?.split('/')[0];
+        return res.status(200).json(await handleUpdateSeason(sid, body));
+      }
+
       return res.status(404).json({ ok: false, error: 'not_found', path });
     }
 
     // ── PUT ──────────────────────────────────────────────────────
     if (req.method === 'PUT') {
+      if (path.includes('/admin/competition/season/')) {
+        const sid = path.split('/admin/competition/season/')[1]?.split('/')[0];
+        return res.status(200).json(await handleUpdateSeason(sid, body));
+      }
+
       if (path.includes('/admin/channels/')) {
         const chId = path.split('/admin/channels/')[1]?.split('/')[0];
         return res.status(200).json(await handleUpdateChannel(chId, body));
