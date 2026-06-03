@@ -941,6 +941,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       ليدربورد الإحالات
     </div>
+    <div class="nav-item" onclick="showPage('competition')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+      إدارة المسابقة
+    </div>
     <div class="nav-item" onclick="showPage('online')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4M3.5 3.5a13 13 0 0 0 0 17M20.5 3.5a13 13 0 0 1 0 17"/></svg>
       المتصلون الآن
@@ -1068,9 +1072,9 @@
           <div class="stat-icon" style="background:rgba(167,139,250,.15);color:#a78bfa">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
           </div>
-          <div class="stat-value" id="stat-taddy">—</div>
-          <div class="stat-label">Taddy اليوم</div>
-          <div class="stat-delta up" style="color:#a78bfa">إعلانات Taddy</div>
+          <div class="stat-value" id="stat-monetag">—</div>
+          <div class="stat-label">Monetag اليوم</div>
+          <div class="stat-delta up" style="color:#a78bfa">إعلانات Monetag</div>
         </div>
 
         <div class="stat-card purple">
@@ -1112,7 +1116,7 @@
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <div class="search-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" placeholder="ابحث باسم أو ID..." id="users-search" oninput="filterUsers()">
+            <input type="text" placeholder="ابحث باسم أو ID في كل الصفحات..." id="users-search" oninput="filterUsers()" style="min-width:220px">
           </div>
           <div class="filter-tabs">
             <button class="filter-tab active" onclick="setUserFilter('all',this)">الكل</button>
@@ -1120,11 +1124,23 @@
             <button class="filter-tab" onclick="setUserFilter('shadow',this)">شادو بان</button>
             <button class="filter-tab" onclick="setUserFilter('premium',this)">بريميوم</button>
           </div>
+          <select id="users-sort-sel" class="form-select" style="width:auto;font-size:13px" onchange="loadUsers(1)">
+            <option value="created">الأحدث تسجيلاً</option>
+            <option value="points">الأعلى نقاطاً</option>
+            <option value="referrals">الأعلى إحالةً</option>
+            <option value="ads">الأكثر إعلانات</option>
+          </select>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddBalanceModal()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          تعديل رصيد
-        </button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;color:var(--muted)">
+            المجموع: <strong id="users-total-info" class="num" style="color:var(--accent2)">…</strong>
+            &nbsp;|&nbsp; صفحة <strong id="users-page-info" class="num">…</strong>
+          </span>
+          <button class="btn btn-primary btn-sm" onclick="openAddBalanceModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            تعديل رصيد
+          </button>
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -1134,21 +1150,142 @@
             <th>النقاط</th>
             <th>المستوى</th>
             <th style="color:var(--blue)">Adsgram اليوم</th>
-            <th style="color:#a78bfa">Taddy اليوم</th>
+            <th style="color:#a78bfa">Monetag اليوم</th>
             <th>إعلانات الكلية</th>
             <th>الإحالات</th>
             <th>الحالة</th>
             <th>إجراءات</th>
           </tr></thead>
           <tbody id="users-body">
-            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
           </tbody>
         </table>
       </div>
-      <!-- Users Pagination -->
-      <div id="users-pagination" style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap"></div>
+      <!-- Pagination -->
+      <div id="users-pagination" style="display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap"></div>
     </div>
 
+
+    <!-- ══════════════════════════ PAGE: COMPETITION -->
+    <div class="page" id="page-competition">
+      <div class="section-header">
+        <div>
+          <div class="section-title">🏆 إدارة المسابقة</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px" id="comp-season-info">جاري التحميل…</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="openCreateSeasonModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            موسم جديد
+          </button>
+          <button class="btn btn-ghost btn-sm" id="comp-stop-btn" onclick="stopCurrentSeason()" style="display:none;color:var(--red)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            إيقاف الموسم
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="openGrantTicketModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+            منح تيكيت
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="loadCompetition()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+            تحديث
+          </button>
+        </div>
+      </div>
+
+      <!-- Season Cards Row -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px" id="comp-season-cards">
+      </div>
+
+      <!-- Timer Bar -->
+      <div id="comp-timer-bar" style="display:none;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px">وقت انتهاء الموسم</div>
+          <div id="comp-countdown" style="font-family:var(--font-num);font-size:20px;color:var(--gold);font-weight:700">—</div>
+        </div>
+        <div style="margin-right:auto">
+          <div style="font-size:11px;color:var(--muted)">الجائزة</div>
+          <div id="comp-prize-display" style="font-size:16px;font-weight:700;color:var(--accent2)">—</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openEditSeasonModal()" style="margin-right:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          تعديل
+        </button>
+      </div>
+
+      <!-- Leaderboard Table -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;color:var(--muted)">
+          ترتيب المسابقة — المجموع: <strong id="comp-total" class="num" style="color:var(--accent2)">—</strong>
+          &nbsp;|&nbsp; صفحة <strong id="comp-page-info" class="num">—</strong>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:50px">#</th>
+            <th>المستخدم</th>
+            <th>التيكيتات</th>
+            <th>آخر تحديث</th>
+            <th>إجراءات</th>
+          </tr></thead>
+          <tbody id="comp-body">
+            <tr><td colspan="5" style="text-align:center;padding:48px;color:var(--muted)">جاري التحميل…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="comp-pagination" style="display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap"></div>
+    </div>
+
+    <!-- ══════════════ COMPETITION MODALS ══════════════ -->
+    <!-- Create Season Modal -->
+    <div class="modal-overlay" id="modal-create-season" onclick="if(event.target===this)closeModal('modal-create-season')">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-title">🏆 إنشاء موسم جديد</div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:16px">سيتم إيقاف الموسم الحالي تلقائياً</p>
+        <label class="form-label">تاريخ الانتهاء</label>
+        <input type="datetime-local" id="cs-end-date" class="form-input" style="margin-bottom:12px">
+        <label class="form-label">نص الجائزة</label>
+        <input type="text" id="cs-prize" class="form-input" value="10$" placeholder="مثال: 10$" style="margin-bottom:18px">
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-create-season')">إلغاء</button>
+          <button class="btn btn-primary btn-sm" onclick="createSeason()">إنشاء الموسم</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Season Modal -->
+    <div class="modal-overlay" id="modal-edit-season" onclick="if(event.target===this)closeModal('modal-edit-season')">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-title">✏️ تعديل الموسم الحالي</div>
+        <input type="hidden" id="es-season-id">
+        <label class="form-label">تاريخ الانتهاء</label>
+        <input type="datetime-local" id="es-end-date" class="form-input" style="margin-bottom:12px">
+        <label class="form-label">نص الجائزة</label>
+        <input type="text" id="es-prize" class="form-input" style="margin-bottom:18px">
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-edit-season')">إلغاء</button>
+          <button class="btn btn-primary btn-sm" onclick="saveSeason()">حفظ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grant Ticket Modal -->
+    <div class="modal-overlay" id="modal-grant-ticket" onclick="if(event.target===this)closeModal('modal-grant-ticket')">
+      <div class="modal-box" style="max-width:380px">
+        <div class="modal-title">🎟️ منح تيكيت</div>
+        <label class="form-label">Telegram ID للمستخدم</label>
+        <input type="number" id="gt-tg-id" class="form-input" placeholder="123456789" style="margin-bottom:12px">
+        <label class="form-label">عدد التيكيتات</label>
+        <input type="number" id="gt-count" class="form-input" value="1" min="1" style="margin-bottom:18px">
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-grant-ticket')">إلغاء</button>
+          <button class="btn btn-primary btn-sm" onclick="grantTicket()">منح</button>
+        </div>
+      </div>
+    </div>
     <!-- ══════════════════════════ PAGE: LEADERBOARD -->
     <div class="page" id="page-leaderboard">
       <div class="section-header">
@@ -1942,7 +2079,8 @@ function closeSidebarMobile() {
 const PAGE_TITLES = {
   dashboard:   ['نظرة عامة',         'إحصائيات عامة للمنصة'],
   users:       ['إدارة المستخدمين',  'بحث وتعديل وحظر وحذف'],
-  leaderboard: ['ليدربورد الإحالات',  'أكثر المستخدمين إحالةً — كل المستخدمين'],
+  leaderboard:  ['ليدربورد الإحالات',  'أكثر المستخدمين إحالةً — كل المستخدمين'],
+  competition:  ['إدارة المسابقة',        'مواسم — تيكيتات — لوحة الترتيب'],
   online:      ['المتصلون الآن',      'نشاط حي في الوقت الفعلي'],
   withdrawals: ['طلبات السحب',        'مراجعة وإدارة طلبات السحب'],
   channels:    ['القنوات والمهمات',   'إضافة وتعديل قنوات الاشتراك'],
@@ -1961,6 +2099,7 @@ function showPage(id) {
   document.querySelector('#topbar-info .page-sub').textContent   = sub;
 
   if (id === 'leaderboard')  loadLeaderboard();
+  if (id === 'competition')   loadCompetition();
   if (id === 'users')       loadUsers();
   if (id === 'online')      loadOnline();
   if (id === 'withdrawals') loadWithdrawals();
@@ -1980,7 +2119,7 @@ async function loadDashboard() {
     setText('stat-banned',     fmt((data.banned ?? 0) + (data.shadow_banned ?? 0)));
     setText('stat-pending-wd', fmt(data.pending_withdrawals ?? '—'));
     setText('stat-adsgram',    fmt(data.adsgram_today    ?? '—'));
-    setText('stat-taddy',      fmt(data.taddy_today      ?? '—'));
+    setText('stat-monetag',    fmt(data.monetag_today    ?? '—'));
     setText('stat-refs',       fmt(data.total_referrals  ?? '—'));
     setText('badge-users',     fmt(data.total_users ?? ''));
     setText('badge-online',    fmt(data.online ?? ''));
@@ -1991,74 +2130,71 @@ async function loadDashboard() {
 }
 
 // ══════════════════════════════════════════
-// USERS
+// USERS — server-side pagination 200/page
 // ══════════════════════════════════════════
-let usersCurrentPage = 1;
-let usersTotalPages  = 1;
-let usersTotalCount  = 0;
-let usersSearchTimer = null;
+let usersPage = 1;
+let usersSearchTimeout = null;
 
 async function loadUsers(page) {
-  if (page != null) usersCurrentPage = page;
-  const search = document.getElementById('users-search')?.value || '';
-  const filter = userFilter !== 'all' ? userFilter : '';
-  const url = `/admin/users?page=${usersCurrentPage}&search=${encodeURIComponent(search)}&filter=${filter}`;
-
-  const tbody = document.getElementById('users-body');
+  if (page) usersPage = page;
+  const search = document.getElementById('users-search')?.value.trim() || '';
+  const tbody  = document.getElementById('users-body');
   tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل…</td></tr>`;
 
-  const data = await apiFetch(url);
+  const params = new URLSearchParams({
+    sort:     document.getElementById('users-sort-sel')?.value || 'created',
+    filter:   userFilter || 'all',
+    search,
+    page:     usersPage,
+    per_page: 200,
+  });
+  if (userFilter === 'online') params.set('online', 'true');
+
+  const data = await apiFetch(`/admin/users/all?${params}`);
   if (!data?.users) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--red)">خطأ في التحميل</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--red)">فشل التحميل</td></tr>`;
     return;
   }
-  allUsers         = data.users;
-  usersTotalPages  = data.pages  || 1;
-  usersTotalCount  = data.total  || data.users.length;
-  usersCurrentPage = data.page   || 1;
 
-  renderUsersTable('users-body', allUsers, 8);
-  renderUsersPagination();
-}
+  allUsers = data.users;
+  renderUsersTable('users-body', allUsers, 9);
 
-function renderUsersPagination() {
-  const container = document.getElementById('users-pagination');
-  if (!container) return;
+  // Update counter
+  setText('users-page-info', `${data.page} / ${data.pages}`);
+  setText('users-total-info', fmt(data.total));
 
-  if (usersTotalPages <= 1) { container.innerHTML = ''; return; }
+  // Render pagination
+  const pgDiv = document.getElementById('users-pagination');
+  pgDiv.innerHTML = '';
+  if (data.pages <= 1) return;
 
-  const totalCount = usersTotalCount.toLocaleString('ar');
-  let html = `<span style="font-size:12px;color:var(--muted);margin-left:8px">إجمالي: ${totalCount} مستخدم &nbsp;|&nbsp; صفحة ${usersCurrentPage} من ${usersTotalPages}</span>`;
-
-  const makeBtn = (label, targetPage, disabled) => {
-    const style = disabled ? 'opacity:.4;cursor:default' : 'cursor:pointer';
-    const active = targetPage === usersCurrentPage ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '';
-    return `<button class="btn btn-sm btn-ghost" style="${style};min-width:34px;${active}" ${disabled ? 'disabled' : `onclick="loadUsers(${targetPage})"`}>${label}</button>`;
+  const mkBtn = (label, pg, active=false, dis=false) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.className   = `btn btn-sm ${active ? 'btn-primary' : 'btn-ghost'}`;
+    b.disabled    = dis;
+    if (!dis) b.onclick = () => loadUsers(pg);
+    pgDiv.appendChild(b);
   };
-
-  html += makeBtn('«', 1, usersCurrentPage === 1);
-  html += makeBtn('‹', usersCurrentPage - 1, usersCurrentPage === 1);
-
-  const start = Math.max(1, usersCurrentPage - 2);
-  const end   = Math.min(usersTotalPages, start + 4);
-  for (let i = start; i <= end; i++) html += makeBtn(i, i, false);
-
-  html += makeBtn('›', usersCurrentPage + 1, usersCurrentPage === usersTotalPages);
-  html += makeBtn('»', usersTotalPages,       usersCurrentPage === usersTotalPages);
-
-  container.innerHTML = html;
+  mkBtn('«', 1, false, usersPage===1);
+  mkBtn('‹', usersPage-1, false, usersPage===1);
+  const st = Math.max(1, usersPage-2);
+  const en = Math.min(data.pages, st+4);
+  for (let p=st; p<=en; p++) mkBtn(p, p, p===usersPage);
+  mkBtn('›', usersPage+1, false, usersPage===data.pages);
+  mkBtn('»', data.pages,  false, usersPage===data.pages);
 }
 
 function setUserFilter(f, el) {
   userFilter = f;
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#page-users .filter-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   loadUsers(1);
 }
 
 function filterUsers() {
-  clearTimeout(usersSearchTimer);
-  usersSearchTimer = setTimeout(() => loadUsers(1), 400);
+  clearTimeout(usersSearchTimeout);
+  usersSearchTimeout = setTimeout(() => loadUsers(1), 400);
 }
 
 function renderUsersFiltered() { loadUsers(1); }
@@ -2089,7 +2225,7 @@ function renderUsersTable(tbodyId, users, cols) {
     const ads  = fmt(u.ads_watched_total ?? 0);
     const refs = fmt(u.total_referrals ?? 0);
     const adsgramT = fmt(u.adsgram_today ?? 0);
-    const taddyT   = fmt(u.taddy_today   ?? 0);
+    const monetagT = fmt(u.monetag_today ?? 0);
 
     if (cols === 6) {
       return `<tr onclick="openUserModal(${JSON.stringify(u).replace(/"/g,"'")})">
@@ -2106,7 +2242,7 @@ function renderUsersTable(tbodyId, users, cols) {
       <td><strong class="num">${fmt(u.points)}</strong></td>
       <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
       <td><span class="num" style="color:var(--blue)">${adsgramT}</span></td>
-      <td><span class="num" style="color:#a78bfa">${taddyT}</span></td>
+      <td><span class="num" style="color:#a78bfa">${monetagT}</span></td>
       <td class="num">${ads}</td>
       <td class="num">${refs}</td>
       <td>${status}</td>
@@ -2372,7 +2508,7 @@ function openUserModal(u) {
       <div class="detail-item"><div class="detail-item-label">النقاط</div><div class="detail-item-value" style="color:var(--gold)">${fmt(u.points)}</div></div>
       <div class="detail-item"><div class="detail-item-label">المستوى</div><div class="detail-item-value">${u.level}</div></div>
       <div class="detail-item"><div class="detail-item-label">Adsgram اليوم</div><div class="detail-item-value" style="color:var(--blue)">${u.adsgram_today ?? 0}</div></div>
-      <div class="detail-item"><div class="detail-item-label">Taddy اليوم</div><div class="detail-item-value" style="color:#a78bfa">${u.taddy_today ?? 0}</div></div>
+      <div class="detail-item"><div class="detail-item-label">Monetag اليوم</div><div class="detail-item-value" style="color:#a78bfa">${u.monetag_today ?? 0}</div></div>
       <div class="detail-item"><div class="detail-item-label">الإعلانات الكلية</div><div class="detail-item-value">${fmt(u.ads_watched_total)}</div></div>
       <div class="detail-item"><div class="detail-item-label">الإحالات</div><div class="detail-item-value">${u.total_referrals}</div></div>
       <div class="detail-item"><div class="detail-item-label">Risk Score</div><div class="detail-item-value" style="color:${u.risk_score>60?'var(--red)':'var(--green)'}">${u.risk_score}</div></div>
@@ -2881,25 +3017,11 @@ function switchSocialTab(tab) {
   document.getElementById('social-panel-tasks').style.display  = tab === 'tasks'  ? '' : 'none';
   if (tab === 'proofs' && !socialProofs.length)    loadSocialProofs();
   if (tab === 'tasks'  && !socialTasksList.length) loadSocialTasks();
-  if (tab === 'tasks') refreshPendingBadge();
 }
 
 // ══════════════════════════════════════════
-let pendingProofsTotal = 0;
-
-async function refreshPendingBadge() {
-  const d = await apiFetch('/admin/social/proofs?status=pending&limit=1');
-  if (!d) return;
-  pendingProofsTotal = d.total || 0;
-  const badge = document.getElementById('proofs-pending-count');
-  if (pendingProofsTotal > 0) {
-    badge.textContent = pendingProofsTotal;
-    badge.style.display = '';
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
+// PROOFS
+// ══════════════════════════════════════════
 async function loadSocialProofs() {
   const list = document.getElementById('social-proofs-list');
   list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:24px">جارٍ التحميل…</div>';
@@ -2907,19 +3029,13 @@ async function loadSocialProofs() {
   if (!data) { list.innerHTML = '<div style="color:var(--red);text-align:center;padding:24px">خطأ في التحميل</div>'; return; }
   socialProofs = data.proofs || [];
 
-  // update badge — استخدم الإجمالي الفعلي من API
+  // update badge
   const badge = document.getElementById('proofs-pending-count');
-  if (socialProofFilter === 'pending') {
-    pendingProofsTotal = data.total || 0;
-    if (pendingProofsTotal > 0) {
-      badge.textContent = pendingProofsTotal;
-      badge.style.display = '';
-    } else {
-      badge.style.display = 'none';
-    }
+  if (socialProofFilter === 'pending' && socialProofs.length) {
+    badge.textContent = socialProofs.length;
+    badge.style.display = '';
   } else {
-    // حدّث العدد في الخلفية بدون انتظار
-    refreshPendingBadge();
+    badge.style.display = 'none';
   }
 
   renderProofsUI();
@@ -3265,4 +3381,237 @@ const _origShowPage = showPage;
     }
   };
 })();
+
+// ══════════════════════════════════════════════════════
+// COMPETITION
+// ══════════════════════════════════════════════════════
+let compCurrentPage = 1;
+let compActiveSeason = null;
+let compCountdownTimer = null;
+
+async function loadCompetition(page) {
+  if (page) compCurrentPage = page;
+  const tbody = document.getElementById('comp-body');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:48px;color:var(--muted)">جاري التحميل…</td></tr>`;
+
+  const data = await apiFetch(`/admin/competition?page=${compCurrentPage}&per_page=50`);
+  if (!data) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:48px;color:var(--red)">فشل التحميل</td></tr>`;
+    return;
+  }
+
+  compActiveSeason = data.season;
+  renderCompSeasonCards(data.seasons || []);
+  renderCompTimerBar(data.season);
+  setText('comp-total',     fmt(data.total));
+  setText('comp-page-info', `${data.page} / ${data.pages}`);
+
+  if (!data.leaderboard?.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:48px;color:var(--muted)">لا يوجد مستخدمون في المسابقة حالياً</td></tr>`;
+  } else {
+    tbody.innerHTML = data.leaderboard.map(r => {
+      const name   = r.name || `#${r.tg_id}`;
+      const init   = name.charAt(0).toUpperCase();
+      const avatar = r.photo_url
+        ? `<div class="avatar"><img src="${r.photo_url}" alt="${init}" onerror="this.parentElement.textContent='${init}'"></div>`
+        : `<div class="avatar">${init}</div>`;
+      const medal  = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉'
+                   : `<span class="num" style="color:var(--muted);font-size:12px">${r.rank}</span>`;
+      const tgLink = r.tg_username ? `https://t.me/${r.tg_username}` : `tg://user?id=${r.tg_id}`;
+      const upd    = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-GB') : '—';
+      return `<tr>
+        <td style="text-align:center">${medal}</td>
+        <td><div class="user-cell">${avatar}<div>
+          <div class="user-name">${name}</div>
+          <div class="user-id">${r.tg_id}</div>
+        </div></div></td>
+        <td><strong class="num" style="color:var(--gold);font-size:16px">🎟️ ${fmt(r.tickets)}</strong></td>
+        <td style="font-size:12px;color:var(--muted)">${upd}</td>
+        <td onclick="event.stopPropagation()"><div class="actions">
+          <div class="icon-btn" title="تيليجرام" onclick="window.open('${tgLink}','_blank')" style="color:var(--blue)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </div>
+          <div class="icon-btn" title="منح تيكيت" onclick="openGrantTicketForUser(${r.tg_id})" style="color:var(--gold)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+          </div>
+          <div class="icon-btn danger" title="حذف من المسابقة" onclick="confirmAction('حذف ${name} من ترتيب المسابقة؟','danger',()=>removeFromComp(${r.user_id}))">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </div>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Pagination
+  const pgDiv = document.getElementById('comp-pagination');
+  pgDiv.innerHTML = '';
+  if (data.pages > 1) {
+    const mk = (label, pg, active=false, dis=false) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.className = `btn btn-sm ${active ? 'btn-primary' : 'btn-ghost'}`;
+      b.disabled = dis;
+      if (!dis) b.onclick = () => loadCompetition(pg);
+      pgDiv.appendChild(b);
+    };
+    mk('«',1,false,compCurrentPage===1);
+    mk('‹',compCurrentPage-1,false,compCurrentPage===1);
+    const st=Math.max(1,compCurrentPage-2), en=Math.min(data.pages,st+4);
+    for(let p=st;p<=en;p++) mk(p,p,p===compCurrentPage);
+    mk('›',compCurrentPage+1,false,compCurrentPage===data.pages);
+    mk('»',data.pages,false,compCurrentPage===data.pages);
+  }
+}
+
+function renderCompSeasonCards(seasons) {
+  const div = document.getElementById('comp-season-cards');
+  if (!seasons.length) { div.innerHTML=''; return; }
+  div.innerHTML = seasons.slice(0,5).map(s => {
+    const isActive = s.is_active && !s.is_ended;
+    const ended    = s.is_ended;
+    const color    = isActive ? 'var(--gold)' : ended ? 'var(--muted)' : 'var(--blue)';
+    const label    = isActive ? '🟢 نشط' : ended ? '🔴 منتهي' : '⚪ متوقف';
+    const endStr   = new Date(s.end_date).toLocaleDateString('ar-EG', {day:'numeric',month:'short',year:'numeric'});
+    return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px">
+      <div style="font-size:11px;color:var(--muted)">موسم #${s.id}</div>
+      <div style="font-size:16px;font-weight:700;color:${color};margin:4px 0">${s.prize_text}</div>
+      <div style="font-size:11px;color:var(--muted)">ينتهي: ${endStr}</div>
+      <div style="font-size:11px;margin-top:6px">${label}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCompTimerBar(season) {
+  const bar = document.getElementById('comp-timer-bar');
+  const stopBtn = document.getElementById('comp-stop-btn');
+  clearInterval(compCountdownTimer);
+
+  if (!season || !season.is_active) {
+    bar.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = 'none';
+    setText('comp-season-info', 'لا يوجد موسم نشط — أنشئ موسماً جديداً');
+    return;
+  }
+
+  bar.style.display = 'flex';
+  if (stopBtn) stopBtn.style.display = '';
+  setText('comp-prize-display', season.prize_text || '—');
+
+  const endDate = new Date(season.end_date);
+  const startStr = new Date(season.start_date).toLocaleDateString('ar-EG', {day:'numeric',month:'long'});
+  const endStr   = endDate.toLocaleDateString('ar-EG', {day:'numeric',month:'long',year:'numeric'});
+  setText('comp-season-info', `موسم #${season.id} · ${startStr} — ${endStr}`);
+
+  function tick() {
+    const diff = endDate - Date.now();
+    if (diff <= 0) {
+      setText('comp-countdown', '⛔ انتهى الموسم');
+      clearInterval(compCountdownTimer);
+      return;
+    }
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff%86400000)/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    setText('comp-countdown', `${d}ي ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+  }
+  tick();
+  compCountdownTimer = setInterval(tick, 1000);
+}
+
+function openCreateSeasonModal() {
+  // Default: 14 days from now
+  const dt = new Date(Date.now() + 14*86400000);
+  const iso = dt.toISOString().slice(0,16);
+  document.getElementById('cs-end-date').value = iso;
+  document.getElementById('cs-prize').value = '10$';
+  openModal('modal-create-season');
+}
+
+async function createSeason() {
+  const endDate   = document.getElementById('cs-end-date').value;
+  const prizeText = document.getElementById('cs-prize').value.trim();
+  if (!endDate) return toast('اختر تاريخ انتهاء','warn');
+  const r = await apiFetch('/admin/competition/season', { method: 'POST', body: JSON.stringify({ end_date: new Date(endDate).toISOString(), prize_text: prizeText }) });
+  if (r?.ok) {
+    toast('تم إنشاء الموسم بنجاح ✅','success');
+    closeModal('modal-create-season');
+    loadCompetition(1);
+  } else {
+    toast(r?.error || 'فشل الإنشاء','error');
+  }
+}
+
+function openEditSeasonModal() {
+  if (!compActiveSeason) return;
+  document.getElementById('es-season-id').value = compActiveSeason.id;
+  document.getElementById('es-end-date').value = new Date(compActiveSeason.end_date).toISOString().slice(0,16);
+  document.getElementById('es-prize').value = compActiveSeason.prize_text || '';
+  openModal('modal-edit-season');
+}
+
+async function saveSeason() {
+  const sid      = document.getElementById('es-season-id').value;
+  const endDate  = document.getElementById('es-end-date').value;
+  const prize    = document.getElementById('es-prize').value.trim();
+  if (!sid) return;
+  const r = await apiFetch(`/admin/competition/season/${sid}`, { method: 'PUT', body: JSON.stringify({ end_date: new Date(endDate).toISOString(), prize_text: prize }) });
+  if (r?.ok) {
+    toast('تم تعديل الموسم ✅','success');
+    closeModal('modal-edit-season');
+    loadCompetition(1);
+  } else {
+    toast(r?.error || 'فشل التعديل','error');
+  }
+}
+
+async function stopCurrentSeason() {
+  if (!compActiveSeason) return;
+  confirmAction(`إيقاف الموسم #${compActiveSeason.id} نهائياً؟`, 'danger', async () => {
+    const r = await apiFetch(`/admin/competition/season/${compActiveSeason.id}`, { method: 'PUT', body: JSON.stringify({ is_active: false }) });
+    if (r?.ok) {
+      toast('تم إيقاف الموسم','success');
+      loadCompetition(1);
+    } else {
+      toast(r?.error || 'فشل الإيقاف','error');
+    }
+  });
+}
+
+function openGrantTicketModal() {
+  document.getElementById('gt-tg-id').value = '';
+  document.getElementById('gt-count').value = '1';
+  openModal('modal-grant-ticket');
+}
+
+function openGrantTicketForUser(tgId) {
+  document.getElementById('gt-tg-id').value = tgId;
+  document.getElementById('gt-count').value = '1';
+  openModal('modal-grant-ticket');
+}
+
+async function grantTicket() {
+  const tgId = parseInt(document.getElementById('gt-tg-id').value);
+  const count = parseInt(document.getElementById('gt-count').value);
+  if (!tgId || count < 1) return toast('أدخل ID وعدد صحيح','warn');
+  const r = await apiFetch('/admin/competition/grant', { method: 'POST', body: JSON.stringify({ tg_id: tgId, count }) });
+  if (r?.ok) {
+    toast(`✅ تم منح ${count} تيكيت، الإجمالي: ${r.tickets}`,'success');
+    closeModal('modal-grant-ticket');
+    loadCompetition(compCurrentPage);
+  } else {
+    toast(r?.error || 'فشل المنح','error');
+  }
+}
+
+async function removeFromComp(userId) {
+  const r = await apiFetch(`/admin/competition/ticket/${userId}`, { method: 'DELETE' });
+  if (r?.ok) {
+    toast('تم حذف المستخدم من الترتيب ✅','success');
+    loadCompetition(compCurrentPage);
+  } else {
+    toast(r?.error || 'فشل الحذف','error');
+  }
+}
+
 </script>
