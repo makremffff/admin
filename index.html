@@ -1873,8 +1873,8 @@
           <input class="form-input" type="text" id="st-title" placeholder="مثال: تابعنا على تويتر">
         </div>
         <div>
-          <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">المكافأة (نقطة) *</label>
-          <input class="form-input" type="number" id="st-reward" value="500" min="0">
+          <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">المكافأة (USDT) *</label>
+          <input class="form-input" type="number" id="st-reward" value="0.5" min="0" step="0.01">
         </div>
       </div>
 
@@ -1969,6 +1969,14 @@
       <textarea class="form-textarea" id="proof-note" rows="3"
         placeholder="اكتب ملاحظتك هنا... تُضاف لرسالة البوت تلقائياً"></textarea>
     </div>
+    <!-- Shadow Ban عند الرفض -->
+    <div id="proof-shadow-ban-wrap" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);border-radius:8px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--red)">
+        <input type="checkbox" id="proof-shadow-ban" style="width:16px;height:16px;cursor:pointer;accent-color:var(--red)">
+        <span>تطبيق Shadow Ban على المستخدم فوراً</span>
+      </label>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;margin-right:26px">المستخدم يستمر يرى التطبيق لكن لا يستطيع كسب مكافآت</div>
+    </div>
     <div class="modal-actions" style="gap:8px">
       <button class="btn btn-ghost" onclick="closeModal('modal-proof')">إلغاء</button>
       <button class="btn btn-danger" id="proof-btn-reject" onclick="reviewProof('reject')">
@@ -1977,7 +1985,7 @@
       </button>
       <button class="btn btn-success" id="proof-btn-approve" onclick="reviewProof('approve')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
-        قبول وإضافة نقاط
+        قبول وإضافة USDT
       </button>
     </div>
   </div>
@@ -3108,7 +3116,7 @@ function proofCardHTML(p) {
         </div>
         <div class="proof-meta-row">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span>المكافأة: <b>${Number(p.reward).toLocaleString('ar')} نقطة</b></span>
+          <span>المكافأة: <b>${Number(p.reward).toFixed(2)} USDT</b></span>
         </div>
         <div class="proof-meta-row">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
@@ -3154,18 +3162,24 @@ function openProofModal(proofId, preAction) {
     noteEl.placeholder       = 'أحسنت! واصل تفاعلك مع المنصة...';
     approveBtn.style.display = '';
     rejectBtn.style.display  = 'none';
+    document.getElementById('proof-shadow-ban-wrap').style.display = 'none';
+    document.getElementById('proof-shadow-ban').checked = false;
   } else if (preAction === 'reject') {
     titleEl.textContent      = '❌ تأكيد رفض الإثبات';
     noteLbl.textContent      = 'سبب الرفض (اختياري — يُرسل للمستخدم)';
     noteEl.placeholder       = 'الصورة غير واضحة / لا تثبت التنفيذ...';
     rejectBtn.style.display  = '';
     approveBtn.style.display = 'none';
+    document.getElementById('proof-shadow-ban-wrap').style.display = '';
+    document.getElementById('proof-shadow-ban').checked = false;
   } else {
     titleEl.textContent      = 'مراجعة الإثبات';
     noteLbl.textContent      = 'ملاحظة ترسل للمستخدم (اختياري)';
     noteEl.placeholder       = 'اكتب ملاحظتك هنا...';
     approveBtn.style.display = '';
     rejectBtn.style.display  = '';
+    document.getElementById('proof-shadow-ban-wrap').style.display = 'none';
+    document.getElementById('proof-shadow-ban').checked = false;
   }
 
   noteEl.value = '';
@@ -3190,7 +3204,7 @@ function openProofModal(proofId, preAction) {
       : `<div style="color:var(--muted);text-align:center;padding:16px;background:var(--bg);border-radius:8px;font-size:13px">⚠️ لا توجد صورة إثبات</div>`
     }
     <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px">
-      💰 سيُضاف <b>${Number(p.reward).toLocaleString('ar')}</b> نقطة عند القبول
+      💵 سيُضاف <b>${Number(p.reward).toFixed(2)} USDT</b> عند القبول
     </div>
   `;
 
@@ -3200,7 +3214,8 @@ function openProofModal(proofId, preAction) {
 async function reviewProof(action) {
   if (!currentProofId) { toast('لم يتم تحديد الإثبات', 'error'); return; }
 
-  const note    = document.getElementById('proof-note').value.trim();
+  const note       = document.getElementById('proof-note').value.trim();
+  const shadowBan  = action === 'reject' && document.getElementById('proof-shadow-ban')?.checked === true;
   const btn     = action === 'approve'
     ? document.getElementById('proof-btn-approve')
     : document.getElementById('proof-btn-reject');
@@ -3211,10 +3226,10 @@ async function reviewProof(action) {
   const data = await apiFetch('/admin/social/review', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ proof_id: currentProofId, action, note }),
+    body:    JSON.stringify({ proof_id: currentProofId, action, note, shadow_ban: shadowBan }),
   });
 
-  if (btn) { btn.disabled = false; btn.textContent = action === 'approve' ? 'قبول وإضافة نقاط' : 'رفض وإشعار'; }
+  if (btn) { btn.disabled = false; btn.textContent = action === 'approve' ? 'قبول وإضافة USDT' : 'رفض وإشعار'; }
 
   if (!data) { toast('فشل الاتصال بالسيرفر', 'error'); return; }
   if (!data.ok) { toast(data.error || 'خطأ من السيرفر', 'error'); return; }
@@ -3263,7 +3278,7 @@ function socialTaskCardHTML(t) {
     <div class="task-ico">${ico}</div>
     <div class="task-info">
       <div class="task-title">${esc(t.title)} ${badge}</div>
-      <div class="task-sub">${plat} — ${Number(t.reward).toLocaleString('ar')} نقطة${t.proof_required ? ' — يتطلب إثباتاً' : ''}</div>
+      <div class="task-sub">${plat} — ${Number(t.reward).toFixed(2)} USDT${t.proof_required ? ' — يتطلب إثباتاً' : ''}</div>
     </div>
     <div class="task-actions">
       <button class="btn btn-sm btn-ghost" onclick="openEditSocialModal(${t.id})" title="تعديل">
@@ -3328,7 +3343,7 @@ async function saveSocialTask() {
   const editId = document.getElementById('st-edit-id').value;
   const payload = {
     title:         document.getElementById('st-title').value.trim(),
-    reward:        parseInt(document.getElementById('st-reward').value),
+    reward:        parseFloat(document.getElementById('st-reward').value),
     icon:          document.getElementById('st-icon').value || 'facebook',
     description:   document.getElementById('st-desc').value.trim(),
     task_url:      document.getElementById('st-url').value.trim(),
