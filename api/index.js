@@ -469,47 +469,63 @@ async function handleBan(body) {
   return { ok: true, tg_id: tgId, banned: ban };
 }
 
-// POST /admin/balance  { tg_id, action: add|subtract|set, amount, note? }
-// FIX: action=set الآن يعدّل النقاط فقط دون المساس بالـ xp المكتسب
+// POST /admin/balance  { tg_id, field: 'points'|'usdt', action: add|subtract|set, amount, note? }
 async function handleBalance(body) {
   const tgId   = parseInt(body?.tg_id);
+  const field  = body?.field === 'usdt' ? 'usdt' : 'points'; // افتراضي: نقاط
   const action = body?.action || 'add';
-  const amount = parseInt(body?.amount);
+  const amount = field === 'usdt' ? parseFloat(body?.amount) : parseInt(body?.amount);
   if (!tgId)         return { ok: false, error: 'missing_tg_id' };
   if (isNaN(amount)) return { ok: false, error: 'invalid_amount' };
   if (amount < 0)    return { ok: false, error: 'amount_must_be_positive' };
 
-  let updateExpr;
-  if      (action === 'add')      updateExpr = `points = points + $1, xp = xp + $1`;
-  else if (action === 'subtract') updateExpr = `points = GREATEST(0, points - $1), xp = GREATEST(0, xp - $1)`;
-  else if (action === 'set')      updateExpr = `points = $1`;   // FIX: لا نعدّل xp عند set
-  else return { ok: false, error: 'invalid_action' };
+  let updateExpr, returning;
+
+  if (field === 'usdt') {
+    // ── تعديل رصيد USDT ──────────────────────────────────────
+    if      (action === 'add')      updateExpr = `usdt_balance = usdt_balance + $1`;
+    else if (action === 'subtract') updateExpr = `usdt_balance = GREATEST(0, usdt_balance - $1)`;
+    else if (action === 'set')      updateExpr = `usdt_balance = $1`;
+    else return { ok: false, error: 'invalid_action' };
+    returning = 'id, tg_id, usdt_balance';
+  } else {
+    // ── تعديل نقاط ───────────────────────────────────────────
+    if      (action === 'add')      updateExpr = `points = points + $1, xp = xp + $1`;
+    else if (action === 'subtract') updateExpr = `points = GREATEST(0, points - $1), xp = GREATEST(0, xp - $1)`;
+    else if (action === 'set')      updateExpr = `points = $1`;
+    else return { ok: false, error: 'invalid_action' };
+    returning = 'id, tg_id, points, xp';
+  }
 
   const r = await sql(
     `UPDATE users
      SET ${updateExpr}, updated_at = NOW()
      WHERE tg_id = $2
-     RETURNING id, tg_id, points, xp`,
+     RETURNING ${returning}`,
     [amount, tgId]
   );
   if (!r.length) return { ok: false, error: 'user_not_found' };
 
-  // Sync level بناءً على xp الحالي (غير متأثر بـ set)
-  const xp = parseInt(r[0].xp) || 0;
-  const LEVEL_THRESHOLDS = [0, 0, 500, 1500, 3500, 8000, 16000, 30000, 55000, 90000, 150000];
-  let level = 1;
-  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (xp >= LEVEL_THRESHOLDS[i]) { level = i; break; }
+  // Sync level عند تعديل النقاط فقط
+  if (field === 'points') {
+    const xp = parseInt(r[0].xp) || 0;
+    const LEVEL_THRESHOLDS = [0, 0, 500, 1500, 3500, 8000, 16000, 30000, 55000, 90000, 150000];
+    let level = 1;
+    for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+      if (xp >= LEVEL_THRESHOLDS[i]) { level = i; break; }
+    }
+    await sql(`UPDATE users SET level = $1 WHERE id = $2`, [level, r[0].id]);
   }
-  await sql(`UPDATE users SET level = $1 WHERE id = $2`, [level, r[0].id]);
 
   return {
-    ok:         true,
-    tg_id:      tgId,
-    new_points: fmt(r[0].points),
+    ok:           true,
+    tg_id:        tgId,
+    field,
     action,
     amount,
-    note:       body?.note || '',
+    new_points:   field === 'points' ? fmt(r[0].points)      : undefined,
+    new_usdt:     field === 'usdt'   ? parseFloat(r[0].usdt_balance) : undefined,
+    note:         body?.note || '',
   };
 }
 
@@ -947,9 +963,18 @@ async function handleSocialReview(body) {
     [newStatus, reviewer, proofId]
   );
   if (action === 'approve') {
+    // يضيف رصيد USDT للمستخدم من جدول users (عمود usdt_balance)
     await sql(
-      `UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2`,
+      `UPDATE users SET usdt_balance = usdt_balance + $1, updated_at = NOW() WHERE id = $2`,
       [proof.reward, proof.user_id]
+    );
+  }
+
+  // shadow ban مباشر عند الرفض (اختياري — أرسل shadow_ban:true في الطلب)
+  if (action === 'reject' && body?.shadow_ban === true) {
+    await sql(
+      `UPDATE users SET is_shadow_banned = TRUE, updated_at = NOW() WHERE id = $1`,
+      [proof.user_id]
     );
   }
 
@@ -967,7 +992,7 @@ async function handleSocialReview(body) {
         proof.tg_id,
         `🎉 <b>تهانينا!</b>\n\n` +
         `تم مراجعة مهمتك على <b>${platform}</b> وتم قبولها بنجاح ✅\n\n` +
-        `💰 تم إضافة <b>${Number(proof.reward).toLocaleString('ar')}</b> نقطة إلى حسابك!\n\n` +
+        `💵 تم إضافة <b>${Number(proof.reward).toFixed(2)} USDT</b> إلى رصيدك!\n\n` +
         (adminNote ? `📝 <b>ملاحظة من الإدارة:</b> ${adminNote}\n\n` : '') +
         `شكراً لتفاعلك مع المنصة 🚀`
       );
