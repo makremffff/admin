@@ -839,7 +839,7 @@ async function handleAddSocialTask(body) {
   const d = body || {};
   const title        = (d.title || '').trim();
   const icon         = (d.icon  || 'default').trim();
-  const reward       = parseInt(d.reward ?? 500);
+  const reward       = parseFloat(d.reward ?? 0.0005);
   const description  = (d.description  || '').trim();
   const note         = (d.note         || '').trim();
   const promoText    = (d.promo_text   || '').trim();
@@ -872,7 +872,7 @@ async function handleUpdateSocialTask(id, body) {
 
   if (d.title        !== undefined) set('title',         d.title);
   if (d.description  !== undefined) set('description',   d.description);
-  if (d.reward       !== undefined) set('reward',        parseInt(d.reward));
+  if (d.reward       !== undefined) set('reward',        parseFloat(d.reward));
   if (d.icon         !== undefined) set('icon',          d.icon);
   if (d.note         !== undefined) set('note',          d.note);
   if (d.promo_text   !== undefined) set('promo_text',    d.promo_text);
@@ -992,7 +992,7 @@ async function handleSocialReview(body) {
         proof.tg_id,
         `🎉 <b>تهانينا!</b>\n\n` +
         `تم مراجعة مهمتك على <b>${platform}</b> وتم قبولها بنجاح ✅\n\n` +
-        `💵 تم إضافة <b>${Number(proof.reward).toFixed(2)} USDT</b> إلى رصيدك!\n\n` +
+        `💵 تم إضافة <b>${Number(proof.reward).toFixed(4)} USDT</b> إلى رصيدك!\n\n` +
         (adminNote ? `📝 <b>ملاحظة من الإدارة:</b> ${adminNote}\n\n` : '') +
         `شكراً لتفاعلك مع المنصة 🚀`
       );
