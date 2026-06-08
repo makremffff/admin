@@ -1734,16 +1734,23 @@
       <input class="form-input" type="text" id="bal-user-id" placeholder="مثال: 123456789">
     </div>
     <div class="form-group">
+      <label class="form-label">نوع الرصيد</label>
+      <select class="form-select" id="bal-field" onchange="balFieldChanged()">
+        <option value="usdt">💵 USDT</option>
+        <option value="points">⭐ نقاط</option>
+      </select>
+    </div>
+    <div class="form-group">
       <label class="form-label">الإجراء</label>
       <select class="form-select" id="bal-action">
-        <option value="add">إضافة نقاط</option>
-        <option value="subtract">خصم نقاط</option>
+        <option value="add" id="bal-action-add">إضافة</option>
+        <option value="subtract">خصم</option>
         <option value="set">تحديد مبلغ ثابت</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">القيمة (نقاط)</label>
-      <input class="form-input" type="number" id="bal-amount" placeholder="0">
+      <label class="form-label" id="bal-amount-label">القيمة (USDT)</label>
+      <input class="form-input" type="number" id="bal-amount" placeholder="0" step="0.01" min="0">
     </div>
     <div class="form-group">
       <label class="form-label">ملاحظة (اختياري)</label>
@@ -2551,6 +2558,12 @@ async function openUserModalById(tgId) {
 
 function openBalanceModal(tgId) {
   if (tgId) document.getElementById('bal-user-id').value = tgId;
+  // reset إلى USDT افتراضياً
+  document.getElementById('bal-field').value  = 'usdt';
+  document.getElementById('bal-action').value = 'add';
+  document.getElementById('bal-amount').value = '';
+  document.getElementById('bal-note').value   = '';
+  balFieldChanged(); // يحدّث الـ label والـ step
   openModal('modal-balance');
 }
 
@@ -2612,22 +2625,46 @@ async function deleteUser(tgId) {
   }
 }
 
+function balFieldChanged() {
+  const field = document.getElementById('bal-field').value;
+  const lbl   = document.getElementById('bal-amount-label');
+  const inp   = document.getElementById('bal-amount');
+  if (field === 'usdt') {
+    lbl.textContent = 'القيمة (USDT)';
+    inp.step = '0.01';
+    inp.placeholder = '0.00';
+  } else {
+    lbl.textContent = 'القيمة (نقاط)';
+    inp.step = '1';
+    inp.placeholder = '0';
+  }
+}
+
 async function doUpdateBalance() {
   const uid    = document.getElementById('bal-user-id').value.trim();
+  const field  = document.getElementById('bal-field').value;
   const action = document.getElementById('bal-action').value;
-  const amount = parseInt(document.getElementById('bal-amount').value);
+  const raw    = document.getElementById('bal-amount').value;
+  const amount = field === 'usdt' ? parseFloat(raw) : parseInt(raw);
   const note   = document.getElementById('bal-note').value.trim();
-  if (!uid || !amount) return toast('أدخل البيانات كاملة', 'error');
+  if (!uid || !raw || isNaN(amount)) return toast('أدخل البيانات كاملة', 'error');
   const data = await apiFetch('/admin/balance', {
     method: 'POST',
-    body: JSON.stringify({ tg_id: uid, action, amount, note }),
+    body: JSON.stringify({ tg_id: uid, field, action, amount, note }),
   });
   if (data?.ok) {
-    toast('تم تعديل الرصيد — نقاط جديدة: ' + fmt(data.new_points), 'success');
+    const msg = field === 'usdt'
+      ? `تم تعديل USDT — رصيد جديد: ${data.new_usdt?.toFixed(2)} USDT`
+      : `تم تعديل النقاط — نقاط جديدة: ${fmt(data.new_points)}`;
+    toast(msg, 'success');
     closeModal('modal-balance');
     // update local cache immediately
     const idx = allUsers.findIndex(u => String(u.tg_id) === String(uid));
-    if (idx !== -1) { allUsers[idx].points = data.new_points; renderUsersFiltered(); }
+    if (idx !== -1) {
+      if (field === 'usdt')   allUsers[idx].usdt_balance = data.new_usdt;
+      else                    allUsers[idx].points       = data.new_points;
+      renderUsersFiltered();
+    }
     setTimeout(refreshData, 600);
   } else {
     toast(data?.error ? ('فشل التعديل: ' + data.error) : 'فشل التعديل — تحقق من الـ tg_id', 'error');
