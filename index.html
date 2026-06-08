@@ -1098,13 +1098,14 @@
           <thead><tr>
             <th>المستخدم</th>
             <th>النقاط</th>
+            <th style="color:#4ade80">USDT</th>
             <th>المستوى</th>
             <th>الحالة</th>
             <th>تاريخ التسجيل</th>
             <th>إجراءات</th>
           </tr></thead>
           <tbody id="recent-users-body">
-            <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1148,6 +1149,7 @@
           <thead><tr>
             <th>المستخدم</th>
             <th>النقاط</th>
+            <th style="color:#4ade80">USDT</th>
             <th>المستوى</th>
             <th style="color:var(--blue)">Adsgram اليوم</th>
             <th style="color:#a78bfa">Monetag اليوم</th>
@@ -1157,7 +1159,7 @@
             <th>إجراءات</th>
           </tr></thead>
           <tbody id="users-body">
-            <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
+            <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
           </tbody>
         </table>
       </div>
@@ -2141,7 +2143,7 @@ async function loadDashboard() {
     setText('badge-wd',        fmt(data.pending_withdrawals ?? ''));
   }
   const users = await apiFetch('/admin/users?limit=6&sort=created_at');
-  if (users?.users) renderUsersTable('recent-users-body', users.users, 6);
+  if (users?.users) renderUsersTable('recent-users-body', users.users, 7);
 }
 
 // ══════════════════════════════════════════
@@ -2172,7 +2174,7 @@ async function loadUsers(page) {
   }
 
   allUsers = data.users;
-  renderUsersTable('users-body', allUsers, 9);
+  renderUsersTable('users-body', allUsers, 10);
 
   // Update counter
   setText('users-page-info', `${data.page} / ${data.pages}`);
@@ -2246,6 +2248,7 @@ function renderUsersTable(tbodyId, users, cols) {
       return `<tr onclick="openUserModal(${JSON.stringify(u).replace(/"/g,"'")})">
         <td><div class="user-cell">${avatarHtml}<div><div class="user-name">${name}${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
         <td><strong class="num">${fmt(u.points)}</strong></td>
+        <td><span class="num" style="color:#4ade80;font-weight:700">${parseFloat(u.usdt_balance||0).toFixed(2)}</span></td>
         <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
         <td>${status}</td>
         <td style="font-size:12px">${date}</td>
@@ -2255,6 +2258,7 @@ function renderUsersTable(tbodyId, users, cols) {
     return `<tr onclick="openUserModal(${encodeUser(u)})">
       <td><div class="user-cell">${avatarHtml}<div><div class="user-name">${name}${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
       <td><strong class="num">${fmt(u.points)}</strong></td>
+      <td><span class="num" style="color:#4ade80;font-weight:700">${parseFloat(u.usdt_balance||0).toFixed(2)}</span></td>
       <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
       <td><span class="num" style="color:var(--blue)">${adsgramT}</span></td>
       <td><span class="num" style="color:#a78bfa">${monetagT}</span></td>
@@ -2521,6 +2525,7 @@ function openUserModal(u) {
     </div>
     <div class="detail-grid">
       <div class="detail-item"><div class="detail-item-label">النقاط</div><div class="detail-item-value" style="color:var(--gold)">${fmt(u.points)}</div></div>
+      <div class="detail-item"><div class="detail-item-label">💵 USDT</div><div class="detail-item-value" style="color:#4ade80;font-weight:700">${parseFloat(u.usdt_balance||0).toFixed(2)}</div></div>
       <div class="detail-item"><div class="detail-item-label">المستوى</div><div class="detail-item-value">${u.level}</div></div>
       <div class="detail-item"><div class="detail-item-label">Adsgram اليوم</div><div class="detail-item-value" style="color:var(--blue)">${u.adsgram_today ?? 0}</div></div>
       <div class="detail-item"><div class="detail-item-label">Monetag اليوم</div><div class="detail-item-value" style="color:#a78bfa">${u.monetag_today ?? 0}</div></div>
