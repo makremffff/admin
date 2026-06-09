@@ -7,22 +7,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:        #0a0c0f;
-    --surface:   #111418;
-    --card:      #161b22;
-    --border:    #21262d;
+    --bg:        #080b0f;
+    --surface:   #0d1117;
+    --card:      #141921;
+    --border:    #1e2530;
     --accent:    #e85d04;
     --accent2:   #f48c06;
-    --gold:      #ffd60a;
-    --green:     #2ea043;
-    --red:       #f85149;
-    --blue:      #388bfd;
-    --purple:    #bc8cff;
-    --text:      #e6edf3;
-    --muted:     #7d8590;
-    --glow:      rgba(232,93,4,0.15);
+    --gold:      #fbbf24;
+    --green:     #22c55e;
+    --red:       #ef4444;
+    --blue:      #3b82f6;
+    --purple:    #a78bfa;
+    --teal:      #22d3a0;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --glow:      rgba(232,93,4,0.12);
     --radius:    12px;
-    --sidebar-w: 240px;
+    --sidebar-w: 248px;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -88,10 +89,10 @@
 
   .logo-icon {
     width: 40px; height: 40px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 0 20px var(--glow);
+    box-shadow: 0 4px 16px rgba(232,93,4,.35), inset 0 1px 0 rgba(255,255,255,.15);
     flex-shrink: 0;
   }
   .logo-icon svg { width: 22px; height: 22px; }
@@ -146,9 +147,10 @@
   .nav-item:hover { background: var(--card); color: var(--text); }
 
   .nav-item.active {
-    background: linear-gradient(90deg, rgba(232,93,4,.18), transparent);
+    background: linear-gradient(90deg, rgba(232,93,4,.14) 0%, rgba(232,93,4,.04) 100%);
     color: var(--accent2);
-    border-right: 3px solid var(--accent);
+    border-right: 2px solid var(--accent);
+    font-weight: 600;
   }
 
   .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
@@ -243,11 +245,12 @@
   }
 
   .btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: #fff;
-    box-shadow: 0 4px 15px rgba(232,93,4,.3);
+    box-shadow: 0 2px 10px rgba(232,93,4,.25), inset 0 1px 0 rgba(255,255,255,.12);
   }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,93,4,.4); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 18px rgba(232,93,4,.4); }
+  .btn-primary:active { transform: translateY(0); }
 
   .btn-ghost {
     background: var(--card);
@@ -324,7 +327,7 @@
   .stat-card.gold   .stat-icon { background: rgba(255,214,10,.15); color: var(--gold); }
   .stat-card.purple .stat-icon { background: rgba(188,140,255,.15); color: var(--purple); }
 
-  .stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.03em; font-variant-numeric: tabular-nums; }
+  .stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; line-height: 1; }
   .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
   .stat-delta {
     font-size: 11px; font-weight: 600; margin-top: 8px;
@@ -678,6 +681,7 @@
     display: inline-block;
     flex-shrink: 0;
   }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @keyframes pulse {
     0%   { box-shadow: 0 0 0 0   rgba(46,160,67,.6); }
     70%  { box-shadow: 0 0 0 8px rgba(46,160,67,0);  }
@@ -1068,13 +1072,13 @@
           <div class="stat-delta up">إعلانات Adsgram</div>
         </div>
 
-        <div class="stat-card" style="--card-accent:#a78bfa">
-          <div class="stat-icon" style="background:rgba(167,139,250,.15);color:#a78bfa">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+        <div class="stat-card" style="--card-accent:var(--teal)">
+          <div class="stat-icon" style="background:rgba(34,211,160,.12);color:var(--teal)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
           </div>
-          <div class="stat-value" id="stat-monetag">—</div>
-          <div class="stat-label">Monetag اليوم</div>
-          <div class="stat-delta up" style="color:#a78bfa">إعلانات Monetag</div>
+          <div class="stat-value" id="stat-total-usdt" style="color:var(--teal)">—</div>
+          <div class="stat-label">USDT مدفوع</div>
+          <div class="stat-delta up" style="color:var(--teal)">إجمالي المسحوب</div>
         </div>
 
         <div class="stat-card purple">
@@ -1097,15 +1101,14 @@
         <table>
           <thead><tr>
             <th>المستخدم</th>
-            <th>النقاط</th>
-            <th style="color:#4ade80">USDT</th>
+            <th style="color:#22d3a0">USDT</th>
             <th>المستوى</th>
             <th>الحالة</th>
             <th>تاريخ التسجيل</th>
             <th>إجراءات</th>
           </tr></thead>
           <tbody id="recent-users-body">
-            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1148,18 +1151,16 @@
         <table>
           <thead><tr>
             <th>المستخدم</th>
-            <th>النقاط</th>
-            <th style="color:#4ade80">USDT</th>
+            <th style="color:#22d3a0">USDT</th>
             <th>المستوى</th>
             <th style="color:var(--blue)">Adsgram اليوم</th>
-            <th style="color:#a78bfa">Monetag اليوم</th>
             <th>إعلانات الكلية</th>
             <th>الإحالات</th>
             <th>الحالة</th>
             <th>إجراءات</th>
           </tr></thead>
           <tbody id="users-body">
-            <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
+            <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">جاري التحميل...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1172,7 +1173,7 @@
     <div class="page" id="page-competition">
       <div class="section-header">
         <div>
-          <div class="section-title">🏆 إدارة المسابقة</div>
+          <div class="section-title" style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" width="16" height="16"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>إدارة المسابقة</div>
           <div style="font-size:12px;color:var(--muted);margin-top:3px" id="comp-season-info">جاري التحميل…</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1245,7 +1246,7 @@
     <!-- Create Season Modal -->
     <div class="modal-overlay" id="modal-create-season" onclick="if(event.target===this)closeModal('modal-create-season')">
       <div class="modal-box" style="max-width:420px">
-        <div class="modal-title">🏆 إنشاء موسم جديد</div>
+        <div class="modal-title">إنشاء موسم جديد</div>
         <p style="color:var(--muted);font-size:13px;margin-bottom:16px">سيتم إيقاف الموسم الحالي تلقائياً</p>
         <label class="form-label">تاريخ الانتهاء</label>
         <input type="datetime-local" id="cs-end-date" class="form-input" style="margin-bottom:12px">
@@ -1261,7 +1262,7 @@
     <!-- Edit Season Modal -->
     <div class="modal-overlay" id="modal-edit-season" onclick="if(event.target===this)closeModal('modal-edit-season')">
       <div class="modal-box" style="max-width:420px">
-        <div class="modal-title">✏️ تعديل الموسم الحالي</div>
+        <div class="modal-title">تعديل الموسم الحالي</div>
         <input type="hidden" id="es-season-id">
         <label class="form-label">تاريخ الانتهاء</label>
         <input type="datetime-local" id="es-end-date" class="form-input" style="margin-bottom:12px">
@@ -1277,7 +1278,7 @@
     <!-- Grant Ticket Modal -->
     <div class="modal-overlay" id="modal-grant-ticket" onclick="if(event.target===this)closeModal('modal-grant-ticket')">
       <div class="modal-box" style="max-width:380px">
-        <div class="modal-title">🎟️ منح تيكيت</div>
+        <div class="modal-title">منح تيكيت</div>
         <label class="form-label">Telegram ID للمستخدم</label>
         <input type="number" id="gt-tg-id" class="form-input" placeholder="123456789" style="margin-bottom:12px">
         <label class="form-label">عدد التيكيتات</label>
@@ -1292,7 +1293,7 @@
     <div class="page" id="page-leaderboard">
       <div class="section-header">
         <div>
-          <div class="section-title">🏆 ليدربورد الإحالات</div>
+          <div class="section-title" style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>ليدربورد الإحالات</div>
           <div style="font-size:12px;color:var(--muted);margin-top:3px">
             إجمالي المستخدمين: <strong id="lb-total-count" class="num" style="color:var(--accent2)">…</strong>
             &nbsp;|&nbsp; صفحة <strong id="lb-page-info" class="num">…</strong>
@@ -1351,7 +1352,7 @@
         <table>
           <thead><tr>
             <th>المستخدم</th>
-            <th>النقاط</th>
+            <th style="color:#22d3a0">USDT</th>
             <th>المستوى</th>
             <th>آخر نشاط</th>
             <th>إجراءات</th>
@@ -1425,9 +1426,9 @@
       <!-- Proofs Panel -->
       <div id="social-panel-proofs">
         <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-          <button class="btn btn-sm btn-ghost proof-filter-btn active" data-s="pending"  onclick="filterProofs('pending')">⏳ انتظار</button>
-          <button class="btn btn-sm btn-ghost proof-filter-btn"        data-s="approved" onclick="filterProofs('approved')">✅ مقبولة</button>
-          <button class="btn btn-sm btn-ghost proof-filter-btn"        data-s="rejected" onclick="filterProofs('rejected')">❌ مرفوضة</button>
+          <button class="btn btn-sm btn-ghost proof-filter-btn active" data-s="pending"  onclick="filterProofs('pending')">انتظار</button>
+          <button class="btn btn-sm btn-ghost proof-filter-btn"        data-s="approved" onclick="filterProofs('approved')">مقبولة</button>
+          <button class="btn btn-sm btn-ghost proof-filter-btn"        data-s="rejected" onclick="filterProofs('rejected')">مرفوضة</button>
           <button class="btn btn-sm btn-ghost proof-filter-btn"        data-s="all"      onclick="filterProofs('all')">كل الإثباتات</button>
           <button class="btn btn-sm btn-ghost" style="margin-right:auto" onclick="loadSocialProofs()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
@@ -1445,75 +1446,167 @@
 
     <!-- ══════════════════════════ PAGE: BROADCAST -->
     <div class="page" id="page-broadcast">
-      <div class="section-header" style="margin-bottom:16px">
+
+      <div class="section-header" style="margin-bottom:20px">
         <div>
-          <div class="section-title">📣 إشعار جماعي</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:3px">ترسل الرسالة لكل المستخدمين عبر البوت</div>
+          <div class="section-title">إشعار جماعي</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">إرسال رسائل لكل المستخدمين عبر البوت</div>
+        </div>
+        <div id="bc-stats-badge" style="display:none;background:rgba(34,211,160,.08);border:1px solid rgba(34,211,160,.2);border-radius:8px;padding:6px 14px;font-size:13px;color:#22d3a0">
+          <span id="bc-stats-sent" style="font-weight:700;font-family:'IBM Plex Mono',monospace">—</span> وصلت
         </div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:14px;max-width:640px">
+      <div style="max-width:660px;display:flex;flex-direction:column;gap:12px">
 
         <!-- نص الرسالة -->
-        <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:12px">
-
-          <label style="font-size:12px;color:var(--text-dim);font-weight:600">نص الرسالة <span style="color:var(--gold)">*</span></label>
-
-          <!-- شريط التنسيق -->
-          <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px 8px 0 0;border-bottom:none">
-            <button class="btn btn-ghost btn-sm" onclick="bcWrap('<b>','</b>')" style="min-width:34px;font-weight:700">B</button>
-            <button class="btn btn-ghost btn-sm" onclick="bcWrap('<i>','</i>')" style="min-width:34px;font-style:italic">I</button>
-            <button class="btn btn-ghost btn-sm" onclick="bcWrap('<u>','</u>')" style="min-width:34px;text-decoration:underline">U</button>
-            <button class="btn btn-ghost btn-sm" onclick="bcWrap('<s>','</s>')" style="min-width:34px;text-decoration:line-through">S</button>
-            <button class="btn btn-ghost btn-sm" onclick="bcWrap('<code>','</code>')" style="min-width:44px;font-family:monospace;color:var(--accent2);font-size:11px">&lt;/&gt; نسخ</button>
-            <button class="btn btn-ghost btn-sm" onclick="bcWrap('<pre>','</pre>')" style="min-width:44px;font-family:monospace;font-size:11px">⬛ بلوك</button>
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(232,93,4,.12);color:var(--accent2)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px">نص الرسالة <span style="color:var(--red);font-weight:400">*</span></div>
+              <div style="font-size:11px;color:var(--muted)">يدعم HTML: &lt;b&gt; &lt;i&gt; &lt;u&gt; &lt;code&gt;</div>
+            </div>
           </div>
-          <textarea id="bc-text" rows="6" placeholder="اكتب رسالتك هنا..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.7;outline:none"></textarea>
-          <div style="font-size:10px;color:var(--text-dim)">💡 <code style="background:var(--bg);padding:1px 5px;border-radius:4px;border:1px solid var(--border)">&lt;code&gt;نص&lt;/code&gt;</code> — يضغط عليه المستخدم فينسخ تلقائياً</div>
-        </div>
-
-        <!-- معاينة مدمجة -->
-        <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:10px">
-          <div style="font-size:12px;color:var(--text-dim);font-weight:600">👁️ معاينة</div>
-          <div style="background:#17212b;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.7;color:#e8e8e8">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-              <div style="width:26px;height:26px;border-radius:50%;background:#2b5278;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">B</div>
-              <span style="font-size:11px;color:#5d7a8a">Bot</span>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="bcWrap('<b>','</b>')" style="font-weight:900;min-width:32px">B</button>
+              <button class="btn btn-ghost btn-sm" onclick="bcWrap('<i>','</i>')" style="font-style:italic;min-width:32px">I</button>
+              <button class="btn btn-ghost btn-sm" onclick="bcWrap('<u>','</u>')" style="text-decoration:underline;min-width:32px">U</button>
+              <button class="btn btn-ghost btn-sm" onclick="bcWrap('<s>','</s>')" style="text-decoration:line-through;min-width:32px">S</button>
+              <button class="btn btn-ghost btn-sm" onclick="bcWrap('<code>','</code>')" style="font-family:monospace;color:var(--accent2);font-size:11px">Code</button>
             </div>
-            <div id="bc-preview-img" style="display:none;margin-bottom:10px">
-              <img id="bc-img-thumb" src="" style="max-width:100%;border-radius:8px;max-height:140px;object-fit:cover">
-            </div>
-            <div id="bc-preview" style="word-break:break-word;min-height:30px">ستظهر الرسالة هنا...</div>
-            <div id="bc-preview-btn" style="display:none;margin-top:10px">
-              <div style="background:#2b5278;color:#fff;text-align:center;padding:7px 14px;border-radius:8px;font-size:12px" id="bc-preview-btn-label">—</div>
-            </div>
+            <textarea id="bc-text" rows="6"
+              placeholder="اكتب رسالتك هنا..."
+              style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+                     padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;
+                     resize:vertical;box-sizing:border-box;line-height:1.8;outline:none;transition:border-color .2s"
+              oninput="bcUpdatePreview()"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
           </div>
         </div>
 
-        <!-- رابط صورة -->
-        <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:8px">
-          <label style="font-size:12px;color:var(--text-dim);font-weight:600">🖼️ رابط صورة <span style="font-size:10px;font-weight:400">(اختياري)</span></label>
-          <input id="bc-image" type="url" placeholder="https://example.com/image.jpg" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;box-sizing:border-box">
+        <!-- صورة -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(56,139,253,.12);color:var(--blue)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px">صورة <span style="font-weight:400;color:var(--muted);font-size:12px">— اختياري</span></div>
+              <div style="font-size:11px;color:var(--muted)">اختر من هاتفك أو جهازك</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="bc-clear-file" onclick="bcClearFile()" style="display:none;margin-right:auto;color:var(--red)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              إزالة
+            </button>
+          </div>
+          <div style="padding:14px 16px">
+            <label id="bc-file-zone" style="display:flex;align-items:center;gap:12px;padding:12px 14px;
+              background:var(--surface);border:1.5px dashed var(--border);border-radius:8px;cursor:pointer;transition:all .2s"
+              onmouseover="this.style.borderColor='var(--accent)'" onmouseout="if(!document.getElementById('bc-image-file').files.length)this.style.borderColor='var(--border)'">
+              <input type="file" id="bc-image-file" accept="image/*" onchange="bcHandleFile(this)" style="display:none">
+              <div id="bc-file-placeholder" style="display:flex;align-items:center;gap:10px;width:100%">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" width="28" height="28" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <div>
+                  <div style="font-size:13px;color:var(--text);font-weight:500">اختر صورة</div>
+                  <div style="font-size:11px;color:var(--muted)">JPG · PNG · WEBP</div>
+                </div>
+              </div>
+              <div id="bc-file-preview-wrap" style="display:none;align-items:center;gap:10px;width:100%">
+                <img id="bc-img-thumb" style="width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
+                <div id="bc-file-name" style="font-size:12px;color:var(--accent2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+              </div>
+            </label>
+          </div>
         </div>
 
-        <!-- زر inline -->
-        <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:8px">
-          <label style="font-size:12px;color:var(--text-dim);font-weight:600">🔗 زر Inline <span style="font-size:10px;font-weight:400">(اختياري)</span></label>
-          <input id="bc-btn-label" type="text" placeholder="نص الزر — مثال: افتح التطبيق" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;box-sizing:border-box;margin-bottom:6px">
-          <input id="bc-btn-url" type="url" placeholder="https://..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;box-sizing:border-box">
+        <!-- معاينة + زر -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(188,140,255,.12);color:var(--purple)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <div style="font-weight:700;font-size:14px">معاينة</div>
+          </div>
+          <div style="padding:14px 16px">
+            <div style="background:#17212b;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.7;color:#e8e8e8">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <div style="width:24px;height:24px;border-radius:50%;background:#2b5278;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <svg viewBox="0 0 24 24" fill="#7fb3d3" width="12" height="12"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.236 7.262l-1.69 7.966c-.127.567-.461.706-.934.44l-2.582-1.903-1.246 1.2c-.138.137-.253.253-.52.253l.185-2.641 4.8-4.336c.209-.185-.045-.288-.324-.103l-5.932 3.732-2.554-.797c-.555-.173-.567-.554.116-.82l9.97-3.843c.463-.168.868.103.711.852z"/></svg>
+                </div>
+                <span style="font-size:12px;font-weight:700;color:#7fb3d3">Bot</span>
+                <span style="font-size:10px;color:#455a6b;margin-right:auto">الآن</span>
+              </div>
+              <div id="bc-preview-img" style="display:none;margin-bottom:8px">
+                <img id="bc-img-preview" src="" style="max-width:100%;border-radius:6px;max-height:160px;object-fit:cover;display:block">
+              </div>
+              <div id="bc-preview" style="word-break:break-word;min-height:24px">
+                <span style="color:#455a6b">ستظهر الرسالة هنا...</span>
+              </div>
+              <div id="bc-preview-btn" style="display:none;margin-top:10px">
+                <div style="background:#2b5278;color:#fff;text-align:center;padding:7px;border-radius:6px;font-size:12px" id="bc-preview-btn-label">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- زر Inline -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-icon" style="background:rgba(56,139,253,.12);color:var(--blue)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px">زر Inline <span style="font-weight:400;color:var(--muted);font-size:12px">— اختياري</span></div>
+            </div>
+          </div>
+          <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:5px">نص الزر</div>
+              <input id="bc-btn-label" type="text" placeholder="افتح التطبيق"
+                oninput="bcUpdatePreview()"
+                style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;
+                       padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;transition:border-color .2s"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:5px">الرابط</div>
+              <input id="bc-btn-url" type="url" placeholder="https://..."
+                style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;
+                       padding:8px 10px;color:var(--text);font-size:13px;direction:ltr;outline:none;box-sizing:border-box;transition:border-color .2s"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+          </div>
         </div>
 
         <!-- زر الإرسال -->
-        <button class="btn btn-primary" onclick="bcSend()" id="bc-send-btn" style="width:100%;padding:13px;font-size:14px;font-weight:700;border-radius:10px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
-          إرسال للجميع
-        </button>
-        <div id="bc-result" style="display:none;font-size:13px;padding:12px 16px;border-radius:10px;text-align:center"></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-primary" onclick="bcSend()" id="bc-send-btn"
+            style="width:100%;padding:12px;font-size:14px;font-weight:700;border-radius:10px;justify-content:center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+            إرسال للجميع
+          </button>
+
+          <div id="bc-progress-wrap" style="display:none;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:7px">
+              <span id="bc-progress-text">جاري الإرسال...</span>
+              <span id="bc-progress-pct" style="font-family:'IBM Plex Mono',monospace;color:var(--accent2)">0%</span>
+            </div>
+            <div style="height:4px;background:var(--border);border-radius:100px;overflow:hidden">
+              <div id="bc-progress-fill" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:100px;width:0;transition:width .3s ease"></div>
+            </div>
+          </div>
+
+          <div id="bc-result" style="display:none;font-size:13px;padding:11px 14px;border-radius:8px;text-align:center"></div>
+        </div>
 
       </div>
     </div>
 
-    <!-- ══════════════════════════ PAGE: SETTINGS -->
+        <!-- ══════════════════════════ PAGE: SETTINGS -->
     <div class="page" id="page-settings">
       <div class="settings-grid">
 
@@ -1592,12 +1685,12 @@
           </div>
           <div class="settings-card-body">
             <div class="setting-row">
-              <div><div class="setting-label">أول سحبة (نقاط)</div><div class="setting-desc">للمستخدم الجديد</div></div>
-              <input class="setting-input-sm" type="number" value="3000" id="cfg-wd-first">
+              <div><div class="setting-label">أول سحبة (USDT)</div><div class="setting-desc">للمستخدم الجديد</div></div>
+              <input class="setting-input-sm" type="number" value="0.5" step="0.01" id="cfg-wd-first">
             </div>
             <div class="setting-row">
-              <div><div class="setting-label">سحب عادي (نقاط)</div><div class="setting-desc">بعد أول سحبة</div></div>
-              <input class="setting-input-sm" type="number" value="20000" id="cfg-wd-normal">
+              <div><div class="setting-label">سحب عادي (USDT)</div><div class="setting-desc">بعد أول سحبة</div></div>
+              <input class="setting-input-sm" type="number" value="1.0" step="0.01" id="cfg-wd-normal">
             </div>
             <div class="setting-row">
               <div><div class="setting-label">مستوى السحب العادي</div><div class="setting-desc">المستوى المطلوب</div></div>
@@ -1613,7 +1706,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <div>
-              <div style="font-weight:700;font-size:14px">مهمة Adsgram</div>
+              <div style="font-weight:700;font-size:14px">Adsgram</div>
               <div style="font-size:11px;color:var(--muted)">إعدادات مهمة الإعلان الخاص</div>
             </div>
           </div>
@@ -1738,8 +1831,7 @@
     <div class="form-group">
       <label class="form-label">نوع الرصيد</label>
       <select class="form-select" id="bal-field" onchange="balFieldChanged()">
-        <option value="usdt">💵 USDT</option>
-        <option value="points">⭐ نقاط</option>
+        <option value="usdt">USDT</option>
       </select>
     </div>
     <div class="form-group">
@@ -1752,7 +1844,7 @@
     </div>
     <div class="form-group">
       <label class="form-label" id="bal-amount-label">القيمة (USDT)</label>
-      <input class="form-input" type="number" id="bal-amount" placeholder="0" step="0.01" min="0">
+      <input class="form-input" type="number" id="bal-amount" placeholder="0.0000" step="0.0001" min="0">
     </div>
     <div class="form-group">
       <label class="form-label">ملاحظة (اختياري)</label>
@@ -1836,8 +1928,8 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
-          <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">المكافأة (نقطة) *</label>
-          <input class="form-input" type="number" id="ch-reward" value="2500" min="0">
+          <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">المكافأة (USDT) *</label>
+          <input class="form-input" type="number" id="ch-reward" value="0.001" step="0.0001" min="0">
         </div>
         <div>
           <label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">الترتيب</label>
@@ -2002,7 +2094,7 @@
 
 <!-- Proof Image Full View -->
 <div id="proof-img-modal" onclick="closeProofImg()">
-  <button id="proof-img-modal-close" onclick="closeProofImg()">✕</button>
+  <button id="proof-img-modal-close" onclick="closeProofImg()">x</button>
   <img id="proof-img-modal-img" src="" alt="">
 </div>
 
@@ -2136,14 +2228,14 @@ async function loadDashboard() {
     setText('stat-banned',     fmt((data.banned ?? 0) + (data.shadow_banned ?? 0)));
     setText('stat-pending-wd', fmt(data.pending_withdrawals ?? '—'));
     setText('stat-adsgram',    fmt(data.adsgram_today    ?? '—'));
-    setText('stat-monetag',    fmt(data.monetag_today    ?? '—'));
+    setText('stat-total-usdt', parseFloat(data.total_ton_paid ?? 0).toFixed(4));
     setText('stat-refs',       fmt(data.total_referrals  ?? '—'));
     setText('badge-users',     fmt(data.total_users ?? ''));
     setText('badge-online',    fmt(data.online ?? ''));
     setText('badge-wd',        fmt(data.pending_withdrawals ?? ''));
   }
   const users = await apiFetch('/admin/users?limit=6&sort=created_at');
-  if (users?.users) renderUsersTable('recent-users-body', users.users, 7);
+  if (users?.users) renderUsersTable('recent-users-body', users.users, 6);
 }
 
 // ══════════════════════════════════════════
@@ -2174,7 +2266,7 @@ async function loadUsers(page) {
   }
 
   allUsers = data.users;
-  renderUsersTable('users-body', allUsers, 10);
+  renderUsersTable('users-body', allUsers, 8);
 
   // Update counter
   setText('users-page-info', `${data.page} / ${data.pages}`);
@@ -2247,8 +2339,7 @@ function renderUsersTable(tbodyId, users, cols) {
     if (cols === 6) {
       return `<tr onclick="openUserModal(${JSON.stringify(u).replace(/"/g,"'")})">
         <td><div class="user-cell">${avatarHtml}<div><div class="user-name">${name}${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
-        <td><strong class="num">${fmt(u.points)}</strong></td>
-        <td><span class="num" style="color:#4ade80;font-weight:700">${parseFloat(u.usdt_balance||0).toFixed(2)}</span></td>
+        <td><span class="usdt-val">${parseFloat(u.usdt_balance||0).toFixed(4)}</span></td>
         <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
         <td>${status}</td>
         <td style="font-size:12px">${date}</td>
@@ -2257,11 +2348,9 @@ function renderUsersTable(tbodyId, users, cols) {
     }
     return `<tr onclick="openUserModal(${encodeUser(u)})">
       <td><div class="user-cell">${avatarHtml}<div><div class="user-name">${name}${premium}</div><div class="user-id">${u.tg_id}</div></div></div></td>
-      <td><strong class="num">${fmt(u.points)}</strong></td>
-      <td><span class="num" style="color:#4ade80;font-weight:700">${parseFloat(u.usdt_balance||0).toFixed(2)}</span></td>
+      <td><span class="usdt-val">${parseFloat(u.usdt_balance||0).toFixed(4)}</span></td>
       <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
       <td><span class="num" style="color:var(--blue)">${adsgramT}</span></td>
-      <td><span class="num" style="color:#a78bfa">${monetagT}</span></td>
       <td class="num">${ads}</td>
       <td class="num">${refs}</td>
       <td>${status}</td>
@@ -2279,15 +2368,24 @@ function userActions(u) {
     ? `https://t.me/${u.tg_username}`
     : `tg://user?id=${u.tg_id}`;
   return `
-    <div class="icon-btn" title="فتح محادثة تيليجرام" onclick="window.open('${tgLink}','_blank')" style="color:var(--blue)">
+    <div class="icon-btn" title="فتح تيليجرام" onclick="window.open('${tgLink}','_blank')" style="color:var(--blue)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </div>
-    <div class="icon-btn" title="عرض التفاصيل" onclick="openUserModalById(${u.tg_id})">
+    <div class="icon-btn" title="تفاصيل" onclick="openUserModalById(${u.tg_id})">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     </div>
-    <div class="icon-btn success" title="تعديل رصيد" onclick="openBalanceModal(${u.tg_id})">
+    <div class="icon-btn success" title="تعديل USDT" onclick="openBalanceModal(${u.tg_id})">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </div>
+    ${u.is_shadow_banned && !u.is_banned
+      ? `<div class="icon-btn" title="رفع شادو بان" onclick="removeShadowBan(${u.tg_id})" style="color:var(--accent2);border-color:rgba(244,140,6,.3);background:rgba(244,140,6,.08)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        </div>`
+      : ''}
     ${u.is_banned
       ? `<div class="icon-btn success" title="رفع الحظر" onclick="confirmAction('رفع الحظر عن #${u.tg_id}?','success',()=>banUser(${u.tg_id},false))">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -2301,6 +2399,19 @@ function userActions(u) {
   `;
 }
 
+async function removeShadowBan(tgId) {
+  const r = await apiFetch('/admin/shadow', {
+    method: 'POST',
+    body: JSON.stringify({ tg_id: tgId, shadow: false }),
+  });
+  if (r?.ok) {
+    toast('تم رفع شادو بان', 'success');
+    loadUsers(usersPage);
+  } else {
+    toast(r?.error || 'فشل الإجراء', 'error');
+  }
+}
+
 // ══════════════════════════════════════════
 // LEADERBOARD
 // ══════════════════════════════════════════
@@ -2311,11 +2422,11 @@ async function loadLeaderboard(page) {
   const sort    = document.getElementById('lb-sort')?.value || 'referrals';
   const perPage = 800;
   const tbody   = document.getElementById('lb-body');
-  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted)">جاري التحميل…</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--muted)">جاري التحميل…</td></tr>`;
 
   const data = await apiFetch(`/admin/users/all?sort=${sort}&page=${lbCurrentPage}&per_page=${perPage}`);
   if (!data?.users) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--red)">فشل التحميل</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--red)">فشل التحميل</td></tr>`;
     return;
   }
 
@@ -2342,7 +2453,7 @@ async function loadLeaderboard(page) {
     const banned = u.is_banned ? `<span class="badge badge-red" style="font-size:10px">محظور</span>` : '';
 
     // Medal for top 3
-    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `<span class="num" style="color:var(--muted);font-size:12px">${rank}</span>`;
+    const medal = rank === 1 ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="#FFD700" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg>' : rank === 2 ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="#C0C0C0" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg>' : rank === 3 ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="#CD7F32" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg>' : `<span class="num" style="color:var(--muted);font-size:12px">${rank}</span>`;
 
     const tgLink = u.tg_username ? `https://t.me/${u.tg_username}` : `tg://user?id=${u.tg_id}`;
     return `<tr>
@@ -2352,8 +2463,7 @@ async function loadLeaderboard(page) {
         <div class="user-id">${u.tg_id}</div>
       </div></div></td>
       <td><strong class="num" style="color:var(--accent2);font-size:15px">${refs}</strong></td>
-      <td><span class="num" style="color:var(--gold)">${earned}</span></td>
-      <td><strong class="num">${pts}</strong></td>
+      <td><span class="usdt-val">${parseFloat(u.usdt_balance||0).toFixed(4)}</span></td>
       <td><span class="num" style="color:var(--muted)">${ads}</span></td>
       <td style="font-size:12px;color:var(--muted)">${date}</td>
       <td onclick="event.stopPropagation()"><div class="actions">
@@ -2416,7 +2526,7 @@ async function loadOnline() {
     const ago     = timeAgo(u.updated_at);
     return `<tr>
       <td><div class="user-cell">${avatarHtml}<div><div class="user-name">${name}</div><div class="user-id">${u.tg_id}</div></div></div></td>
-      <td><strong class="num">${fmt(u.points)}</strong></td>
+      <td><span class="usdt-val">${parseFloat(u.usdt_balance||0).toFixed(4)}</span></td>
       <td><span class="badge badge-blue num">Lv ${u.level}</span></td>
       <td><span class="badge badge-green"><span class="online-pulse" style="width:6px;height:6px;margin-left:3px"></span>${ago}</span></td>
       <td><div class="actions">${userActions(u)}</div></td>
@@ -2490,7 +2600,7 @@ function renderWithdrawals() {
       </div>
       <div style="text-align:left">
         <div class="wd-amount">${parseFloat(w.ton_amount||0).toFixed(4)} TON</div>
-        <div class="wd-pts">${fmt(w.pts)} نقطة</div>
+        <div class="wd-pts" style="font-size:11px;color:var(--muted)">USDT رصيد</div>
       </div>
       <div class="wd-actions">${actions}</div>
     </div>`;
@@ -2525,7 +2635,7 @@ function openUserModal(u) {
     </div>
     <div class="detail-grid">
       <div class="detail-item"><div class="detail-item-label">النقاط</div><div class="detail-item-value" style="color:var(--gold)">${fmt(u.points)}</div></div>
-      <div class="detail-item"><div class="detail-item-label">💵 USDT</div><div class="detail-item-value" style="color:#4ade80;font-weight:700">${parseFloat(u.usdt_balance||0).toFixed(2)}</div></div>
+      <div class="detail-item"><div class="detail-item-label"> USDT</div><div class="detail-item-value" style="color:#4ade80;font-weight:700">${parseFloat(u.usdt_balance||0).toFixed(4)}</div></div>
       <div class="detail-item"><div class="detail-item-label">المستوى</div><div class="detail-item-value">${u.level}</div></div>
       <div class="detail-item"><div class="detail-item-label">Adsgram اليوم</div><div class="detail-item-value" style="color:var(--blue)">${u.adsgram_today ?? 0}</div></div>
       <div class="detail-item"><div class="detail-item-label">Monetag اليوم</div><div class="detail-item-value" style="color:#a78bfa">${u.monetag_today ?? 0}</div></div>
@@ -2846,8 +2956,8 @@ function renderChannels() {
         </div>
         <div style="display:flex;align-items:center;gap:16px;flex-shrink:0">
           <div style="text-align:center">
-            <div style="font-size:18px;font-weight:700;color:var(--gold)">${fmt(ch.reward)}</div>
-            <div style="font-size:11px;color:var(--muted)">نقطة</div>
+            <div style="font-size:18px;font-weight:700;color:#22d3a0;font-family:'IBM Plex Mono',monospace">${parseFloat(ch.reward||0).toFixed(4)}</div>
+            <div style="font-size:11px;color:var(--muted)">USDT</div>
           </div>
           ${statusBadge}
           <div class="actions">
@@ -2940,18 +3050,11 @@ setInterval(refreshData, 30000);
 
   // معاينة لحظية
   function bcUpdatePreview() {
-    const raw     = ta()?.value || '';
-    const imgUrl  = document.getElementById('bc-image')?.value?.trim();
-    const btnLbl  = document.getElementById('bc-btn-label')?.value?.trim();
-    const prev    = document.getElementById('bc-preview');
-    const prevImg = document.getElementById('bc-preview-img');
+    const raw    = ta()?.value || '';
+    const btnLbl = document.getElementById('bc-btn-label')?.value?.trim();
+    const prev   = document.getElementById('bc-preview');
     const prevBtn = document.getElementById('bc-preview-btn');
-    if (prev) prev.innerHTML = raw || '<span style="color:#5d7a8a">ستظهر الرسالة هنا...</span>';
-    if (prevImg) {
-      prevImg.style.display = imgUrl ? '' : 'none';
-      const img = document.getElementById('bc-img-thumb');
-      if (img && imgUrl) img.src = imgUrl;
-    }
+    if (prev) prev.innerHTML = raw || '<span style="color:#455a6b">ستظهر الرسالة هنا...</span>';
     if (prevBtn) {
       prevBtn.style.display = btnLbl ? '' : 'none';
       const lbl = document.getElementById('bc-preview-btn-label');
@@ -2972,24 +3075,107 @@ setInterval(refreshData, 30000);
     bcUpdatePreview();
   };
 
+  // معالجة اختيار صورة من الجهاز
+  window.bcHandleFile = function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const dataUrl = e.target.result;
+      const thumb = document.getElementById('bc-img-thumb');
+      const prevImg = document.getElementById('bc-img-preview');
+      const prevWrap = document.getElementById('bc-preview-img');
+      const fileWrap = document.getElementById('bc-file-preview-wrap');
+      const placeholder = document.getElementById('bc-file-placeholder');
+      const fileNameEl = document.getElementById('bc-file-name');
+      const clearBtn = document.getElementById('bc-clear-file');
+      if (thumb) thumb.src = dataUrl;
+      if (prevImg) prevImg.src = dataUrl;
+      if (prevWrap) prevWrap.style.display = '';
+      if (fileWrap) fileWrap.style.display = 'flex';
+      if (placeholder) placeholder.style.display = 'none';
+      if (fileNameEl) fileNameEl.textContent = file.name;
+      if (clearBtn) clearBtn.style.display = '';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.bcClearFile = function() {
+    const input = document.getElementById('bc-image-file');
+    if (input) input.value = '';
+    ['bc-img-thumb','bc-img-preview'].forEach(id => { const el=document.getElementById(id); if(el) el.src=''; });
+    const prevWrap = document.getElementById('bc-preview-img');
+    const fileWrap = document.getElementById('bc-file-preview-wrap');
+    const placeholder = document.getElementById('bc-file-placeholder');
+    const fileNameEl = document.getElementById('bc-file-name');
+    const clearBtn = document.getElementById('bc-clear-file');
+    if (prevWrap) prevWrap.style.display = 'none';
+    if (fileWrap) fileWrap.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'flex';
+    if (fileNameEl) fileNameEl.textContent = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+  };
+
   // إرسال
   window.bcSend = async function() {
     const text     = ta()?.value?.trim();
-    const imageUrl = document.getElementById('bc-image')?.value?.trim();
     const btnLabel = document.getElementById('bc-btn-label')?.value?.trim();
     const btnUrl   = document.getElementById('bc-btn-url')?.value?.trim();
     const resultEl = document.getElementById('bc-result');
     const sendBtn  = document.getElementById('bc-send-btn');
+    const progWrap = document.getElementById('bc-progress-wrap');
+    const fillEl   = document.getElementById('bc-progress-fill');
+    const pctEl    = document.getElementById('bc-progress-pct');
+    const progText = document.getElementById('bc-progress-text');
 
-    if (!text) { alert('اكتب نص الرسالة أولاً'); return; }
+    if (!text) { toast('اكتب نص الرسالة أولاً', 'warn'); return; }
 
+    // قراءة الصورة من الـ file input
+    const fileInput = document.getElementById('bc-image-file');
+    let image_base64 = null, image_mime = null;
+    if (fileInput?.files?.[0]) {
+      const file = fileInput.files[0];
+      image_mime = file.type || 'image/jpeg';
+      image_base64 = await new Promise(resolve => {
+        const r = new FileReader();
+        r.onload = e => resolve(e.target.result.split(',')[1]);
+        r.readAsDataURL(file);
+      });
+    }
+
+    // جلب العدد الكلي للمستخدمين لحساب التقدم الحقيقي
+    let totalUsers = 100;
+    try {
+      const stats = await apiFetch('/admin/stats');
+      if (stats?.total_users) totalUsers = stats.total_users;
+    } catch(_) {}
+
+    const BATCH = 25;
+    const totalBatches  = Math.ceil(totalUsers / BATCH);
+    const totalEstSecs  = totalBatches; // ثانية لكل دفعة
+
+    // إعداد الواجهة
     sendBtn.disabled = true;
-    sendBtn.textContent = '⏳ جاري الإرسال...';
+    sendBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"
+      style="animation:spin 1s linear infinite"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+      جاري الإرسال...`;
     if (resultEl) resultEl.style.display = 'none';
+    if (progWrap) progWrap.style.display = '';
+
+    // Progress timer — يُظهر نسبة مئوية حقيقية مبنية على التوقيت المتوقع
+    let elapsed = 0;
+    const progInterval = setInterval(() => {
+      elapsed++;
+      const pct = Math.min(Math.round((elapsed / totalEstSecs) * 95), 95);
+      const sent = Math.min(Math.round((elapsed / totalEstSecs) * totalUsers), totalUsers);
+      if (fillEl) fillEl.style.width = pct + '%';
+      if (pctEl)  pctEl.textContent  = pct + '%';
+      if (progText) progText.textContent = `تم إرسال ~${sent.toLocaleString('ar')} من ${totalUsers.toLocaleString('ar')}`;
+    }, 1000);
 
     try {
       const body = { text };
-      if (imageUrl) body.image_url = imageUrl;
+      if (image_base64) { body.image_base64 = image_base64; body.image_mime = image_mime; }
       if (btnLabel && btnUrl) { body.button_label = btnLabel; body.button_url = btnUrl; }
 
       const d = await apiFetch('/admin/broadcast', {
@@ -2997,39 +3183,52 @@ setInterval(refreshData, 30000);
         body: JSON.stringify(body),
       });
 
+      clearInterval(progInterval);
+      if (fillEl)   { fillEl.style.width = '100%'; }
+      if (pctEl)    { pctEl.textContent  = '100%'; }
+      if (progText) { progText.textContent = 'اكتمل الإرسال'; }
+
       if (resultEl) {
         resultEl.style.display = '';
-        if (d.ok) {
-          resultEl.style.background = 'rgba(34,197,94,0.1)';
-          resultEl.style.border = '1px solid rgba(34,197,94,0.25)';
-          resultEl.style.color = 'rgba(34,197,94,0.9)';
-          resultEl.textContent = `✅ تم الإرسال — ${d.sent} نجح / ${d.failed} فشل من ${d.total} مستخدم`;
+        if (d?.ok) {
+          const pctSent = d.total > 0 ? Math.round((d.sent / d.total) * 100) : 0;
+          resultEl.style.cssText = 'background:rgba(34,211,160,.07);border:1px solid rgba(34,211,160,.22);border-radius:8px;color:#22d3a0;font-size:13px;padding:11px 14px;text-align:center';
+          resultEl.innerHTML = `
+            <div style="font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;letter-spacing:.03em">${pctSent}%</div>
+            <div style="font-size:12px;margin-top:3px;color:var(--muted)">
+              <strong style="color:#22d3a0">${(d.sent).toLocaleString('ar')}</strong> وصلت &nbsp;·&nbsp;
+              <span style="color:var(--red)">${(d.failed).toLocaleString('ar')}</span> فشلت &nbsp;·&nbsp;
+              الإجمالي <strong>${(d.total).toLocaleString('ar')}</strong>
+            </div>`;
+          // Update stats badge
+          const badge = document.getElementById('bc-stats-badge');
+          if (badge) {
+            badge.style.display = '';
+            document.getElementById('bc-stats-sent').textContent = d.sent.toLocaleString('ar');
+          }
         } else {
-          resultEl.style.background = 'rgba(239,68,68,0.1)';
-          resultEl.style.border = '1px solid rgba(239,68,68,0.25)';
-          resultEl.style.color = 'rgba(239,68,68,0.9)';
-          resultEl.textContent = `❌ خطأ: ${d.error}`;
+          resultEl.style.cssText = 'background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center';
+          resultEl.textContent = `خطأ: ${d?.error || 'حدث خطأ'}`;
         }
       }
     } catch (e) {
+      clearInterval(progInterval);
       if (resultEl) {
-        resultEl.style.display = '';
-        resultEl.textContent = '❌ فشل الاتصال بالسيرفر';
+        resultEl.style.cssText = 'background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center;display:block';
+        resultEl.textContent = 'فشل الاتصال بالسيرفر';
       }
     }
 
     sendBtn.disabled = false;
-    sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> إرسال للجميع';
+    sendBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> إرسال للجميع`;
   };
 
   // ربط الـ events
   document.addEventListener('DOMContentLoaded', () => {
-    const t = document.getElementById('bc-text');
-    const img = document.getElementById('bc-image');
+    const t  = document.getElementById('bc-text');
     const bl = document.getElementById('bc-btn-label');
-    if (t)   t.addEventListener('input', bcUpdatePreview);
-    if (img) img.addEventListener('input', bcUpdatePreview);
-    if (bl)  bl.addEventListener('input', bcUpdatePreview);
+    if (t)  t.addEventListener('input',  bcUpdatePreview);
+    if (bl) bl.addEventListener('input', bcUpdatePreview);
   });
 })();
 
@@ -3113,7 +3312,7 @@ function proofCardHTML(p) {
   const plat  = SOCIAL_PLATFORM_NAMES[p.task_icon] || p.task_icon;
   const date  = new Date(p.created_at).toLocaleString('ar-EG', {dateStyle:'short', timeStyle:'short'});
   const statusColor = { pending:'var(--gold)', approved:'#22c55e', rejected:'var(--red)' }[p.status] || 'var(--muted)';
-  const statusLabel = { pending:'⏳ انتظار', approved:'✅ مقبول', rejected:'❌ مرفوض' }[p.status] || p.status;
+  const statusLabel = { pending:'انتظار', approved:'مقبول', rejected:'مرفوض' }[p.status] || p.status;
   const hasImg = p.proof_image && (p.proof_image.startsWith('data:') || p.proof_image.startsWith('http'));
 
   const actionsHTML = p.status === 'pending' ? `
@@ -3246,7 +3445,7 @@ function openProofModal(proofId, preAction) {
       : `<div style="color:var(--muted);text-align:center;padding:16px;background:var(--bg);border-radius:8px;font-size:13px">⚠️ لا توجد صورة إثبات</div>`
     }
     <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px">
-      💵 سيُضاف <b>${Number(p.reward).toFixed(2)} USDT</b> عند القبول
+       سيُضاف <b>${Number(p.reward).toFixed(2)} USDT</b> عند القبول
     </div>
   `;
 
@@ -3415,7 +3614,7 @@ async function deleteSocialTask(id, title) {
   if (!confirm(`حذف مهمة "${title}"؟`)) return;
   const data = await apiFetch(`/admin/social/tasks/${id}`, { method: 'DELETE' });
   if (!data?.ok) { toast(data?.error || 'فشل الحذف', 'error'); return; }
-  toast('🗑️ تم حذف المهمة', 'success');
+  toast('️ تم حذف المهمة', 'success');
   socialTasksList = socialTasksList.filter(t => t.id !== id);
   renderSocialTasksUI();
 }
@@ -3472,7 +3671,7 @@ async function loadCompetition(page) {
       const avatar = r.photo_url
         ? `<div class="avatar"><img src="${r.photo_url}" alt="${init}" onerror="this.parentElement.textContent='${init}'"></div>`
         : `<div class="avatar">${init}</div>`;
-      const medal  = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉'
+      const medal  = r.rank === 1 ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="#FFD700" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg>' : r.rank === 2 ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="#C0C0C0" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg>' : r.rank === 3 ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="#CD7F32" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z"/></svg>'
                    : `<span class="num" style="color:var(--muted);font-size:12px">${r.rank}</span>`;
       const tgLink = r.tg_username ? `https://t.me/${r.tg_username}` : `tg://user?id=${r.tg_id}`;
       const upd    = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-GB') : '—';
@@ -3482,7 +3681,7 @@ async function loadCompetition(page) {
           <div class="user-name">${name}</div>
           <div class="user-id">${r.tg_id}</div>
         </div></div></td>
-        <td><strong class="num" style="color:var(--gold);font-size:16px">🎟️ ${fmt(r.tickets)}</strong></td>
+        <td><strong class="num" style="color:var(--gold);font-size:16px"><strong class="num" style="color:var(--gold)">${fmt(r.tickets)}</strong></strong></td>
         <td style="font-size:12px;color:var(--muted)">${upd}</td>
         <td onclick="event.stopPropagation()"><div class="actions">
           <div class="icon-btn" title="تيليجرام" onclick="window.open('${tgLink}','_blank')" style="color:var(--blue)">
@@ -3527,7 +3726,7 @@ function renderCompSeasonCards(seasons) {
     const isActive = s.is_active && !s.is_ended;
     const ended    = s.is_ended;
     const color    = isActive ? 'var(--gold)' : ended ? 'var(--muted)' : 'var(--blue)';
-    const label    = isActive ? '🟢 نشط' : ended ? '🔴 منتهي' : '⚪ متوقف';
+    const label    = isActive ? 'نشط' : ended ? 'منتهي' : 'متوقف';
     const endStr   = new Date(s.end_date).toLocaleDateString('ar-EG', {day:'numeric',month:'short',year:'numeric'});
     return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px">
       <div style="font-size:11px;color:var(--muted)">موسم #${s.id}</div>
@@ -3562,7 +3761,7 @@ function renderCompTimerBar(season) {
   function tick() {
     const diff = endDate - Date.now();
     if (diff <= 0) {
-      setText('comp-countdown', '⛔ انتهى الموسم');
+      setText('comp-countdown', 'انتهى الموسم');
       clearInterval(compCountdownTimer);
       return;
     }
