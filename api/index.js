@@ -71,6 +71,59 @@ async function sendBotPhoto(tgId, photo, caption, extra = {}) {
   }
 }
 
+// إرسال صورة رُفعت كـ base64 عبر multipart/form-data
+async function sendBotPhotoUpload(tgId, base64Data, mimeType, caption, extra = {}) {
+  if (!tgId || !base64Data) return { ok: false };
+  try {
+    const buffer = Buffer.from(base64Data, 'base64');
+    const { Blob } = await import('buffer');
+    const blob = new Blob([buffer], { type: mimeType || 'image/jpeg' });
+    const form = new FormData();
+    form.append('chat_id',    String(tgId));
+    form.append('caption',    caption || '');
+    form.append('parse_mode', 'HTML');
+    form.append('photo',      blob, 'photo.jpg');
+    if (extra.reply_markup) {
+      form.append('reply_markup', JSON.stringify(extra.reply_markup));
+    }
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+      method: 'POST', body: form,
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('[BOT_PHOTO_UPLOAD] Failed:', e.message);
+    return { ok: false };
+  }
+}
+
+// إرسال صورة من base64 عبر multipart/form-data
+async function sendBotPhotoUpload(tgId, base64Data, mimeType, caption, extra = {}) {
+  if (!tgId || !base64Data) return { ok: false };
+  try {
+    // تحويل base64 إلى Buffer
+    const buffer = Buffer.from(base64Data, 'base64');
+    const blob   = new Blob([buffer], { type: mimeType || 'image/jpeg' });
+
+    const form = new FormData();
+    form.append('chat_id',    String(tgId));
+    form.append('caption',    caption || '');
+    form.append('parse_mode', 'HTML');
+    form.append('photo',      blob, 'image.jpg');
+    if (extra.reply_markup) {
+      form.append('reply_markup', JSON.stringify(extra.reply_markup));
+    }
+
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+      method: 'POST',
+      body: form,
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('[BOT_PHOTO_UPLOAD] Failed:', e.message);
+    return { ok: false };
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────
 function fmt(n) {
   return n == null ? 0 : Number(n);
@@ -469,6 +522,19 @@ async function handleBan(body) {
   return { ok: true, tg_id: tgId, banned: ban };
 }
 
+// POST /admin/shadow  { tg_id, shadow: true|false }
+async function handleShadow(body) {
+  const tgId   = parseInt(body?.tg_id);
+  const shadow = !!body?.shadow;
+  if (!tgId) return { ok: false, error: 'missing_tg_id' };
+
+  await sql(
+    `UPDATE users SET is_shadow_banned = $1, updated_at = NOW() WHERE tg_id = $2`,
+    [shadow, tgId]
+  );
+  return { ok: true, tg_id: tgId, shadow_banned: shadow };
+}
+
 // POST /admin/balance  { tg_id, field: 'points'|'usdt', action: add|subtract|set, amount, note? }
 async function handleBalance(body) {
   const tgId   = parseInt(body?.tg_id);
@@ -642,36 +708,41 @@ async function handleWithdrawalAction(body) {
   return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
 }
 
-// POST /admin/broadcast
+// POST /admin/broadcast — إرسال متوازٍ بدفعات 25 رسالة/ثانية
 async function handleBroadcast(body) {
-  const { text, image_url, button_label, button_url } = body || {};
+  const { text, image_url, image_base64, image_mime, button_label, button_url } = body || {};
   if (!text) return { ok: false, error: 'missing_text' };
 
-  // جلب كل tg_id للمستخدمين النشطين
   const users = await sql(`SELECT tg_id FROM users WHERE tg_id IS NOT NULL AND is_banned = FALSE`);
   if (!users.length) return { ok: false, error: 'no_users' };
 
-  // بناء الـ inline keyboard لو في زر
   const extra = {};
   if (button_label && button_url) {
-    extra.reply_markup = {
-      inline_keyboard: [[{ text: button_label, url: button_url }]],
-    };
+    extra.reply_markup = { inline_keyboard: [[{ text: button_label, url: button_url }]] };
   }
 
+  const BATCH_SIZE  = 25;   // 25 رسالة متوازية
+  const BATCH_DELAY = 1000; // ثانية بين الدفعات
+
   let sent = 0, failed = 0;
-  for (const u of users) {
-    try {
-      let r;
-      if (image_url) {
-        r = await sendBotPhoto(u.tg_id, image_url, text, extra);
-      } else {
-        r = await sendBotMessage(u.tg_id, text, extra);
-      }
-      if (r?.ok) sent++; else failed++;
-    } catch (_) { failed++; }
-    // تأخير بسيط لتجنب حد الـ rate limit
-    await new Promise(r => setTimeout(r, 35));
+
+  for (let i = 0; i < users.length; i += BATCH_SIZE) {
+    const batch   = users.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(batch.map(async u => {
+      try {
+        let r;
+        if (image_base64 && image_mime) {
+          r = await sendBotPhotoUpload(u.tg_id, image_base64, image_mime, text, extra);
+        } else if (image_url) {
+          r = await sendBotPhoto(u.tg_id, image_url, text, extra);
+        } else {
+          r = await sendBotMessage(u.tg_id, text, extra);
+        }
+        return r?.ok ? 'sent' : 'failed';
+      } catch (_) { return 'failed'; }
+    }));
+    for (const r of results) r === 'sent' ? sent++ : failed++;
+    if (i + BATCH_SIZE < users.length) await new Promise(r => setTimeout(r, BATCH_DELAY));
   }
 
   return { ok: true, total: users.length, sent, failed };
@@ -1279,6 +1350,9 @@ module.exports = async function handler(req, res) {
 
       if (path.endsWith('/admin/social/review'))
         return res.status(200).json(await handleSocialReview(body));
+
+      if (path.endsWith('/admin/shadow'))
+        return res.status(200).json(await handleShadow(body));
 
       if (path.endsWith('/admin/broadcast'))
         return res.status(200).json(await handleBroadcast(body));
