@@ -708,44 +708,62 @@ async function handleWithdrawalAction(body) {
   return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
 }
 
-// POST /admin/broadcast — إرسال متوازٍ بدفعات 25 رسالة/ثانية
+// POST /admin/broadcast
+// يقبل: { text, image_base64?, image_mime?, image_url?, button_label?, button_url?, offset, limit }
+// الفرونت يستدعيه دفعة دفعة — كل دفعة 25 مستخدم — لتفادي Vercel timeout
 async function handleBroadcast(body) {
-  const { text, image_url, image_base64, image_mime, button_label, button_url } = body || {};
+  const {
+    text, image_url, image_base64, image_mime,
+    button_label, button_url,
+    offset = 0, limit = 25,
+  } = body || {};
+
   if (!text) return { ok: false, error: 'missing_text' };
 
-  const users = await sql(`SELECT tg_id FROM users WHERE tg_id IS NOT NULL AND is_banned = FALSE`);
-  if (!users.length) return { ok: false, error: 'no_users' };
+  // إجمالي المستخدمين (للفرونت يحسب النسبة)
+  const [{ count: totalCount }] = await sql(
+    `SELECT COUNT(*) AS count FROM users WHERE tg_id IS NOT NULL AND is_banned = FALSE`
+  );
+  const total = parseInt(totalCount);
+
+  // جلب دفعة واحدة فقط
+  const batch = await sql(
+    `SELECT tg_id FROM users
+     WHERE tg_id IS NOT NULL AND is_banned = FALSE
+     ORDER BY id
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+
+  if (!batch.length) {
+    return { ok: true, total, sent: 0, failed: 0, has_more: false, offset };
+  }
 
   const extra = {};
   if (button_label && button_url) {
     extra.reply_markup = { inline_keyboard: [[{ text: button_label, url: button_url }]] };
   }
 
-  const BATCH_SIZE  = 25;   // 25 رسالة متوازية
-  const BATCH_DELAY = 1000; // ثانية بين الدفعات
+  const results = await Promise.all(batch.map(async u => {
+    try {
+      let r;
+      if (image_base64 && image_mime) {
+        r = await sendBotPhotoUpload(u.tg_id, image_base64, image_mime, text, extra);
+      } else if (image_url) {
+        r = await sendBotPhoto(u.tg_id, image_url, text, extra);
+      } else {
+        r = await sendBotMessage(u.tg_id, text, extra);
+      }
+      return r?.ok ? 'sent' : 'failed';
+    } catch (_) { return 'failed'; }
+  }));
 
-  let sent = 0, failed = 0;
+  const sent   = results.filter(r => r === 'sent').length;
+  const failed = results.filter(r => r === 'failed').length;
+  const nextOffset = offset + batch.length;
+  const has_more   = nextOffset < total;
 
-  for (let i = 0; i < users.length; i += BATCH_SIZE) {
-    const batch   = users.slice(i, i + BATCH_SIZE);
-    const results = await Promise.all(batch.map(async u => {
-      try {
-        let r;
-        if (image_base64 && image_mime) {
-          r = await sendBotPhotoUpload(u.tg_id, image_base64, image_mime, text, extra);
-        } else if (image_url) {
-          r = await sendBotPhoto(u.tg_id, image_url, text, extra);
-        } else {
-          r = await sendBotMessage(u.tg_id, text, extra);
-        }
-        return r?.ok ? 'sent' : 'failed';
-      } catch (_) { return 'failed'; }
-    }));
-    for (const r of results) r === 'sent' ? sent++ : failed++;
-    if (i + BATCH_SIZE < users.length) await new Promise(r => setTimeout(r, BATCH_DELAY));
-  }
-
-  return { ok: true, total: users.length, sent, failed };
+  return { ok: true, total, sent, failed, has_more, offset: nextOffset };
 }
 
 // GET /admin/online — المتصلون في آخر 5 دقائق
