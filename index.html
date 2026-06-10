@@ -3130,7 +3130,7 @@ setInterval(refreshData, 30000);
 
     if (!text) { toast('اكتب نص الرسالة أولاً', 'warn'); return; }
 
-    // قراءة الصورة من الـ file input
+    // قراءة الصورة
     const fileInput = document.getElementById('bc-image-file');
     let image_base64 = null, image_mime = null;
     if (fileInput?.files?.[0]) {
@@ -3143,17 +3143,6 @@ setInterval(refreshData, 30000);
       });
     }
 
-    // جلب العدد الكلي للمستخدمين لحساب التقدم الحقيقي
-    let totalUsers = 100;
-    try {
-      const stats = await apiFetch('/admin/stats');
-      if (stats?.total_users) totalUsers = stats.total_users;
-    } catch(_) {}
-
-    const BATCH = 25;
-    const totalBatches  = Math.ceil(totalUsers / BATCH);
-    const totalEstSecs  = totalBatches; // ثانية لكل دفعة
-
     // إعداد الواجهة
     sendBtn.disabled = true;
     sendBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"
@@ -3162,60 +3151,80 @@ setInterval(refreshData, 30000);
     if (resultEl) resultEl.style.display = 'none';
     if (progWrap) progWrap.style.display = '';
 
-    // Progress timer — يُظهر نسبة مئوية حقيقية مبنية على التوقيت المتوقع
-    let elapsed = 0;
-    const progInterval = setInterval(() => {
-      elapsed++;
-      const pct = Math.min(Math.round((elapsed / totalEstSecs) * 95), 95);
-      const sent = Math.min(Math.round((elapsed / totalEstSecs) * totalUsers), totalUsers);
-      if (fillEl) fillEl.style.width = pct + '%';
-      if (pctEl)  pctEl.textContent  = pct + '%';
-      if (progText) progText.textContent = `تم إرسال ~${sent.toLocaleString('ar')} من ${totalUsers.toLocaleString('ar')}`;
-    }, 1000);
+    // ── Loop: الفرونت يرسل دفعة تلو الأخرى ──────────────────────
+    // كل دفعة = استدعاء API منفصل → لا يوجد timeout على Vercel
+    const LIMIT = 25;
+    let offset  = 0;
+    let totalSent   = 0;
+    let totalFailed = 0;
+    let totalUsers  = 1;
+    let hasMore     = true;
+    let errorOccurred = false;
 
-    try {
-      const body = { text };
-      if (image_base64) { body.image_base64 = image_base64; body.image_mime = image_mime; }
-      if (btnLabel && btnUrl) { body.button_label = btnLabel; body.button_url = btnUrl; }
+    while (hasMore) {
+      try {
+        const body = { text, offset, limit: LIMIT };
+        if (image_base64) { body.image_base64 = image_base64; body.image_mime = image_mime; }
+        if (btnLabel && btnUrl) { body.button_label = btnLabel; body.button_url = btnUrl; }
 
-      const d = await apiFetch('/admin/broadcast', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
+        const d = await apiFetch('/admin/broadcast', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
 
-      clearInterval(progInterval);
-      if (fillEl)   { fillEl.style.width = '100%'; }
-      if (pctEl)    { pctEl.textContent  = '100%'; }
-      if (progText) { progText.textContent = 'اكتمل الإرسال'; }
-
-      if (resultEl) {
-        resultEl.style.display = '';
-        if (d?.ok) {
-          const pctSent = d.total > 0 ? Math.round((d.sent / d.total) * 100) : 0;
-          resultEl.style.cssText = 'background:rgba(34,211,160,.07);border:1px solid rgba(34,211,160,.22);border-radius:8px;color:#22d3a0;font-size:13px;padding:11px 14px;text-align:center';
-          resultEl.innerHTML = `
-            <div style="font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;letter-spacing:.03em">${pctSent}%</div>
-            <div style="font-size:12px;margin-top:3px;color:var(--muted)">
-              <strong style="color:#22d3a0">${(d.sent).toLocaleString('ar')}</strong> وصلت &nbsp;·&nbsp;
-              <span style="color:var(--red)">${(d.failed).toLocaleString('ar')}</span> فشلت &nbsp;·&nbsp;
-              الإجمالي <strong>${(d.total).toLocaleString('ar')}</strong>
-            </div>`;
-          // Update stats badge
-          const badge = document.getElementById('bc-stats-badge');
-          if (badge) {
-            badge.style.display = '';
-            document.getElementById('bc-stats-sent').textContent = d.sent.toLocaleString('ar');
+        if (!d?.ok) {
+          errorOccurred = true;
+          if (resultEl) {
+            resultEl.style.cssText = 'display:block;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center';
+            resultEl.textContent = `خطأ: ${d?.error || 'حدث خطأ'}`;
           }
-        } else {
-          resultEl.style.cssText = 'background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center';
-          resultEl.textContent = `خطأ: ${d?.error || 'حدث خطأ'}`;
+          break;
         }
+
+        totalUsers  = d.total  || totalUsers;
+        totalSent  += d.sent   || 0;
+        totalFailed += d.failed || 0;
+        offset      = d.offset; // offset القادم يرجعه الـ API
+        hasMore     = d.has_more;
+
+        // تحديث البار بنسبة حقيقية
+        const pct = totalUsers > 0 ? Math.round((offset / totalUsers) * 100) : 0;
+        if (fillEl)   fillEl.style.width = Math.min(pct, 99) + '%';
+        if (pctEl)    pctEl.textContent  = Math.min(pct, 99) + '%';
+        if (progText) progText.textContent = `${offset.toLocaleString('ar')} من ${totalUsers.toLocaleString('ar')}`;
+
+      } catch (e) {
+        errorOccurred = true;
+        if (resultEl) {
+          resultEl.style.cssText = 'display:block;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center';
+          resultEl.textContent = 'فشل الاتصال بالسيرفر';
+        }
+        break;
       }
-    } catch (e) {
-      clearInterval(progInterval);
-      if (resultEl) {
-        resultEl.style.cssText = 'background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center;display:block';
-        resultEl.textContent = 'فشل الاتصال بالسيرفر';
+    }
+
+    // ── نهاية الإرسال ─────────────────────────────────────────────
+    if (fillEl)   fillEl.style.width = '100%';
+    if (pctEl)    pctEl.textContent  = '100%';
+    if (progText) progText.textContent = 'اكتمل الإرسال';
+
+    if (!errorOccurred && resultEl) {
+      const pctSent = totalUsers > 0 ? Math.round((totalSent / totalUsers) * 100) : 0;
+      resultEl.style.cssText = 'display:block;background:rgba(34,211,160,.07);border:1px solid rgba(34,211,160,.22);border-radius:8px;color:#22d3a0;font-size:13px;padding:11px 14px;text-align:center';
+      resultEl.innerHTML = `
+        <div style="font-size:26px;font-weight:700;font-family:'IBM Plex Mono',monospace">${pctSent}%</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--muted)">
+          <strong style="color:#22d3a0">${totalSent.toLocaleString('ar')}</strong> وصلت
+          &nbsp;·&nbsp;
+          <span style="color:var(--red)">${totalFailed.toLocaleString('ar')}</span> فشلت
+          &nbsp;·&nbsp;
+          الإجمالي <strong>${totalUsers.toLocaleString('ar')}</strong>
+        </div>`;
+      const badge = document.getElementById('bc-stats-badge');
+      if (badge) {
+        badge.style.display = '';
+        const sentEl = document.getElementById('bc-stats-sent');
+        if (sentEl) sentEl.textContent = totalSent.toLocaleString('ar');
       }
     }
 
