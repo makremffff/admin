@@ -76,8 +76,8 @@ async function sendBotPhotoUpload(tgId, base64Data, mimeType, caption, extra = {
   if (!tgId || !base64Data) return { ok: false };
   try {
     const buffer = Buffer.from(base64Data, 'base64');
-    const { Blob } = await import('buffer');
-    const blob = new Blob([buffer], { type: mimeType || 'image/jpeg' });
+    // Blob is global in Node.js 18+ (Vercel default runtime)
+    const blob = new (global.Blob || require('buffer').Blob)([buffer], { type: mimeType || 'image/jpeg' });
     const form = new FormData();
     form.append('chat_id',    String(tgId));
     form.append('caption',    caption || '');
@@ -722,21 +722,16 @@ async function handleBroadcast(body) {
   const off = parseInt(offset) || 0;
   const lim = Math.min(parseInt(limit) || 25, 50);
 
-  // إجمالي المستخدمين — tagged template literal (متوافق مع neon)
-  const countRows = await sql`
-    SELECT COUNT(*)::int AS cnt
-    FROM users
-    WHERE tg_id IS NOT NULL AND is_banned = FALSE
-  `;
-  const total = countRows[0]?.cnt || 0;
-
-  // جلب دفعة واحدة — tagged template مع ${} لتمرير المتغيرات
-  const batch = await sql`
+  // COUNT — نفس أسلوب باقي الكود في الملف
+  const allIds = await sql`
     SELECT tg_id FROM users
     WHERE tg_id IS NOT NULL AND is_banned = FALSE
     ORDER BY id
-    LIMIT ${lim} OFFSET ${off}
   `;
+  const total = allIds.length;
+
+  // الدفعة الحالية فقط
+  const batch = allIds.slice(off, off + lim);
 
   if (!batch.length) {
     return { ok: true, total, sent: 0, failed: 0, has_more: false, offset: off };
