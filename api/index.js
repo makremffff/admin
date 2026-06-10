@@ -709,8 +709,7 @@ async function handleWithdrawalAction(body) {
 }
 
 // POST /admin/broadcast
-// يقبل: { text, image_base64?, image_mime?, image_url?, button_label?, button_url?, offset, limit }
-// الفرونت يستدعيه دفعة دفعة — كل دفعة 25 مستخدم — لتفادي Vercel timeout
+// كل استدعاء يرسل دفعة 25 مستخدم — الفرونت يكرر الاستدعاء حتى has_more=false
 async function handleBroadcast(body) {
   const {
     text, image_url, image_base64, image_mime,
@@ -720,23 +719,27 @@ async function handleBroadcast(body) {
 
   if (!text) return { ok: false, error: 'missing_text' };
 
-  // إجمالي المستخدمين (للفرونت يحسب النسبة)
-  const [{ count: totalCount }] = await sql(
-    `SELECT COUNT(*) AS count FROM users WHERE tg_id IS NOT NULL AND is_banned = FALSE`
-  );
-  const total = parseInt(totalCount);
+  const off = parseInt(offset) || 0;
+  const lim = Math.min(parseInt(limit) || 25, 50);
 
-  // جلب دفعة واحدة فقط
-  const batch = await sql(
-    `SELECT tg_id FROM users
-     WHERE tg_id IS NOT NULL AND is_banned = FALSE
-     ORDER BY id
-     LIMIT $1 OFFSET $2`,
-    [limit, offset]
-  );
+  // إجمالي المستخدمين — tagged template literal (متوافق مع neon)
+  const countRows = await sql`
+    SELECT COUNT(*)::int AS cnt
+    FROM users
+    WHERE tg_id IS NOT NULL AND is_banned = FALSE
+  `;
+  const total = countRows[0]?.cnt || 0;
+
+  // جلب دفعة واحدة — tagged template مع ${} لتمرير المتغيرات
+  const batch = await sql`
+    SELECT tg_id FROM users
+    WHERE tg_id IS NOT NULL AND is_banned = FALSE
+    ORDER BY id
+    LIMIT ${lim} OFFSET ${off}
+  `;
 
   if (!batch.length) {
-    return { ok: true, total, sent: 0, failed: 0, has_more: false, offset };
+    return { ok: true, total, sent: 0, failed: 0, has_more: false, offset: off };
   }
 
   const extra = {};
@@ -758,9 +761,9 @@ async function handleBroadcast(body) {
     } catch (_) { return 'failed'; }
   }));
 
-  const sent   = results.filter(r => r === 'sent').length;
-  const failed = results.filter(r => r === 'failed').length;
-  const nextOffset = offset + batch.length;
+  const sent       = results.filter(r => r === 'sent').length;
+  const failed     = results.filter(r => r === 'failed').length;
+  const nextOffset = off + batch.length;
   const has_more   = nextOffset < total;
 
   return { ok: true, total, sent, failed, has_more, offset: nextOffset };
