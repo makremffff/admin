@@ -722,16 +722,10 @@ async function handleBroadcast(body) {
   const off = parseInt(offset) || 0;
   const lim = Math.min(parseInt(limit) || 25, 50);
 
-  // COUNT — نفس أسلوب باقي الكود في الملف
-  const allIds = await sql`
-    SELECT tg_id FROM users
-    WHERE tg_id IS NOT NULL AND is_banned = FALSE
-    ORDER BY id
-  `;
-  const total = allIds.length;
-
-  // الدفعة الحالية فقط
-  const batch = allIds.slice(off, off + lim);
+  // نفس أسلوب الكود الأصلي — sql() كـ function call لا tagged template
+  const allIds = await sql(`SELECT tg_id FROM users WHERE tg_id IS NOT NULL AND is_banned = FALSE ORDER BY id`);
+  const total  = allIds.length;
+  const batch  = allIds.slice(off, off + lim);
 
   if (!batch.length) {
     return { ok: true, total, sent: 0, failed: 0, has_more: false, offset: off };
