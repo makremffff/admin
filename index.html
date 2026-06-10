@@ -3183,8 +3183,7 @@ setInterval(refreshData, 30000);
         }
         if (!d?.ok) {
           errorOccurred = true;
-          const errMsg = typeof d?.error === 'string' ? d.error
-                       : d?.detail || JSON.stringify(d?.error) || 'حدث خطأ';
+          const errMsg = d?.detail || (typeof d?.error === 'string' ? d.error : JSON.stringify(d?.error)) || 'حدث خطأ';
           if (resultEl) {
             resultEl.style.cssText = 'display:block;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center';
             resultEl.textContent = `خطأ: ${errMsg}`;
