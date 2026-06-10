@@ -3172,12 +3172,24 @@ setInterval(refreshData, 30000);
           body: JSON.stringify(body),
         });
 
-        if (!d?.ok) {
+        if (!d) {
+          // apiFetch returned null — non-JSON or network error
           errorOccurred = true;
           if (resultEl) {
             resultEl.style.cssText = 'display:block;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center';
-            resultEl.textContent = `خطأ: ${d?.error || 'حدث خطأ'}`;
+            resultEl.textContent = 'فشل الاتصال — تحقق من Console للتفاصيل';
           }
+          break;
+        }
+        if (!d?.ok) {
+          errorOccurred = true;
+          const errMsg = typeof d?.error === 'string' ? d.error
+                       : d?.detail || JSON.stringify(d?.error) || 'حدث خطأ';
+          if (resultEl) {
+            resultEl.style.cssText = 'display:block;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center';
+            resultEl.textContent = `خطأ: ${errMsg}`;
+          }
+          console.error('[BC] API error:', d);
           break;
         }
 
@@ -3195,9 +3207,10 @@ setInterval(refreshData, 30000);
 
       } catch (e) {
         errorOccurred = true;
+        console.error('[BC] Fetch error:', e);
         if (resultEl) {
           resultEl.style.cssText = 'display:block;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.22);border-radius:8px;color:var(--red);font-size:13px;padding:11px 14px;text-align:center';
-          resultEl.textContent = 'فشل الاتصال بالسيرفر';
+          resultEl.textContent = `فشل الاتصال بالسيرفر: ${e?.message || e}`;
         }
         break;
       }
