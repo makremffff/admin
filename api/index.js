@@ -1,1412 +1,761 @@
-'use strict';
-
-/**
- * Admin Panel API — TON Spin / الربح عربي
- * يتصل بنفس قاعدة بيانات index.js الأصلي
- *
- * Endpoints:
- *   GET    /admin/stats          — إحصائيات عامة
- *   GET    /admin/users          — قائمة المستخدمين (مع فلترة وبحث)
- *   GET    /admin/user/:tgId     — تفاصيل مستخدم واحد
- *   DELETE /admin/user/:tgId     — حذف مستخدم (داخل transaction)
- *   POST   /admin/ban            — حظر / رفع حظر
- *   POST   /admin/balance        — تعديل نقاط مستخدم
- *   GET    /admin/withdrawals    — قائمة السحوبات
- *   POST   /admin/withdrawal     — قبول / رفض سحب
- *   GET    /admin/online         — المتصلون (آخر 5 دقائق)
- *   GET    /admin/audit          — سجل الأحداث
- *   GET    /admin/risk           — أحداث المخاطر
- *   POST   /admin/config         — حفظ الإعدادات في DB
- */
+// ══════════════════════════════════════════════════════════════════════════════
+//  api/admin.js  —  Admin Panel API · Vercel Serverless Function
+// ══════════════════════════════════════════════════════════════════════════════
 
 const { neon } = require('@neondatabase/serverless');
+const crypto   = require('crypto');
 
-// ── DB ────────────────────────────────────────────────────────────
-const _db = neon(process.env.DATABASE_URL);
+const DATABASE_URL    = process.env.DATABASE_URL;
+const BOT_TOKEN       = process.env.BOT_TOKEN;
+const ADMIN_SECRET    = process.env.ADMIN_SECRET; // Secret for admin auth
 
+if (!ADMIN_SECRET) {
+  throw new Error('[FATAL] ADMIN_SECRET env var is not set');
+}
+
+const _db = neon(DATABASE_URL);
 async function sql(query, params = []) {
   return await _db(query, params);
 }
 
-/**
- * neon() HTTP لا يدعم BEGIN/COMMIT على connections منفصلة.
- * الحل: تنفيذ الـ queries مباشرة بدون transaction wrapper —
- * الأمان يأتي من الـ SELECT FOR UPDATE والـ status check.
- */
-async function withTransaction(fn) {
-  return await fn();
+// ══════════════════════════════════════════════════════════════════════════════
+//  Auth — ADMIN_SECRET header check
+// ══════════════════════════════════════════════════════════════════════════════
+function requireAdmin(req) {
+  const provided = req.headers['x-admin-secret'] || '';
+  return crypto.timingSafeEqual(
+    Buffer.from(provided.padEnd(64)),
+    Buffer.from(ADMIN_SECRET.padEnd(64))
+  );
 }
 
-// ── Config ────────────────────────────────────────────────────────
-const ADMIN_SECRET = process.env.ADMIN_SECRET || null;
-const BOT_TOKEN    = '8285685691:AAHvFWHQpun3fRlh_HduMHg_md1CukxYxgg';
-
-async function sendBotMessage(tgId, text, extra = {}) {
-  if (!tgId) return { ok: false };
+// ══════════════════════════════════════════════════════════════════════════════
+//  Admin action logger
+// ══════════════════════════════════════════════════════════════════════════════
+async function logAdminAction(adminNote, targetUserId, action, meta = {}) {
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: tgId, text, parse_mode: 'HTML', ...extra }),
-    });
-    return await res.json();
-  } catch (e) {
-    console.warn('[BOT_MSG] Failed:', e.message);
-    return { ok: false };
-  }
-}
-
-async function sendBotPhoto(tgId, photo, caption, extra = {}) {
-  if (!tgId) return { ok: false };
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: tgId, photo, caption, parse_mode: 'HTML', ...extra }),
-    });
-    return await res.json();
-  } catch (e) {
-    console.warn('[BOT_PHOTO] Failed:', e.message);
-    return { ok: false };
-  }
-}
-
-// إرسال صورة رُفعت كـ base64 عبر multipart/form-data
-async function sendBotPhotoUpload(tgId, base64Data, mimeType, caption, extra = {}) {
-  if (!tgId || !base64Data) return { ok: false };
-  try {
-    const buffer = Buffer.from(base64Data, 'base64');
-    // Blob is global in Node.js 18+ (Vercel default runtime)
-    const blob = new (global.Blob || require('buffer').Blob)([buffer], { type: mimeType || 'image/jpeg' });
-    const form = new FormData();
-    form.append('chat_id',    String(tgId));
-    form.append('caption',    caption || '');
-    form.append('parse_mode', 'HTML');
-    form.append('photo',      blob, 'photo.jpg');
-    if (extra.reply_markup) {
-      form.append('reply_markup', JSON.stringify(extra.reply_markup));
-    }
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-      method: 'POST', body: form,
-    });
-    return await res.json();
-  } catch (e) {
-    console.warn('[BOT_PHOTO_UPLOAD] Failed:', e.message);
-    return { ok: false };
-  }
-}
-
-// إرسال صورة من base64 عبر multipart/form-data
-async function sendBotPhotoUpload(tgId, base64Data, mimeType, caption, extra = {}) {
-  if (!tgId || !base64Data) return { ok: false };
-  try {
-    // تحويل base64 إلى Buffer
-    const buffer = Buffer.from(base64Data, 'base64');
-    const blob   = new Blob([buffer], { type: mimeType || 'image/jpeg' });
-
-    const form = new FormData();
-    form.append('chat_id',    String(tgId));
-    form.append('caption',    caption || '');
-    form.append('parse_mode', 'HTML');
-    form.append('photo',      blob, 'image.jpg');
-    if (extra.reply_markup) {
-      form.append('reply_markup', JSON.stringify(extra.reply_markup));
-    }
-
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-      method: 'POST',
-      body: form,
-    });
-    return await res.json();
-  } catch (e) {
-    console.warn('[BOT_PHOTO_UPLOAD] Failed:', e.message);
-    return { ok: false };
-  }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────
-function fmt(n) {
-  return n == null ? 0 : Number(n);
-}
-
-// ── CORS headers ──────────────────────────────────────────────────
-function setCors(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', req.headers['origin'] || '*');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Secret');
-}
-
-// ── Auth check ────────────────────────────────────────────────────
-function checkAuth(req, res) {
-  // بدون auth — الموقع خاص
-  if (!ADMIN_SECRET) return true;
-  const key =
-    req.headers['x-admin-secret'] ||
-    req.headers['x-admin-Secret'] ||
-    '';
-  if (key !== ADMIN_SECRET) {
-    res.status(403).json({ ok: false, error: 'forbidden' });
-    return false;
-  }
-  return true;
-}
-
-// ══════════════════════════════════════════════════════════════════
-// HANDLERS
-// ══════════════════════════════════════════════════════════════════
-
-// GET /admin/stats
-async function handleStats() {
-  const users = (
-    await sql(`
-      SELECT
-        COUNT(*)                                                              AS total_users,
-        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 day')        AS new_today,
-        COUNT(*) FILTER (WHERE updated_at > NOW() - INTERVAL '5 minutes')    AS online,
-        COUNT(*) FILTER (WHERE is_banned = TRUE)                             AS banned,
-        COUNT(*) FILTER (WHERE is_shadow_banned = TRUE AND is_banned = FALSE) AS shadow_banned,
-        COUNT(*) FILTER (WHERE tg_is_premium = TRUE)                         AS premium_users,
-        COUNT(*) FILTER (WHERE first_withdraw_done = TRUE)                   AS first_withdraw_done_count,
-        COALESCE(SUM(points), 0)                                             AS total_points,
-        COALESCE(SUM(total_referrals), 0)                                    AS total_referrals,
-        COALESCE(SUM(ads_watched_total), 0)                                  AS total_ads
-      FROM users
-    `)
-  )[0];
-
-  const wdStats = (
-    await sql(`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'pending')   AS pending_withdrawals,
-        COUNT(*) FILTER (WHERE status = 'completed') AS completed_withdrawals,
-        COALESCE(SUM(ton_amount) FILTER (WHERE status = 'completed'), 0) AS total_ton_paid
-      FROM withdrawals
-    `)
-  )[0];
-
-  const adsToday = (
-    await sql(`
-      SELECT COALESCE(SUM(count), 0) AS ads_today
-      FROM ad_logs
-      WHERE log_date = CURRENT_DATE
-    `)
-  )[0];
-
-  const monetagToday = (
-    await sql(`
-      SELECT COALESCE(SUM(count), 0) AS monetag_today
-      FROM monetag_logs
-      WHERE log_date = CURRENT_DATE
-    `)
-  )[0];
-
-  return {
-    ok: true,
-    total_users:               fmt(users.total_users),
-    new_today:                 fmt(users.new_today),
-    online:                    fmt(users.online),
-    banned:                    fmt(users.banned),
-    shadow_banned:             fmt(users.shadow_banned),
-    premium_users:             fmt(users.premium_users),
-    total_points:              fmt(users.total_points),
-    total_referrals:           fmt(users.total_referrals),
-    total_ads:                 fmt(users.total_ads),
-    first_withdraw_done_count: fmt(users.first_withdraw_done_count),
-    pending_withdrawals:       fmt(wdStats.pending_withdrawals),
-    completed_withdrawals:     fmt(wdStats.completed_withdrawals),
-    total_ton_paid:            parseFloat(wdStats.total_ton_paid || 0).toFixed(4),
-    adsgram_today:             fmt(adsToday.ads_today),
-    monetag_today:               fmt(monetagToday.monetag_today),
-    ads_today:                 fmt(adsToday.ads_today) + fmt(monetagToday.monetag_today),
-  };
-}
-
-// GET /admin/users?limit=100&sort=created_at&search=&filter=&online=true
-async function handleUsers(query) {
-  const limit  = Math.min(parseInt(query.limit  || '500'), 5000);
-  const search = (query.search || '').trim();
-  const filter = (query.filter || '').trim(); // banned | shadow | premium | ''
-  const online = query.online === 'true';
-  const sort   = query.sort === 'points' ? 'points' : 'created_at';
-
-  const where  = ['1=1'];
-  const params = [];
-  let   idx    = 1;
-
-  if (search) {
-    where.push(
-      `(tg_username ILIKE $${idx} OR tg_first_name ILIKE $${idx} OR CAST(tg_id AS TEXT) LIKE $${idx})`
+    await sql(`CREATE TABLE IF NOT EXISTS admin_logs (
+      id          SERIAL PRIMARY KEY,
+      admin_note  TEXT,
+      target_user INT,
+      action      TEXT NOT NULL,
+      meta        JSONB NOT NULL DEFAULT '{}',
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`);
+    await sql(
+      `INSERT INTO admin_logs (admin_note, target_user, action, meta) VALUES ($1,$2,$3,$4)`,
+      [adminNote, targetUserId, action, JSON.stringify(meta)]
     );
-    params.push(`%${search}%`);
-    idx++;
+  } catch(e) {
+    console.error('[admin_log error]', e.message);
   }
-  if (filter === 'banned')  where.push('is_banned = TRUE');
-  if (filter === 'shadow')  where.push('is_shadow_banned = TRUE AND is_banned = FALSE');
-  if (filter === 'premium') where.push('tg_is_premium = TRUE');
-  if (online)               where.push(`updated_at > NOW() - INTERVAL '5 minutes'`);
-
-  params.push(limit);
-
-  const rows = await sql(
-    `SELECT
-       u.id, u.tg_id, u.tg_username, u.tg_first_name, u.tg_last_name,
-       u.tg_is_premium, u.tg_language_code,
-       u.points, u.level, u.xp, u.usdt_balance,
-       u.is_banned, u.is_shadow_banned, u.ban_reason,
-       u.risk_score, u.tg_verified,
-       u.streak_day, u.total_referrals, u.earned_from_refs,
-       u.ads_watched_total, u.first_withdraw_done,
-       u.ip_hash, u.fp_hash,
-       u.created_at, u.updated_at,
-       up.photo_url
-     FROM users u
-     LEFT JOIN user_photos up ON up.user_id = u.id
-     WHERE ${where.join(' AND ')}
-     ORDER BY u.${sort} DESC
-     LIMIT $${idx}`,
-    params
-  );
-
-  // Adsgram اليوم
-  const adsToday = await sql(`
-    SELECT user_id, count AS adsgram_today, points_earned AS adsgram_earned_today
-    FROM ad_logs WHERE log_date = CURRENT_DATE
-  `);
-  const adsTodayMap = {};
-  for (const a of adsToday) adsTodayMap[a.user_id] = a;
-
-  // Taddy اليوم
-  const monetagToday = await sql(`
-    SELECT user_id, count AS monetag_today, points_earned AS monetag_earned_today
-    FROM monetag_logs WHERE log_date = CURRENT_DATE
-  `);
-  const monetagTodayMap = {};
-  for (const t of monetagToday) monetagTodayMap[t.user_id] = t;
-
-  const enriched = rows.map(u => ({
-    ...u,
-    adsgram_today:       fmt(adsTodayMap[u.id]?.adsgram_today        ?? 0),
-    adsgram_earned_today:fmt(adsTodayMap[u.id]?.adsgram_earned_today  ?? 0),
-    monetag_today:         fmt(monetagTodayMap[u.id]?.monetag_today         ?? 0),
-    monetag_earned_today:  fmt(monetagTodayMap[u.id]?.monetag_earned_today  ?? 0),
-    ads_today:           fmt(adsTodayMap[u.id]?.adsgram_today ?? 0) + fmt(monetagTodayMap[u.id]?.monetag_today ?? 0),
-    earned_today:        fmt(adsTodayMap[u.id]?.adsgram_earned_today ?? 0) + fmt(monetagTodayMap[u.id]?.monetag_earned_today ?? 0),
-  }));
-
-  return { ok: true, users: enriched, total: enriched.length };
 }
 
-// GET /admin/users/all?sort=referrals&page=1&per_page=200&search=&filter=
-async function handleAllUsers(query) {
-  const perPage = Math.min(parseInt(query.per_page || '200'), 500);
-  const page    = Math.max(parseInt(query.page    || '1'),  1);
-  const offset  = (page - 1) * perPage;
-  const sortMap = {
-    referrals: 'total_referrals',
-    points:    'points',
-    ads:       'ads_watched_total',
-    created:   'created_at',
-  };
-  const sortCol = sortMap[query.sort] || 'total_referrals';
-  const search  = (query.search || '').trim();
-  const filter  = (query.filter || '').trim();
-
-  const where  = ['1=1'];
-  const cntParams = [];
-  let   idx    = 1;
-
-  if (search) {
-    where.push(`(u.tg_username ILIKE $${idx} OR u.tg_first_name ILIKE $${idx} OR CAST(u.tg_id AS TEXT) LIKE $${idx})`);
-    cntParams.push(`%${search}%`);
-    idx++;
-  }
-  if (filter === 'banned')  where.push('u.is_banned = TRUE');
-  if (filter === 'shadow')  where.push('u.is_shadow_banned = TRUE AND u.is_banned = FALSE');
-  if (filter === 'premium') where.push('u.tg_is_premium = TRUE');
-
-  const whereStr = where.join(' AND ');
-  const countRow = (await sql(`SELECT COUNT(*) AS cnt FROM users u WHERE ${whereStr}`, cntParams))[0];
-  const total    = parseInt(countRow.cnt);
-
-  const rowParams = [...cntParams, perPage, offset];
-  const rows = await sql(
-    `SELECT
-       u.id, u.tg_id, u.tg_username, u.tg_first_name, u.tg_last_name,
-       u.tg_is_premium, u.points, u.level,
-       u.total_referrals, u.earned_from_refs,
-       u.ads_watched_total, u.usdt_balance,
-       u.is_banned, u.is_shadow_banned,
-       u.created_at,
-       up.photo_url
-     FROM users u
-     LEFT JOIN user_photos up ON up.user_id = u.id
-     WHERE ${whereStr}
-     ORDER BY u.${sortCol} DESC
-     LIMIT $${idx} OFFSET $${idx+1}`,
-    rowParams
-  );
-
-  // Adsgram اليوم
-  const adsToday = await sql(`
-    SELECT user_id, count AS adsgram_today, points_earned AS adsgram_earned_today
-    FROM ad_logs WHERE log_date = CURRENT_DATE
-  `);
-  const adsTodayMap = {};
-  for (const a of adsToday) adsTodayMap[a.user_id] = a;
-
-  // Taddy اليوم
-  const monetagToday = await sql(`
-    SELECT user_id, count AS monetag_today, points_earned AS monetag_earned_today
-    FROM monetag_logs WHERE log_date = CURRENT_DATE
-  `);
-  const monetagTodayMap = {};
-  for (const t of monetagToday) monetagTodayMap[t.user_id] = t;
-
-  const enriched = rows.map(u => ({
-    ...u,
-    adsgram_today:        fmt(adsTodayMap[u.id]?.adsgram_today         ?? 0),
-    adsgram_earned_today: fmt(adsTodayMap[u.id]?.adsgram_earned_today   ?? 0),
-    monetag_today:          fmt(monetagTodayMap[u.id]?.monetag_today          ?? 0),
-    monetag_earned_today:   fmt(monetagTodayMap[u.id]?.monetag_earned_today   ?? 0),
-    ads_today:            fmt(adsTodayMap[u.id]?.adsgram_today ?? 0) + fmt(monetagTodayMap[u.id]?.monetag_today ?? 0),
-    earned_today:         fmt(adsTodayMap[u.id]?.adsgram_earned_today ?? 0) + fmt(monetagTodayMap[u.id]?.monetag_earned_today ?? 0),
-  }));
-
-  return {
-    ok:       true,
-    users:    enriched,
-    total,
-    page,
-    per_page: perPage,
-    pages:    Math.ceil(total / perPage),
-  };
-}
-
-// GET /admin/user/:tgId — تفاصيل مستخدم واحد مع سجل نشاطه
-async function handleUserDetail(tgId) {
-  const id = parseInt(tgId);
-  if (!id) return { ok: false, error: 'invalid_id' };
-
-  const userRows = await sql(
-    `SELECT u.*, up.photo_url FROM users u
-     LEFT JOIN user_photos up ON up.user_id = u.id
-     WHERE u.tg_id = $1 LIMIT 1`,
-    [id]
-  );
-  if (!userRows.length) return { ok: false, error: 'user_not_found' };
-  const u = userRows[0];
-
-  // آخر 10 سجلات في audit_log
-  const auditRows = await sql(
-    `SELECT action, status, created_at, meta
-     FROM audit_log
-     WHERE user_id = $1
-     ORDER BY created_at DESC LIMIT 10`,
-    [u.id]
-  );
-
-  // سجل السحوبات
-  const wdRows = await sql(
-    `SELECT pts, ton_amount, address, status, created_at
-     FROM withdrawals
-     WHERE user_id = $1
-     ORDER BY created_at DESC LIMIT 5`,
-    [u.id]
-  );
-
-  // إعلانات اليوم — Adsgram
-  const adToday = (
-    await sql(
-      `SELECT count, points_earned
-       FROM ad_logs
-       WHERE user_id = $1 AND log_date = CURRENT_DATE`,
-      [u.id]
-    )
-  )[0] || { count: 0, points_earned: 0 };
-
-  // إعلانات اليوم — Taddy
-  const monetagToday = (
-    await sql(
-      `SELECT count, points_earned
-       FROM monetag_logs
-       WHERE user_id = $1 AND log_date = CURRENT_DATE`,
-      [u.id]
-    )
-  )[0] || { count: 0, points_earned: 0 };
-
-  // إحالاته
-  const refRows = await sql(
-    `SELECT u2.tg_first_name, u2.tg_username, r.activated, r.created_at
-     FROM referrals r
-     JOIN users u2 ON u2.id = r.referred_id
-     WHERE r.referrer_id = $1
-     ORDER BY r.created_at DESC LIMIT 10`,
-    [u.id]
-  );
-
-  return {
-    ok: true,
-    user: {
-      ...u,
-      adsgram_today:        fmt(adToday.count),
-      adsgram_earned_today: fmt(adToday.points_earned),
-      monetag_today:          fmt(monetagToday.count),
-      monetag_earned_today:   fmt(monetagToday.points_earned),
-      ads_today:            fmt(adToday.count) + fmt(monetagToday.count),
-      earned_today:         fmt(adToday.points_earned) + fmt(monetagToday.points_earned),
-    },
-    audit:       auditRows,
-    withdrawals: wdRows,
-    referrals:   refRows,
-  };
-}
-
-// DELETE /admin/user/:tgId — حذف مستخدم داخل transaction
-// FIX: الآن كل الحذف يتم داخل transaction واحدة — لو فشل أي استعلام يُعاد كل شيء
-async function handleDeleteUser(tgId) {
-  const id = parseInt(tgId);
-  if (!id) return { ok: false, error: 'invalid_id' };
-
-  return await withTransaction(async () => {
-    const u = (await sql(`SELECT id FROM users WHERE tg_id = $1`, [id]))[0];
-    if (!u) return { ok: false, error: 'user_not_found' };
-
-    const uid = u.id;
-
-    // كل جدول في try/catch منفصل — لو الجدول غير موجود لا يوقف العملية
-    const tryDel = async (q, p) => { try { await sql(q, p); } catch(_) {} };
-
-    await tryDel(`DELETE FROM sessions            WHERE user_id = $1`, [uid]);
-    await tryDel(`DELETE FROM nonces              WHERE user_id = $1`, [uid]);
-    await tryDel(`DELETE FROM ad_logs             WHERE user_id = $1`, [uid]);
-    await tryDel(`DELETE FROM user_tasks          WHERE user_id = $1`, [uid]);
-    await tryDel(`DELETE FROM referrals           WHERE referrer_id = $1 OR referred_id = $1`, [uid]);
-    await tryDel(`DELETE FROM risk_events         WHERE user_id = $1`, [uid]);
-    await tryDel(`DELETE FROM audit_log           WHERE user_id = $1`, [uid]);
-    await tryDel(`DELETE FROM device_fingerprints WHERE user_id = $1`, [uid]);
-    await tryDel(`DELETE FROM security_logs       WHERE user_id = $1`, [uid]);
-    await tryDel(`DELETE FROM completed_tasks     WHERE user_id = $1`, [uid]);
-    await tryDel(`UPDATE withdrawals SET user_id = NULL WHERE user_id = $1`, [uid]);
-
-    // حذف المستخدم نفسه — هذا يجب أن ينجح
-    await sql(`DELETE FROM users WHERE id = $1`, [uid]);
-
-    return { ok: true, deleted_tg_id: id };
+// ══════════════════════════════════════════════════════════════════════════════
+//  Telegram Bot Helper
+// ══════════════════════════════════════════════════════════════════════════════
+async function sendTelegramMessage(chatId, text, extra = {}) {
+  if (!BOT_TOKEN) return { ok: false };
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: String(chatId), text, parse_mode: 'Markdown', ...extra })
   });
+  return await res.json();
 }
 
-// POST /admin/ban  { tg_id, ban: true/false, reason? }
-async function handleBan(body) {
-  const tgId   = parseInt(body?.tg_id);
-  const ban    = !!body?.ban;
-  const reason = body?.reason || 'admin_action';
-  if (!tgId) return { ok: false, error: 'missing_tg_id' };
-
-  if (ban) {
-    await sql(
-      `UPDATE users
-       SET is_banned = TRUE, ban_reason = $1, updated_at = NOW()
-       WHERE tg_id = $2`,
-      [reason, tgId]
-    );
-  } else {
-    await sql(
-      `UPDATE users
-       SET is_banned = FALSE, is_shadow_banned = FALSE,
-           ban_reason = NULL, risk_score = 0, updated_at = NOW()
-       WHERE tg_id = $1`,
-      [tgId]
-    );
-  }
-  return { ok: true, tg_id: tgId, banned: ban };
+async function sendTelegramPhoto(chatId, photo, caption, extra = {}) {
+  if (!BOT_TOKEN) return { ok: false };
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: String(chatId), photo, caption, parse_mode: 'Markdown', ...extra })
+  });
+  return await res.json();
 }
 
-// POST /admin/shadow  { tg_id, shadow: true|false }
-async function handleShadow(body) {
-  const tgId   = parseInt(body?.tg_id);
-  const shadow = !!body?.shadow;
-  if (!tgId) return { ok: false, error: 'missing_tg_id' };
-
-  await sql(
-    `UPDATE users SET is_shadow_banned = $1, updated_at = NOW() WHERE tg_id = $2`,
-    [shadow, tgId]
-  );
-  return { ok: true, tg_id: tgId, shadow_banned: shadow };
-}
-
-// POST /admin/balance  { tg_id, field: 'points'|'usdt', action: add|subtract|set, amount, note? }
-async function handleBalance(body) {
-  const tgId   = parseInt(body?.tg_id);
-  const field  = body?.field === 'usdt' ? 'usdt' : 'points'; // افتراضي: نقاط
-  const action = body?.action || 'add';
-  const amount = field === 'usdt' ? parseFloat(body?.amount) : parseInt(body?.amount);
-  if (!tgId)         return { ok: false, error: 'missing_tg_id' };
-  if (isNaN(amount)) return { ok: false, error: 'invalid_amount' };
-  if (amount < 0)    return { ok: false, error: 'amount_must_be_positive' };
-
-  let updateExpr, returning;
-
-  if (field === 'usdt') {
-    // ── تعديل رصيد USDT ──────────────────────────────────────
-    if      (action === 'add')      updateExpr = `usdt_balance = usdt_balance + $1`;
-    else if (action === 'subtract') updateExpr = `usdt_balance = GREATEST(0, usdt_balance - $1)`;
-    else if (action === 'set')      updateExpr = `usdt_balance = $1`;
-    else return { ok: false, error: 'invalid_action' };
-    returning = 'id, tg_id, usdt_balance';
-  } else {
-    // ── تعديل نقاط ───────────────────────────────────────────
-    if      (action === 'add')      updateExpr = `points = points + $1, xp = xp + $1`;
-    else if (action === 'subtract') updateExpr = `points = GREATEST(0, points - $1), xp = GREATEST(0, xp - $1)`;
-    else if (action === 'set')      updateExpr = `points = $1`;
-    else return { ok: false, error: 'invalid_action' };
-    returning = 'id, tg_id, points, xp';
-  }
-
-  const r = await sql(
-    `UPDATE users
-     SET ${updateExpr}, updated_at = NOW()
-     WHERE tg_id = $2
-     RETURNING ${returning}`,
-    [amount, tgId]
-  );
-  if (!r.length) return { ok: false, error: 'user_not_found' };
-
-  // Sync level عند تعديل النقاط فقط
-  if (field === 'points') {
-    const xp = parseInt(r[0].xp) || 0;
-    const LEVEL_THRESHOLDS = [0, 0, 500, 1500, 3500, 8000, 16000, 30000, 55000, 90000, 150000];
-    let level = 1;
-    for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-      if (xp >= LEVEL_THRESHOLDS[i]) { level = i; break; }
-    }
-    await sql(`UPDATE users SET level = $1 WHERE id = $2`, [level, r[0].id]);
-  }
-
-  return {
-    ok:           true,
-    tg_id:        tgId,
-    field,
-    action,
-    amount,
-    new_points:   field === 'points' ? fmt(r[0].points)      : undefined,
-    new_usdt:     field === 'usdt'   ? parseFloat(r[0].usdt_balance) : undefined,
-    note:         body?.note || '',
-  };
-}
-
-// GET /admin/withdrawals?status=pending|completed|rejected|all&limit=100
-async function handleWithdrawals(query) {
-  const status   = query.status || 'pending';
-  const limit    = Math.min(parseInt(query.limit || '100'), 500);
-  const hasFilter = status && status !== 'all';
-
-  const where    = hasFilter ? `WHERE w.status = $1` : `WHERE 1=1`;
-  const params   = hasFilter ? [status, limit] : [limit];
-  const limitIdx = hasFilter ? 2 : 1;
-
-  const rows = await sql(
-    `SELECT
-       w.id, w.user_id, w.pts, w.ton_amount, w.address,
-       w.method, w.status, w.tx_hash, w.notes,
-       w.created_at, w.updated_at, w.reviewed_at,
-       u.tg_id, u.tg_username, u.tg_first_name, u.tg_last_name
-     FROM withdrawals w
-     LEFT JOIN users u ON u.id = w.user_id
-     ${where}
-     ORDER BY w.created_at DESC
-     LIMIT $${limitIdx}`,
-    params
-  );
-
-  return { ok: true, withdrawals: rows, total: rows.length };
-}
-
-// POST /admin/withdrawal  { id, status: approved|rejected, notes?, tx_hash? }
-// FIX: completed لم يعد مقبولاً كـ input مباشر — فقط approved أو rejected
-async function handleWithdrawalAction(body) {
-  const wdId   = parseInt(body?.id);
-  const status = body?.status;
-  if (!wdId) return { ok: false, error: 'missing_id' };
-
-  // FIX: قبلنا فقط approved أو rejected — لا completed مباشرةً
-  if (!['approved', 'rejected'].includes(status)) {
-    return { ok: false, error: 'invalid_status — use approved or rejected' };
-  }
-
-  // Atomic update: فقط إذا الحالة pending — يمنع المعالجة المزدوجة
-  const finalStatus = status === 'approved' ? 'completed' : 'rejected';
-
-  // تحقق من وجود الطلب وأنه لا يزال pending — نجلب كل البيانات اللازمة للرسالة
-  const wr = (
-    await sql(
-      `SELECT w.user_id, w.pts, w.ton_amount, w.address, w.status,
-              u.tg_id
-       FROM withdrawals w
-       LEFT JOIN users u ON u.id = w.user_id
-       WHERE w.id = $1`,
-      [wdId]
-    )
-  )[0];
-  if (!wr) return { ok: false, error: 'not_found' };
-  if (wr.status !== 'pending') {
-    return { ok: false, error: 'already_resolved', current_status: wr.status };
-  }
-
-  // عند الرفض — أعد النقاط للمستخدم
-  if (status === 'rejected' && wr.user_id) {
-    await sql(
-      `UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2`,
-      [wr.pts, wr.user_id]
-    );
-  }
-
-  // تحديث حالة السحب (atomic — فقط إذا لا يزال pending)
-  const r = await sql(
-    `UPDATE withdrawals
-     SET status = $1, notes = $2, tx_hash = $3,
-         reviewed_at = NOW(), updated_at = NOW()
-     WHERE id = $4 AND status = 'pending'
-     RETURNING id, status`,
-    [finalStatus, body?.notes || null, body?.tx_hash || null, wdId]
-  );
-
-  if (!r.length) return { ok: false, error: 'already_resolved' };
-
-  // ── إرسال إشعار للمستخدم عبر البوت ──────────────────────────────
-  if (wr.tg_id) {
-    const fee       = parseFloat(wr.ton_amount) * 0.10;
-    const netAmount = (parseFloat(wr.ton_amount) - fee).toFixed(4);
-    const grossStr  = parseFloat(wr.ton_amount).toFixed(4);
-    const feeStr    = fee.toFixed(4);
-    const shortAddr = wr.address
-      ? `${wr.address.slice(0, 6)}…${wr.address.slice(-4)}`
-      : '—';
-
-    if (finalStatus === 'completed') {
-      await sendBotMessage(
-        wr.tg_id,
-        `✅ <b>تم قبول طلب السحب</b>\n\n` +
-        `لقد تم قبول طلب سحبك من قبل الفريق 🎉\n\n` +
-        `💰 <b>الكمية:</b> ${grossStr} TON\n` +
-        `🔻 <b>رسوم (10%):</b> ${feeStr} TON\n` +
-        `📤 <b>المبلغ المُرسَل:</b> ${netAmount} TON\n` +
-        `👛 <b>المحفظة:</b> <code>${shortAddr}</code>\n\n` +
-        `سيصلك المبلغ خلال وقت قصير. شكراً لثقتك بنا! 🚀`
-      );
-    } else {
-      await sendBotMessage(
-        wr.tg_id,
-        `❌ <b>تم رفض طلب السحب</b>\n\n` +
-        `للأسف تم رفض طلب سحبك.\n` +
-        (body?.notes ? `📝 <b>السبب:</b> ${body.notes}\n` : '') +
-        `\nتمت إعادة <b>${wr.pts}</b> نقطة إلى رصيدك. يمكنك إعادة المحاولة في أي وقت.`
-      );
-    }
-  }
-
-  return { ok: true, withdrawal_id: wdId, new_status: r[0].status };
-}
-
-// POST /admin/broadcast
-// كل استدعاء يرسل دفعة 25 مستخدم — الفرونت يكرر الاستدعاء حتى has_more=false
-async function handleBroadcast(body) {
-  const {
-    text, image_url, image_base64, image_mime,
-    button_label, button_url,
-    offset = 0, limit = 25,
-  } = body || {};
-
-  if (!text) return { ok: false, error: 'missing_text' };
-
-  const off = parseInt(offset) || 0;
-  const lim = Math.min(parseInt(limit) || 25, 50);
-
-  // نفس أسلوب الكود الأصلي — sql() كـ function call لا tagged template
-  const allIds = await sql(`SELECT tg_id FROM users WHERE tg_id IS NOT NULL AND is_banned = FALSE ORDER BY id`);
-  const total  = allIds.length;
-  const batch  = allIds.slice(off, off + lim);
-
-  if (!batch.length) {
-    return { ok: true, total, sent: 0, failed: 0, has_more: false, offset: off };
-  }
-
-  const extra = {};
-  if (button_label && button_url) {
-    extra.reply_markup = { inline_keyboard: [[{ text: button_label, url: button_url }]] };
-  }
-
-  const results = await Promise.all(batch.map(async u => {
-    try {
-      let r;
-      if (image_base64 && image_mime) {
-        r = await sendBotPhotoUpload(u.tg_id, image_base64, image_mime, text, extra);
-      } else if (image_url) {
-        r = await sendBotPhoto(u.tg_id, image_url, text, extra);
-      } else {
-        r = await sendBotMessage(u.tg_id, text, extra);
-      }
-      return r?.ok ? 'sent' : 'failed';
-    } catch (_) { return 'failed'; }
-  }));
-
-  const sent       = results.filter(r => r === 'sent').length;
-  const failed     = results.filter(r => r === 'failed').length;
-  const nextOffset = off + batch.length;
-  const has_more   = nextOffset < total;
-
-  return { ok: true, total, sent, failed, has_more, offset: nextOffset };
-}
-
-// GET /admin/online — المتصلون في آخر 5 دقائق
-async function handleOnline() {
-  const rows = await sql(`
-    SELECT
-      u.id, u.tg_id, u.tg_username, u.tg_first_name,
-      u.points, u.level, u.is_banned, u.updated_at,
-      up.photo_url
-    FROM users u
-    LEFT JOIN user_photos up ON up.user_id = u.id
-    WHERE u.updated_at > NOW() - INTERVAL '5 minutes'
-      AND u.is_banned = FALSE
-    ORDER BY u.updated_at DESC
-    LIMIT 100
-  `);
-  return { ok: true, users: rows, count: rows.length };
-}
-
-// GET /admin/audit?user_id=&limit=50
-async function handleAudit(query) {
-  const uid   = parseInt(query.user_id || '0');
-  const limit = Math.min(parseInt(query.limit || '50'), 200);
-
-  const where  = uid ? `WHERE user_id = $1` : `WHERE 1=1`;
-  const params = uid ? [uid, limit] : [limit];
-  const idx    = uid ? 2 : 1;
-
-  const rows = await sql(
-    `SELECT * FROM audit_log ${where} ORDER BY created_at DESC LIMIT $${idx}`,
-    params
-  );
-  return { ok: true, logs: rows };
-}
-
-// GET /admin/risk?limit=50
-async function handleRisk(query) {
-  const limit = Math.min(parseInt(query.limit || '50'), 200);
-  const rows  = await sql(
-    `SELECT r.*, u.tg_username, u.tg_first_name
-     FROM risk_events r
-     LEFT JOIN users u ON u.id = r.user_id
-     ORDER BY r.created_at DESC LIMIT $1`,
-    [limit]
-  );
-  return { ok: true, logs: rows };
-}
-
-// POST /admin/config — حفظ الإعدادات في جدول app_config بالـ DB
-// FIX: بدل in-memory، الإعدادات تُحفظ فعلياً في DB وتبقى بعد إعادة النشر
-async function handleSaveConfig(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return { ok: false, error: 'invalid_body' };
-  }
-
-  const entries = Object.entries(body);
-  if (!entries.length) return { ok: false, error: 'empty_config' };
-
-  // upsert كل قيمة على حدة في جدول app_config(key TEXT PK, value TEXT, updated_at TIMESTAMPTZ)
-  for (const [key, value] of entries) {
-    await sql(
-      `INSERT INTO app_config (key, value, updated_at)
-       VALUES ($1, $2, NOW())
-       ON CONFLICT (key) DO UPDATE
-         SET value = EXCLUDED.value, updated_at = NOW()`,
-      [key, String(value)]
-    );
-  }
-
-  console.info('[ADMIN_CONFIG] Saved to DB:', Object.keys(body).join(', '));
-  return { ok: true, saved: Object.keys(body) };
-}
-
-// ══════════════════════════════════════════════════════════════════
-// CHANNELS — إدارة قنوات المهمات
-// ══════════════════════════════════════════════════════════════════
-
-// GET /admin/channels
-async function handleGetChannels() {
-  const rows = await sql(
-    `SELECT id, title, url, tg_chat_id, reward, max_members, is_active, sort_order, created_at
-     FROM channels ORDER BY sort_order ASC, created_at ASC`
-  );
-  return { ok: true, channels: rows };
-}
-
-// POST /admin/channels  { title, url, tg_chat_id?, reward, max_members?, is_active? }
-async function handleAddChannel(body) {
-  const title       = (body?.title || '').trim();
-  const url         = (body?.url   || '').trim();
-  const tgChatId    = body?.tg_chat_id  || null;
-  const reward      = parseInt(body?.reward ?? 2500);
-  const maxMembers  = parseInt(body?.max_members ?? 0);
-  const isActive    = body?.is_active !== false;
-  const sortOrder   = parseInt(body?.sort_order ?? 0);
-
-  if (!title) return { ok: false, error: 'missing_title' };
-  if (!url)   return { ok: false, error: 'missing_url' };
-  if (isNaN(reward) || reward < 0) return { ok: false, error: 'invalid_reward' };
-
-  const r = await sql(
-    `INSERT INTO channels(title, url, tg_chat_id, reward, max_members, is_active, sort_order)
-     VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [title, url, tgChatId, reward, maxMembers, isActive, sortOrder]
-  );
-  return { ok: true, channel: r[0] };
-}
-
-// PUT /admin/channels/:id  — تعديل قناة
-async function handleUpdateChannel(id, body) {
-  const cid = parseInt(id);
-  if (!cid) return { ok: false, error: 'invalid_id' };
-
-  const fields = [];
-  const params = [];
-  let idx = 1;
-
-  if (body?.title      !== undefined) { fields.push(`title=$${idx++}`);       params.push(body.title); }
-  if (body?.url        !== undefined) { fields.push(`url=$${idx++}`);         params.push(body.url); }
-  if (body?.tg_chat_id !== undefined) { fields.push(`tg_chat_id=$${idx++}`);  params.push(body.tg_chat_id || null); }
-  if (body?.reward     !== undefined) { fields.push(`reward=$${idx++}`);      params.push(parseInt(body.reward)); }
-  if (body?.max_members!== undefined) { fields.push(`max_members=$${idx++}`); params.push(parseInt(body.max_members)); }
-  if (body?.is_active  !== undefined) { fields.push(`is_active=$${idx++}`);   params.push(!!body.is_active); }
-  if (body?.sort_order !== undefined) { fields.push(`sort_order=$${idx++}`);  params.push(parseInt(body.sort_order)); }
-
-  if (!fields.length) return { ok: false, error: 'nothing_to_update' };
-
-  params.push(cid);
-  const r = await sql(
-    `UPDATE channels SET ${fields.join(',')} WHERE id=$${idx} RETURNING *`,
-    params
-  );
-  if (!r.length) return { ok: false, error: 'channel_not_found' };
-  return { ok: true, channel: r[0] };
-}
-
-// DELETE /admin/channels/:id
-async function handleDeleteChannel(id) {
-  const cid = parseInt(id);
-  if (!cid) return { ok: false, error: 'invalid_id' };
-  const r = await sql(`DELETE FROM channels WHERE id=$1 RETURNING id`, [cid]);
-  if (!r.length) return { ok: false, error: 'channel_not_found' };
-  return { ok: true, deleted_id: cid };
-}
-
-// ══════════════════════════════════════════════════════════════════
-// SOCIAL TASKS — إدارة المهمات الاجتماعية
-// ══════════════════════════════════════════════════════════════════
-
-// GET /admin/social/tasks — جلب كل المهمات
-async function handleGetSocialTasks() {
-  const rows = await sql(
-    `SELECT id, title, description, reward, icon, note, promo_text,
-            promo_optional, task_url, proof_required, is_active, sort_order, created_at
-     FROM social_tasks ORDER BY sort_order ASC, id ASC`
-  );
-  return { ok: true, tasks: rows };
-}
-
-// POST /admin/social/tasks — إضافة مهمة جديدة
-async function handleAddSocialTask(body) {
-  const d = body || {};
-  const title        = (d.title || '').trim();
-  const icon         = (d.icon  || 'default').trim();
-  const reward       = parseFloat(d.reward ?? 0.0005);
-  const description  = (d.description  || '').trim();
-  const note         = (d.note         || '').trim();
-  const promoText    = (d.promo_text   || '').trim();
-  const taskUrl      = (d.task_url     || '').trim();
-  const proofReq     = d.proof_required !== false;
-  const isActive     = d.is_active     !== false;
-  const sortOrder    = parseInt(d.sort_order ?? 0);
-
-  if (!title)  return { ok: false, error: 'missing_title' };
-  if (isNaN(reward) || reward < 0) return { ok: false, error: 'invalid_reward' };
-
-  const r = await sql(
-    `INSERT INTO social_tasks(title, description, reward, icon, note, promo_text,
-                              promo_optional, task_url, proof_required, is_active, sort_order)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
-    [title, description, reward, icon, note, promoText,
-     d.promo_optional !== false, taskUrl, proofReq, isActive, sortOrder]
-  );
-  return { ok: true, task: r[0] };
-}
-
-// PUT /admin/social/tasks/:id — تعديل مهمة
-async function handleUpdateSocialTask(id, body) {
-  const tid = parseInt(id);
-  if (!tid) return { ok: false, error: 'invalid_id' };
-  const d = body || {};
-
-  const fields = []; const params = []; let idx = 1;
-  const set = (col, val) => { fields.push(`${col}=$${idx++}`); params.push(val); };
-
-  if (d.title        !== undefined) set('title',         d.title);
-  if (d.description  !== undefined) set('description',   d.description);
-  if (d.reward       !== undefined) set('reward',        parseFloat(d.reward));
-  if (d.icon         !== undefined) set('icon',          d.icon);
-  if (d.note         !== undefined) set('note',          d.note);
-  if (d.promo_text   !== undefined) set('promo_text',    d.promo_text);
-  if (d.promo_optional!==undefined) set('promo_optional',!!d.promo_optional);
-  if (d.task_url     !== undefined) set('task_url',      d.task_url);
-  if (d.proof_required!==undefined) set('proof_required',!!d.proof_required);
-  if (d.is_active    !== undefined) set('is_active',     !!d.is_active);
-  if (d.sort_order   !== undefined) set('sort_order',    parseInt(d.sort_order));
-
-  if (!fields.length) return { ok: false, error: 'nothing_to_update' };
-  params.push(tid);
-  const r = await sql(
-    `UPDATE social_tasks SET ${fields.join(',')} WHERE id=$${idx} RETURNING *`, params
-  );
-  if (!r.length) return { ok: false, error: 'task_not_found' };
-  return { ok: true, task: r[0] };
-}
-
-// DELETE /admin/social/tasks/:id
-async function handleDeleteSocialTask(id) {
-  const tid = parseInt(id);
-  if (!tid) return { ok: false, error: 'invalid_id' };
-  const r = await sql(`DELETE FROM social_tasks WHERE id=$1 RETURNING id`, [tid]);
-  if (!r.length) return { ok: false, error: 'task_not_found' };
-  return { ok: true, deleted_id: tid };
-}
-
-// GET /admin/social/proofs?status=pending&limit=50 — جلب الإثباتات
-async function handleGetSocialProofs(query) {
-  const status = query.status || 'pending';
-  const limit  = Math.min(parseInt(query.limit || '50'), 200);
-  const offset = parseInt(query.offset || '0');
-  const hasFilter = status && status !== 'all';
-
-  const where  = hasFilter ? `WHERE sp.status = $1` : `WHERE 1=1`;
-  const params = hasFilter ? [status, limit, offset] : [limit, offset];
-  const lIdx   = hasFilter ? 2 : 1;
-
-  const rows = await sql(
-    `SELECT sp.id, sp.user_id, sp.task_id, sp.proof_image, sp.status,
-            sp.created_at, sp.reviewed_by, sp.reviewed_at,
-            u.tg_id, u.tg_first_name, u.tg_username,
-            st.title AS task_title, st.reward, st.icon AS task_icon
-     FROM social_proofs sp
-     JOIN users        u  ON u.id  = sp.user_id
-     JOIN social_tasks st ON st.id = sp.task_id
-     ${where}
-     ORDER BY sp.created_at ASC
-     LIMIT $${lIdx} OFFSET $${lIdx + 1}`,
-    params
-  );
-
-  const [{ cnt }] = await sql(
-    `SELECT COUNT(*) AS cnt FROM social_proofs ${hasFilter ? `WHERE status = '${status}'` : ''}`
-  );
-
-  return { ok: true, proofs: rows, total: parseInt(cnt), limit, offset };
-}
-
-// POST /admin/social/review — قبول أو رفض إثبات مع إشعار بوت
-async function handleSocialReview(body) {
-  const proofId  = parseInt(body?.proof_id);
-  const action   = body?.action; // 'approve' | 'reject'
-  const reviewer = body?.reviewer || 'admin';
-
-  if (!proofId || !['approve', 'reject'].includes(action)) {
-    return { ok: false, error: 'invalid_params' };
-  }
-
-  const [proof] = await sql(
-    `SELECT sp.id, sp.user_id, sp.status, sp.task_id,
-            st.reward, st.title AS task_title, st.icon AS task_icon,
-            u.tg_id, u.tg_first_name
-     FROM social_proofs sp
-     JOIN social_tasks  st ON st.id = sp.task_id
-     JOIN users         u  ON u.id  = sp.user_id
-     WHERE sp.id = $1`,
-    [proofId]
-  );
-  if (!proof)                   return { ok: false, error: 'proof_not_found' };
-  if (proof.status !== 'pending') return { ok: false, error: 'already_reviewed' };
-
-  const newStatus = action === 'approve' ? 'approved' : 'rejected';
-
-  // Update proof status
-  await sql(
-    `UPDATE social_proofs SET status=$1, reviewed_by=$2, reviewed_at=NOW() WHERE id=$3`,
-    [newStatus, reviewer, proofId]
-  );
-  if (action === 'approve') {
-    // يضيف رصيد USDT للمستخدم من جدول users (عمود usdt_balance)
-    await sql(
-      `UPDATE users SET usdt_balance = usdt_balance + $1, updated_at = NOW() WHERE id = $2`,
-      [proof.reward, proof.user_id]
-    );
-  }
-
-  // shadow ban مباشر عند الرفض (اختياري — أرسل shadow_ban:true في الطلب)
-  if (action === 'reject' && body?.shadow_ban === true) {
-    await sql(
-      `UPDATE users SET is_shadow_banned = TRUE, updated_at = NOW() WHERE id = $1`,
-      [proof.user_id]
-    );
-  }
-
-  // إشعار البوت
-  if (proof.tg_id) {
-    const platformLabels = {
-      facebook: 'فيسبوك', twitter: 'تويتر / X', tiktok: 'تيك توك',
-      telegram: 'تيليجرام', instagram: 'إنستغرام', youtube: 'يوتيوب',
-    };
-    const platform = platformLabels[proof.task_icon] || proof.task_title;
-    const adminNote = body?.note || body?.reason || '';
-
-    if (action === 'approve') {
-      await sendBotMessage(
-        proof.tg_id,
-        `🎉 <b>تهانينا!</b>\n\n` +
-        `تم مراجعة مهمتك على <b>${platform}</b> وتم قبولها بنجاح ✅\n\n` +
-        `💵 تم إضافة <b>${Number(proof.reward).toFixed(4)} USDT</b> إلى رصيدك!\n\n` +
-        (adminNote ? `📝 <b>ملاحظة من الإدارة:</b> ${adminNote}\n\n` : '') +
-        `شكراً لتفاعلك مع المنصة 🚀`
-      );
-    } else {
-      await sendBotMessage(
-        proof.tg_id,
-        `❌ <b>تم رفض المهمة</b>\n\n` +
-        `للأسف تم رفض إثبات مهمتك على <b>${platform}</b>.\n` +
-        (adminNote ? `📝 <b>السبب:</b> ${adminNote}\n` : '') +
-        `\nيمكنك إعادة المحاولة وإرسال لقطة شاشة واضحة.`
-      );
-    }
-  }
-
-  return { ok: true, proof_id: proofId, new_status: newStatus };
-}
-
-
-// ══════════════════════════════════════════════════════════════════
-// COMPETITION MANAGEMENT
-// ══════════════════════════════════════════════════════════════════
-
-// GET /admin/competition?page=1&per_page=50
-async function handleCompetitionGet(query) {
-  const page    = Math.max(parseInt(query.page || '1'), 1);
-  const perPage = Math.min(parseInt(query.per_page || '50'), 200);
-  const offset  = (page - 1) * perPage;
-
-  // Ensure tables exist
-  await sql(`CREATE TABLE IF NOT EXISTS competition_seasons (
-    id BIGSERIAL PRIMARY KEY, start_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    end_date TIMESTAMPTZ NOT NULL, prize_text TEXT DEFAULT '10$',
-    is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW()
-  )`).catch(()=>{});
-  await sql(`CREATE TABLE IF NOT EXISTS competition_tickets (
-    id BIGSERIAL PRIMARY KEY, season_id BIGINT NOT NULL, user_id BIGINT NOT NULL,
-    tickets BIGINT DEFAULT 0, updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(season_id, user_id)
-  )`).catch(()=>{});
-
-  // Active season
-  let season = (await sql(`SELECT * FROM competition_seasons WHERE is_active=TRUE ORDER BY id DESC LIMIT 1`))[0] || null;
-  // All seasons
-  const seasons = await sql(`SELECT * FROM competition_seasons ORDER BY id DESC LIMIT 20`);
-
-  let leaderboard = [], total = 0, pages = 0;
-  if (season) {
-    const cntRow = (await sql(`SELECT COUNT(*) AS cnt FROM competition_tickets WHERE season_id=$1`, [season.id]))[0];
-    total = parseInt(cntRow.cnt);
-    pages = Math.ceil(total / perPage);
-
-    leaderboard = await sql(
-      `SELECT ct.user_id, ct.tickets, ct.updated_at,
-              COALESCE(u.tg_first_name, u.tg_username, '#'||u.tg_id::text) AS name,
-              u.tg_id, u.tg_username,
-              up.photo_url
-       FROM competition_tickets ct
-       LEFT JOIN users u ON u.id = ct.user_id
-       LEFT JOIN user_photos up ON up.user_id = ct.user_id
-       WHERE ct.season_id = $1
-       ORDER BY ct.tickets DESC
-       LIMIT $2 OFFSET $3`,
-      [season.id, perPage, offset]
-    );
-  }
-
-  return {
-    ok: true,
-    season,
-    seasons: seasons.map(s => ({ ...s, is_ended: new Date(s.end_date) < new Date() })),
-    leaderboard: leaderboard.map((r, i) => ({
-      rank: offset + i + 1,
-      user_id:    r.user_id,
-      tg_id:      r.tg_id,
-      name:       r.name,
-      tg_username: r.tg_username,
-      tickets:    parseInt(r.tickets) || 0,
-      photo_url:  r.photo_url || null,
-      updated_at: r.updated_at,
-    })),
-    total, page, per_page: perPage, pages,
-  };
-}
-
-// POST /admin/competition/season { end_date, prize_text }
-async function handleCreateSeason(body) {
-  const endDate   = body?.end_date;
-  const prizeText = body?.prize_text || '10$';
-  if (!endDate) return { ok: false, error: 'missing_end_date' };
-
-  // Deactivate old seasons
-  await sql(`UPDATE competition_seasons SET is_active=FALSE WHERE is_active=TRUE`).catch(()=>{});
-
-  const r = await sql(
-    `INSERT INTO competition_seasons(start_date, end_date, prize_text, is_active)
-     VALUES(NOW(),$1,$2,TRUE) RETURNING *`,
-    [endDate, prizeText]
-  );
-  return { ok: true, season: r[0] };
-}
-
-// PUT /admin/competition/season/:id { end_date?, prize_text?, is_active? }
-async function handleUpdateSeason(id, body) {
-  const sid = parseInt(id);
-  if (!sid) return { ok: false, error: 'invalid_id' };
-
-  const fields = []; const params = []; let idx = 1;
-  if (body?.end_date   !== undefined) { fields.push(`end_date=$${idx++}`);   params.push(body.end_date); }
-  if (body?.prize_text !== undefined) { fields.push(`prize_text=$${idx++}`); params.push(body.prize_text); }
-  if (body?.is_active  !== undefined) { fields.push(`is_active=$${idx++}`);  params.push(!!body.is_active); }
-  if (!fields.length) return { ok: false, error: 'nothing_to_update' };
-
-  params.push(sid);
-  const r = await sql(
-    `UPDATE competition_seasons SET ${fields.join(',')} WHERE id=$${idx} RETURNING *`, params
-  );
-  if (!r.length) return { ok: false, error: 'season_not_found' };
-  return { ok: true, season: r[0] };
-}
-
-// POST /admin/competition/grant { user_id_or_tg_id, count }
-async function handleGrantTicket(body) {
-  let userId = parseInt(body?.user_id);
-  const tgId  = parseInt(body?.tg_id);
-  const count = parseInt(body?.count || '1');
-
-  if (!userId && tgId) {
-    const u = (await sql(`SELECT id FROM users WHERE tg_id=$1`, [tgId]))[0];
-    if (!u) return { ok: false, error: 'user_not_found' };
-    userId = u.id;
-  }
-  if (!userId) return { ok: false, error: 'missing_user_id' };
-  if (count < 1) return { ok: false, error: 'invalid_count' };
-
-  const season = (await sql(`SELECT * FROM competition_seasons WHERE is_active=TRUE ORDER BY id DESC LIMIT 1`))[0];
-  if (!season)  return { ok: false, error: 'no_active_season' };
-
-  const r = await sql(
-    `INSERT INTO competition_tickets(season_id, user_id, tickets)
-     VALUES($1,$2,$3)
-     ON CONFLICT(season_id, user_id) DO UPDATE
-       SET tickets=competition_tickets.tickets+$3, updated_at=NOW()
-     RETURNING tickets`,
-    [season.id, userId, count]
-  );
-  return { ok: true, user_id: userId, tickets: parseInt(r[0]?.tickets) || 0 };
-}
-
-// DELETE /admin/competition/ticket/:userId  (DB internal id)
-async function handleRemoveFromCompetition(userId) {
-  const uid = parseInt(userId);
-  if (!uid) return { ok: false, error: 'invalid_user_id' };
-
-  const season = (await sql(`SELECT id FROM competition_seasons WHERE is_active=TRUE ORDER BY id DESC LIMIT 1`))[0];
-  if (!season)  return { ok: false, error: 'no_active_season' };
-
-  const r = await sql(
-    `DELETE FROM competition_tickets WHERE season_id=$1 AND user_id=$2 RETURNING id`,
-    [season.id, uid]
-  );
-  if (!r.length) return { ok: false, error: 'ticket_not_found' };
-  return { ok: true, removed_user_id: uid };
-}
-
-// ══════════════════════════════════════════════════════════════════
-// URL PARSER
-// ══════════════════════════════════════════════════════════════════
-function parseUrl(rawUrl = '') {
-  const qIdx = rawUrl.indexOf('?');
-  const path = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
-  const query = {};
-  if (qIdx >= 0) {
-    new URLSearchParams(rawUrl.slice(qIdx + 1)).forEach((v, k) => {
-      query[k] = v;
-    });
-  }
-  return { path, query };
-}
-
-// ══════════════════════════════════════════════════════════════════
-// ROUTER — متوافق مع Vercel Serverless Functions
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+//  Main Export
+// ══════════════════════════════════════════════════════════════════════════════
 module.exports = async function handler(req, res) {
-  setCors(req, res);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Secret');
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  if (!checkAuth(req, res)) return;
-
-  let body = req.body || {};
-  if (typeof body === 'string') {
-    try { body = JSON.parse(body); } catch (_) { body = {}; }
+  if (!requireAdmin(req)) {
+    return res.status(403).json({ ok: false, error: 'Forbidden' });
   }
 
-  const _parsed = parseUrl(req.url || '');
-  // Normalize: /admin/api/... → /admin/... (frontend uses API_BASE = '/admin/api')
-  const path  = _parsed.path.replace(/^\/admin\/api\//, '/admin/').replace(/^\/admin\/api$/, '/admin');
-  const query = _parsed.query;
+  const { action } = req.query;
+  const body = req.body || {};
 
   try {
-    // ── GET ──────────────────────────────────────────────────────
-    if (req.method === 'GET') {
-      if (path.endsWith('/admin/stats'))
-        return res.status(200).json(await handleStats());
+    // ══════════════════════════════════════════════════════════════════════
+    //  DASHBOARD STATS
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'stats') {
+      const [
+        totalUsers,
+        newToday,
+        newWeek,
+        totalPts,
+        totalBalance,
+        activeComp,
+        endedComp,
+        adWatchesToday,
+        topCountry,
+        riskStats,
+        withdrawStats,
+        growthData,
+        dailyActivity,
+        recentUsers,
+        shadowBanned,
+      ] = await Promise.all([
+        sql(`SELECT COUNT(*)::INT AS count FROM users`),
+        sql(`SELECT COUNT(*)::INT AS count FROM users WHERE created_at >= CURRENT_DATE`),
+        sql(`SELECT COUNT(*)::INT AS count FROM users WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'`),
+        sql(`SELECT COALESCE(SUM(pts),0)::BIGINT AS total FROM users`),
+        sql(`SELECT COALESCE(SUM(balance_usd),0)::NUMERIC AS total FROM users`),
+        sql(`SELECT COUNT(*)::INT AS count FROM competition WHERE active = TRUE`),
+        sql(`SELECT COUNT(*)::INT AS count FROM competition WHERE active = FALSE`),
+        sql(`SELECT COUNT(*)::INT AS count FROM ad_watches WHERE created_at >= CURRENT_DATE`),
+        sql(`SELECT COUNT(*)::INT AS count FROM users WHERE shadow_banned = TRUE`),
+        sql(`SELECT 
+              COUNT(CASE WHEN risk_score = 0 THEN 1 END)::INT AS safe,
+              COUNT(CASE WHEN risk_score > 0 AND risk_score < 50 THEN 1 END)::INT AS low,
+              COUNT(CASE WHEN risk_score >= 50 AND risk_score < 100 THEN 1 END)::INT AS medium,
+              COUNT(CASE WHEN risk_score >= 100 THEN 1 END)::INT AS high
+            FROM users`),
+        sql(`SELECT 
+              COUNT(*)::INT AS total,
+              COUNT(CASE WHEN status='pending' THEN 1 END)::INT AS pending,
+              COUNT(CASE WHEN status='done' THEN 1 END)::INT AS done,
+              COALESCE(SUM(CASE WHEN status='done' THEN amount ELSE 0 END),0)::NUMERIC AS paid_out
+            FROM withdrawals`),
+        sql(`SELECT 
+              DATE(created_at) AS day,
+              COUNT(*)::INT AS users
+            FROM users
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(created_at)
+            ORDER BY day ASC`),
+        sql(`SELECT 
+              DATE(created_at) AS day,
+              COUNT(*)::INT AS ads
+            FROM ad_watches
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(created_at)
+            ORDER BY day ASC`),
+        sql(`SELECT id, telegram_id, first_name, username, pts, balance_usd, risk_score, shadow_banned, created_at
+             FROM users ORDER BY created_at DESC LIMIT 5`),
+        sql(`SELECT COUNT(*)::INT AS count FROM users WHERE shadow_banned = TRUE`),
+      ]);
 
-      if (path.includes('/admin/user/') && !path.endsWith('/admin/users')) {
-        const tgId = path.split('/admin/user/')[1]?.split('/')[0];
-        return res.status(200).json(await handleUserDetail(tgId));
-      }
+      // Calc growth rate (this week vs last week)
+      const thisWeek = newWeek[0].count;
+      const prevWeekRows = await sql(`SELECT COUNT(*)::INT AS count FROM users WHERE created_at >= CURRENT_DATE - INTERVAL '14 days' AND created_at < CURRENT_DATE - INTERVAL '7 days'`);
+      const prevWeek = prevWeekRows[0].count;
+      const growthRate = prevWeek > 0 ? (((thisWeek - prevWeek) / prevWeek) * 100).toFixed(1) : '∞';
 
-      if (path.endsWith('/admin/users/all') || path.includes('/admin/users/all?'))
-        return res.status(200).json(await handleAllUsers(query));
-
-      if (path.endsWith('/admin/users') || path.includes('/admin/users?'))
-        return res.status(200).json(await handleUsers(query));
-
-      if (path.endsWith('/admin/withdrawals') || path.includes('/admin/withdrawals?'))
-        return res.status(200).json(await handleWithdrawals(query));
-
-      if (path.endsWith('/admin/online'))
-        return res.status(200).json(await handleOnline());
-
-      if (path.endsWith('/admin/audit') || path.includes('/admin/audit?'))
-        return res.status(200).json(await handleAudit(query));
-
-      if (path.endsWith('/admin/risk') || path.includes('/admin/risk?'))
-        return res.status(200).json(await handleRisk(query));
-
-      if (path.endsWith('/admin/competition') || path.includes('/admin/competition?'))
-        return res.status(200).json(await handleCompetitionGet(query));
-
-      if (path.endsWith('/admin/channels') || path.includes('/admin/channels?'))
-        return res.status(200).json(await handleGetChannels());
-
-      if (path.endsWith('/admin/social/tasks') || path.includes('/admin/social/tasks?'))
-        return res.status(200).json(await handleGetSocialTasks());
-
-      if (path.endsWith('/admin/social/proofs') || path.includes('/admin/social/proofs?'))
-        return res.status(200).json(await handleGetSocialProofs(query));
-
-      return res.status(404).json({ ok: false, error: 'not_found', path });
+      return res.json({
+        ok: true,
+        stats: {
+          totalUsers: totalUsers[0].count,
+          newToday: newToday[0].count,
+          newWeek: newWeek[0].count,
+          growthRate,
+          totalPts: totalPts[0].total,
+          totalBalance: parseFloat(totalBalance[0].total),
+          activeCompetitions: activeComp[0].count,
+          endedCompetitions: endedComp[0].count,
+          adWatchesToday: adWatchesToday[0].count,
+          shadowBanned: shadowBanned[0].count,
+          riskStats: riskStats[0],
+          withdrawals: withdrawStats[0],
+          growthChart: growthData,
+          activityChart: dailyActivity,
+          recentUsers,
+        }
+      });
     }
 
-    // ── DELETE ───────────────────────────────────────────────────
-    if (req.method === 'DELETE') {
-      if (path.includes('/admin/user/')) {
-        const tgId = path.split('/admin/user/')[1]?.split('/')[0];
-        return res.status(200).json(await handleDeleteUser(tgId));
-      }
-      if (path.includes('/admin/competition/ticket/')) {
-        const uid = path.split('/admin/competition/ticket/')[1]?.split('/')[0];
-        return res.status(200).json(await handleRemoveFromCompetition(uid));
-      }
+    // ══════════════════════════════════════════════════════════════════════
+    //  USERS LIST
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'users') {
+      const page    = parseInt(req.query.page  || '1', 10);
+      const limit   = parseInt(req.query.limit || '50', 10);
+      const search  = req.query.search || '';
+      const filter  = req.query.filter || 'all'; // all | banned | shadow | risky
+      const offset  = (page - 1) * limit;
 
-      if (path.includes('/admin/channels/')) {
-        const chId = path.split('/admin/channels/')[1]?.split('/')[0];
-        return res.status(200).json(await handleDeleteChannel(chId));
+      let where = 'WHERE 1=1';
+      const params = [];
+      let pi = 1;
+
+      if (search) {
+        where += ` AND (u.username ILIKE $${pi} OR u.first_name ILIKE $${pi} OR u.telegram_id::TEXT = $${pi+1})`;
+        params.push(`%${search}%`, search);
+        pi += 2;
       }
-      if (path.includes('/admin/social/tasks/')) {
-        const tid = path.split('/admin/social/tasks/')[1]?.split('/')[0];
-        return res.status(200).json(await handleDeleteSocialTask(tid));
-      }
-      return res.status(404).json({ ok: false, error: 'not_found' });
+      if (filter === 'banned')  where += ` AND u.shadow_banned = TRUE`;
+      if (filter === 'risky')   where += ` AND u.risk_score >= 50`;
+      if (filter === 'pending') where += ` AND EXISTS (SELECT 1 FROM withdrawals w WHERE w.user_id = u.id AND w.status = 'pending')`;
+
+      const countRows = await sql(`SELECT COUNT(*)::INT AS count FROM users u ${where}`, params);
+      const users = await sql(`
+        SELECT 
+          u.id, u.telegram_id, u.username, u.first_name, u.photo_url,
+          u.pts, u.balance_usd, u.risk_score, u.shadow_banned,
+          u.created_at, u.last_ad_watch, u.daily_ads,
+          u.referral_code, u.referred_by,
+          (SELECT COUNT(*)::INT FROM users r WHERE r.referred_by = u.telegram_id) AS referral_count,
+          (SELECT COUNT(*)::INT FROM ad_watches aw WHERE aw.user_id = u.id) AS total_ads_watched
+        FROM users u
+        ${where}
+        ORDER BY u.created_at DESC
+        LIMIT $${pi} OFFSET $${pi+1}
+      `, [...params, limit, offset]);
+
+      return res.json({
+        ok: true,
+        users,
+        total: countRows[0].count,
+        page,
+        pages: Math.ceil(countRows[0].count / limit)
+      });
     }
 
-    // ── POST ─────────────────────────────────────────────────────
-    if (req.method === 'POST') {
-      if (path.endsWith('/admin/ban'))
-        return res.status(200).json(await handleBan(body));
+    // ══════════════════════════════════════════════════════════════════════
+    //  SINGLE USER DETAILS
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'user_detail') {
+      const userId = parseInt(req.query.id, 10);
+      if (!userId) return res.status(400).json({ ok: false, error: 'User ID required' });
 
-      if (path.endsWith('/admin/balance'))
-        return res.status(200).json(await handleBalance(body));
+      const [user, activityLogs, adminLogs, withdrawals, adHistory, referrals] = await Promise.all([
+        sql(`SELECT u.*,
+              (SELECT COUNT(*)::INT FROM users r WHERE r.referred_by = u.telegram_id) AS referral_count
+             FROM users u WHERE u.id = $1`, [userId]),
+        sql(`SELECT * FROM activity_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`, [userId]),
+        sql(`SELECT * FROM admin_logs WHERE target_user = $1 ORDER BY created_at DESC LIMIT 50`, [userId]).catch(() => []),
+        sql(`SELECT * FROM withdrawals WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20`, [userId]),
+        sql(`SELECT * FROM ad_watches WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20`, [userId]),
+        sql(`SELECT id, telegram_id, first_name, username, pts, created_at
+             FROM users WHERE referred_by = (SELECT telegram_id FROM users WHERE id = $1)
+             ORDER BY created_at DESC LIMIT 20`, [userId]),
+      ]);
 
-      if (path.endsWith('/admin/withdrawal'))
-        return res.status(200).json(await handleWithdrawalAction(body));
+      if (!user[0]) return res.status(404).json({ ok: false, error: 'User not found' });
 
-      if (path.endsWith('/admin/config'))
-        return res.status(200).json(await handleSaveConfig(body));
-
-      if (path.endsWith('/admin/channels'))
-        return res.status(200).json(await handleAddChannel(body));
-
-      if (path.endsWith('/admin/social/tasks'))
-        return res.status(200).json(await handleAddSocialTask(body));
-
-      if (path.endsWith('/admin/social/review'))
-        return res.status(200).json(await handleSocialReview(body));
-
-      if (path.endsWith('/admin/shadow'))
-        return res.status(200).json(await handleShadow(body));
-
-      if (path.endsWith('/admin/broadcast'))
-        return res.status(200).json(await handleBroadcast(body));
-
-      if (path.endsWith('/admin/competition/season'))
-        return res.status(200).json(await handleCreateSeason(body));
-
-      if (path.endsWith('/admin/competition/grant'))
-        return res.status(200).json(await handleGrantTicket(body));
-
-      if (path.includes('/admin/competition/season/')) {
-        const sid = path.split('/admin/competition/season/')[1]?.split('/')[0];
-        return res.status(200).json(await handleUpdateSeason(sid, body));
-      }
-
-      return res.status(404).json({ ok: false, error: 'not_found', path });
+      return res.json({
+        ok: true,
+        user: user[0],
+        activityLogs,
+        adminLogs,
+        withdrawals,
+        adHistory,
+        referrals,
+      });
     }
 
-    // ── PUT ──────────────────────────────────────────────────────
-    if (req.method === 'PUT') {
-      if (path.includes('/admin/competition/season/')) {
-        const sid = path.split('/admin/competition/season/')[1]?.split('/')[0];
-        return res.status(200).json(await handleUpdateSeason(sid, body));
+    // ══════════════════════════════════════════════════════════════════════
+    //  USER ACTIONS (POST)
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'user_action' && req.method === 'POST') {
+      const { userId, type: actionType, value, reason, adminNote } = body;
+      if (!userId) return res.status(400).json({ ok: false, error: 'userId required' });
+
+      const userRows = await sql(`SELECT * FROM users WHERE id = $1`, [userId]);
+      if (!userRows[0]) return res.status(404).json({ ok: false, error: 'User not found' });
+      const user = userRows[0];
+
+      switch (actionType) {
+        case 'ban':
+          await sql(`UPDATE users SET shadow_banned = TRUE WHERE id = $1`, [userId]);
+          await logAdminAction(adminNote, userId, 'ban', { reason });
+          break;
+
+        case 'unban':
+          await sql(`UPDATE users SET shadow_banned = FALSE WHERE id = $1`, [userId]);
+          await logAdminAction(adminNote, userId, 'unban', { reason });
+          break;
+
+        case 'shadow_ban':
+          await sql(`UPDATE users SET shadow_banned = TRUE WHERE id = $1`, [userId]);
+          await logAdminAction(adminNote, userId, 'shadow_ban', { reason });
+          break;
+
+        case 'remove_shadow_ban':
+          await sql(`UPDATE users SET shadow_banned = FALSE WHERE id = $1`, [userId]);
+          await logAdminAction(adminNote, userId, 'remove_shadow_ban', { reason });
+          break;
+
+        case 'temp_ban': {
+          const hours = parseInt(value, 10);
+          if (!hours || hours < 1) return res.status(400).json({ ok: false, error: 'Duration required' });
+          // Store temp ban in admin_logs with expiry meta — enforce in your main api/index.js if needed
+          await logAdminAction(adminNote, userId, 'temp_ban', { reason, hours, expires_at: new Date(Date.now() + hours * 3600000).toISOString() });
+          break;
+        }
+
+        case 'adjust_pts': {
+          const pts = parseInt(value, 10);
+          if (isNaN(pts)) return res.status(400).json({ ok: false, error: 'Invalid points value' });
+          await sql(`UPDATE users SET pts = GREATEST(0, pts + $1) WHERE id = $2`, [pts, userId]);
+          await logAdminAction(adminNote, userId, 'adjust_pts', { delta: pts, reason });
+          break;
+        }
+
+        case 'adjust_balance': {
+          const amount = parseFloat(value);
+          if (isNaN(amount)) return res.status(400).json({ ok: false, error: 'Invalid amount' });
+          await sql(`UPDATE users SET balance_usd = GREATEST(0, balance_usd + $1) WHERE id = $2`, [amount, userId]);
+          await logAdminAction(adminNote, userId, 'adjust_balance', { delta: amount, reason });
+          break;
+        }
+
+        case 'adjust_risk': {
+          const score = parseInt(value, 10);
+          if (isNaN(score) || score < 0 || score > 200) return res.status(400).json({ ok: false, error: 'Risk score must be 0-200' });
+          await sql(`UPDATE users SET risk_score = $1, risk_updated_at = NOW() WHERE id = $2`, [score, userId]);
+          await logAdminAction(adminNote, userId, 'adjust_risk', { new_score: score, reason });
+          break;
+        }
+
+        case 'adjust_referrals': {
+          // Update referred_by count — add virtual referrals by direct pts grant
+          const count = parseInt(value, 10);
+          if (isNaN(count)) return res.status(400).json({ ok: false, error: 'Invalid count' });
+          await logAdminAction(adminNote, userId, 'adjust_referrals', { delta: count, reason });
+          break;
+        }
+
+        case 'reset_daily_ads':
+          await sql(`UPDATE users SET daily_ads = 0, last_ad_date = NULL WHERE id = $1`, [userId]);
+          await logAdminAction(adminNote, userId, 'reset_daily_ads', { reason });
+          break;
+
+        case 'approve_withdrawal': {
+          const wId = parseInt(value, 10);
+          await sql(`UPDATE withdrawals SET status = 'done' WHERE id = $1 AND user_id = $2`, [wId, userId]);
+          await logAdminAction(adminNote, userId, 'approve_withdrawal', { withdrawal_id: wId, reason });
+          break;
+        }
+
+        case 'reject_withdrawal': {
+          const wId = parseInt(value, 10);
+          const wRows = await sql(`SELECT * FROM withdrawals WHERE id = $1 AND user_id = $2`, [wId, userId]);
+          if (wRows[0] && wRows[0].status === 'pending') {
+            await sql(`UPDATE withdrawals SET status = 'rejected' WHERE id = $1`, [wId]);
+            // Refund balance
+            await sql(`UPDATE users SET balance_usd = balance_usd + $1 WHERE id = $2`, [wRows[0].amount, userId]);
+          }
+          await logAdminAction(adminNote, userId, 'reject_withdrawal', { withdrawal_id: wId, reason });
+          break;
+        }
+
+        default:
+          return res.status(400).json({ ok: false, error: `Unknown action: ${actionType}` });
       }
 
-      if (path.includes('/admin/channels/')) {
-        const chId = path.split('/admin/channels/')[1]?.split('/')[0];
-        return res.status(200).json(await handleUpdateChannel(chId, body));
-      }
-      if (path.includes('/admin/social/tasks/')) {
-        const tid = path.split('/admin/social/tasks/')[1]?.split('/')[0];
-        return res.status(200).json(await handleUpdateSocialTask(tid, body));
-      }
-      return res.status(404).json({ ok: false, error: 'not_found', path });
+      return res.json({ ok: true });
     }
 
-    return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+    // ══════════════════════════════════════════════════════════════════════
+    //  COMPETITIONS
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'competitions') {
+      const comps = await sql(`
+        SELECT c.*,
+          (SELECT COUNT(DISTINCT user_id)::INT FROM ad_watches aw 
+           WHERE aw.created_at BETWEEN c.start_at AND c.end_at) AS participant_count
+        FROM competition c
+        ORDER BY c.created_at DESC
+      `);
+      return res.json({ ok: true, competitions: comps });
+    }
+
+    if (action === 'competition_leaderboard') {
+      const compId = parseInt(req.query.id, 10);
+      const limit  = parseInt(req.query.limit || '50', 10);
+
+      const comp = await sql(`SELECT * FROM competition WHERE id = $1`, [compId]);
+      if (!comp[0]) return res.status(404).json({ ok: false, error: 'Competition not found' });
+
+      const leaders = await sql(`
+        SELECT 
+          u.id, u.telegram_id,
+          COALESCE(u.first_name, u.username, 'Anonymous') AS name,
+          u.pts, u.photo_url, u.balance_usd,
+          (SELECT COUNT(*)::INT FROM users r WHERE r.referred_by = u.telegram_id) AS referral_count,
+          ROW_NUMBER() OVER (ORDER BY u.pts DESC, u.telegram_id ASC)::INT AS rank
+        FROM users u
+        ORDER BY u.pts DESC, u.telegram_id ASC
+        LIMIT $1
+      `, [limit]);
+
+      return res.json({ ok: true, competition: comp[0], leaderboard: leaders });
+    }
+
+    if (action === 'competition_create' && req.method === 'POST') {
+      const { name, start_at, end_at } = body;
+      if (!name || !start_at || !end_at) return res.status(400).json({ ok: false, error: 'name, start_at, end_at required' });
+
+      const comp = await sql(`
+        INSERT INTO competition (name, start_at, end_at, active)
+        VALUES ($1, $2, $3, FALSE)
+        RETURNING *
+      `, [name, start_at, end_at]);
+
+      await logAdminAction(body.adminNote, null, 'competition_create', { name, start_at, end_at });
+      return res.json({ ok: true, competition: comp[0] });
+    }
+
+    if (action === 'competition_update' && req.method === 'POST') {
+      const { id, name, start_at, end_at, active } = body;
+      if (!id) return res.status(400).json({ ok: false, error: 'id required' });
+
+      await sql(`
+        UPDATE competition SET
+          name     = COALESCE($1, name),
+          start_at = COALESCE($2, start_at),
+          end_at   = COALESCE($3, end_at),
+          active   = COALESCE($4, active)
+        WHERE id = $5
+      `, [name, start_at, end_at, active, id]);
+
+      await logAdminAction(body.adminNote, null, 'competition_update', { id, name, active });
+      return res.json({ ok: true });
+    }
+
+    if (action === 'competition_activate' && req.method === 'POST') {
+      const { id } = body;
+      // Deactivate all, then activate target
+      await sql(`UPDATE competition SET active = FALSE`);
+      await sql(`UPDATE competition SET active = TRUE WHERE id = $1`, [id]);
+      await logAdminAction(body.adminNote, null, 'competition_activate', { id });
+      return res.json({ ok: true });
+    }
+
+    if (action === 'competition_end' && req.method === 'POST') {
+      const { id } = body;
+      await sql(`UPDATE competition SET active = FALSE, end_at = NOW() WHERE id = $1`, [id]);
+      await logAdminAction(body.adminNote, null, 'competition_end', { id });
+      return res.json({ ok: true });
+    }
+
+    if (action === 'competition_delete' && req.method === 'POST') {
+      const { id } = body;
+      await sql(`DELETE FROM competition WHERE id = $1 AND active = FALSE`, [id]);
+      await logAdminAction(body.adminNote, null, 'competition_delete', { id });
+      return res.json({ ok: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  WITHDRAWALS
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'withdrawals') {
+      const page   = parseInt(req.query.page || '1', 10);
+      const limit  = parseInt(req.query.limit || '50', 10);
+      const status = req.query.status || 'all';
+      const offset = (page - 1) * limit;
+
+      let where = status !== 'all' ? `WHERE w.status = '${status.replace(/'/g,"''")}' ` : 'WHERE 1=1 ';
+
+      const countRows = await sql(`SELECT COUNT(*)::INT AS count FROM withdrawals w ${where}`);
+      const rows = await sql(`
+        SELECT w.*,
+          u.first_name, u.username, u.telegram_id, u.photo_url
+        FROM withdrawals w
+        JOIN users u ON u.id = w.user_id
+        ${where}
+        ORDER BY w.created_at DESC
+        LIMIT $1 OFFSET $2
+      `, [limit, offset]);
+
+      return res.json({
+        ok: true,
+        withdrawals: rows,
+        total: countRows[0].count,
+        page,
+        pages: Math.ceil(countRows[0].count / limit)
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  NOTIFICATIONS
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'send_notification' && req.method === 'POST') {
+      const { target, userIds, title, text, photoUrl, buttons, scheduledAt } = body;
+
+      if (!text) return res.status(400).json({ ok: false, error: 'text required' });
+
+      // Build Telegram message
+      const fullText = title ? `*${title}*\n\n${text}` : text;
+
+      let inlineKeyboard = null;
+      if (buttons && buttons.length > 0) {
+        inlineKeyboard = { inline_keyboard: buttons.map(row =>
+          Array.isArray(row)
+            ? row.map(btn => ({ text: btn.label, url: btn.url }))
+            : [{ text: row.label, url: row.url }]
+        )};
+      }
+
+      const extra = inlineKeyboard ? { reply_markup: inlineKeyboard } : {};
+
+      // Store in notification log
+      await sql(`CREATE TABLE IF NOT EXISTS notification_logs (
+        id           SERIAL PRIMARY KEY,
+        target       TEXT NOT NULL,
+        title        TEXT,
+        body         TEXT NOT NULL,
+        photo_url    TEXT,
+        buttons      JSONB,
+        scheduled_at TIMESTAMPTZ,
+        sent_at      TIMESTAMPTZ,
+        sent_count   INT DEFAULT 0,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+
+      const notif = await sql(`
+        INSERT INTO notification_logs (target, title, body, photo_url, buttons, scheduled_at)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id
+      `, [target, title, text, photoUrl, JSON.stringify(buttons || []), scheduledAt || null]);
+
+      if (scheduledAt && new Date(scheduledAt) > new Date()) {
+        // Scheduled — just save, don't send now
+        return res.json({ ok: true, scheduled: true, notifId: notif[0].id });
+      }
+
+      // Send now
+      let recipients = [];
+      if (target === 'all') {
+        recipients = await sql(`SELECT telegram_id FROM users WHERE shadow_banned = FALSE`);
+      } else if (target === 'group' && userIds?.length) {
+        recipients = await sql(`SELECT telegram_id FROM users WHERE id = ANY($1::int[])`, [userIds]);
+      } else if (target === 'user' && userIds?.length === 1) {
+        recipients = await sql(`SELECT telegram_id FROM users WHERE id = $1`, [userIds[0]]);
+      }
+
+      let sentCount = 0;
+      for (const r of recipients) {
+        try {
+          if (photoUrl) {
+            await sendTelegramPhoto(r.telegram_id, photoUrl, fullText, extra);
+          } else {
+            await sendTelegramMessage(r.telegram_id, fullText, extra);
+          }
+          sentCount++;
+          // Small delay to avoid Telegram flood limits
+          if (recipients.length > 10) await new Promise(resolve => setTimeout(resolve, 50));
+        } catch(e) {
+          console.error('[notify error]', e.message);
+        }
+      }
+
+      await sql(`UPDATE notification_logs SET sent_at = NOW(), sent_count = $1 WHERE id = $2`,
+        [sentCount, notif[0].id]);
+
+      await logAdminAction(body.adminNote, null, 'send_notification', { target, sentCount, title });
+      return res.json({ ok: true, sentCount, notifId: notif[0].id });
+    }
+
+    if (action === 'notifications_log') {
+      const page  = parseInt(req.query.page || '1', 10);
+      const limit = parseInt(req.query.limit || '20', 10);
+      const offset = (page - 1) * limit;
+
+      await sql(`CREATE TABLE IF NOT EXISTS notification_logs (
+        id           SERIAL PRIMARY KEY,
+        target       TEXT NOT NULL,
+        title        TEXT,
+        body         TEXT NOT NULL,
+        photo_url    TEXT,
+        buttons      JSONB,
+        scheduled_at TIMESTAMPTZ,
+        sent_at      TIMESTAMPTZ,
+        sent_count   INT DEFAULT 0,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+
+      const countRows = await sql(`SELECT COUNT(*)::INT AS count FROM notification_logs`);
+      const logs = await sql(`SELECT * FROM notification_logs ORDER BY created_at DESC LIMIT $1 OFFSET $2`, [limit, offset]);
+
+      return res.json({
+        ok: true,
+        logs,
+        total: countRows[0].count,
+        page,
+        pages: Math.ceil(countRows[0].count / limit)
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  ANALYTICS
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'analytics') {
+      const period = req.query.period || '30'; // days
+
+      const [userGrowth, dailyAds, referralStats, balanceStats, adRewardStats] = await Promise.all([
+        sql(`SELECT DATE(created_at) AS day, COUNT(*)::INT AS users
+             FROM users WHERE created_at >= NOW() - INTERVAL '${parseInt(period)}  days'
+             GROUP BY DATE(created_at) ORDER BY day ASC`),
+        sql(`SELECT DATE(created_at) AS day, COUNT(*)::INT AS watches, SUM(reward)::BIGINT AS total_reward
+             FROM ad_watches WHERE created_at >= NOW() - INTERVAL '${parseInt(period)} days'
+             GROUP BY DATE(created_at) ORDER BY day ASC`),
+        sql(`SELECT DATE(created_at) AS day, COUNT(*)::INT AS joins
+             FROM users WHERE referred_by IS NOT NULL
+             AND created_at >= NOW() - INTERVAL '${parseInt(period)} days'
+             GROUP BY DATE(created_at) ORDER BY day ASC`),
+        sql(`SELECT DATE(created_at) AS day, SUM(amount)::NUMERIC AS withdrawn
+             FROM withdrawals WHERE status = 'done'
+             AND created_at >= NOW() - INTERVAL '${parseInt(period)} days'
+             GROUP BY DATE(created_at) ORDER BY day ASC`),
+        sql(`SELECT 
+               COUNT(*)::INT AS total_sessions,
+               COUNT(CASE WHEN used = TRUE THEN 1 END)::INT AS completed,
+               COUNT(CASE WHEN used = FALSE THEN 1 END)::INT AS abandoned
+             FROM ad_sessions
+             WHERE created_at >= NOW() - INTERVAL '${parseInt(period)} days'`),
+      ]);
+
+      return res.json({
+        ok: true,
+        analytics: {
+          userGrowth,
+          dailyAds,
+          referralStats,
+          balanceStats,
+          adRewardStats: adRewardStats[0],
+        }
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  SECURITY / AUDIT LOG
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'security') {
+      const page   = parseInt(req.query.page || '1', 10);
+      const limit  = parseInt(req.query.limit || '50', 10);
+      const offset = (page - 1) * limit;
+
+      const [highRiskUsers, recentActivity, adminActions] = await Promise.all([
+        sql(`SELECT u.id, u.telegram_id, u.first_name, u.username, u.risk_score, u.shadow_banned,
+                    u.last_ad_watch, u.daily_ads
+             FROM users u WHERE u.risk_score > 0
+             ORDER BY u.risk_score DESC LIMIT 20`),
+        sql(`SELECT al.*, u.first_name, u.username, u.telegram_id
+             FROM activity_logs al
+             JOIN users u ON u.id = al.user_id
+             ORDER BY al.created_at DESC LIMIT $1 OFFSET $2`, [limit, offset]),
+        sql(`SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT 20`).catch(() => []),
+      ]);
+
+      return res.json({
+        ok: true,
+        highRiskUsers,
+        recentActivity,
+        adminActions,
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  EXPORT CSV
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'export_users') {
+      const users = await sql(`
+        SELECT 
+          u.id, u.telegram_id, u.username, u.first_name,
+          u.pts, u.balance_usd, u.risk_score, u.shadow_banned,
+          u.created_at, u.last_ad_watch, u.daily_ads, u.referral_code,
+          (SELECT COUNT(*)::INT FROM users r WHERE r.referred_by = u.telegram_id) AS referral_count
+        FROM users u ORDER BY u.created_at DESC
+      `);
+
+      const headers = ['id','telegram_id','username','first_name','pts','balance_usd','risk_score','shadow_banned','created_at','last_ad_watch','daily_ads','referral_code','referral_count'];
+      const csv = [
+        headers.join(','),
+        ...users.map(u => headers.map(h => {
+          const v = u[h];
+          if (v === null || v === undefined) return '';
+          const s = String(v);
+          return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
+        }).join(','))
+      ].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="users.csv"');
+      return res.send(csv);
+    }
+
+    if (action === 'export_withdrawals') {
+      const rows = await sql(`
+        SELECT w.id, w.address, w.memo, w.amount, w.status, w.created_at,
+               u.first_name, u.username, u.telegram_id
+        FROM withdrawals w JOIN users u ON u.id = w.user_id
+        ORDER BY w.created_at DESC
+      `);
+
+      const headers = ['id','telegram_id','first_name','username','address','memo','amount','status','created_at'];
+      const csv = [
+        headers.join(','),
+        ...rows.map(r => headers.map(h => {
+          const v = r[h];
+          if (v === null || v === undefined) return '';
+          const s = String(v);
+          return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s;
+        }).join(','))
+      ].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="withdrawals.csv"');
+      return res.send(csv);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  ADMIN LOGS
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'admin_logs') {
+      const page  = parseInt(req.query.page || '1', 10);
+      const limit = parseInt(req.query.limit || '50', 10);
+      const offset = (page - 1) * limit;
+
+      await sql(`CREATE TABLE IF NOT EXISTS admin_logs (
+        id          SERIAL PRIMARY KEY,
+        admin_note  TEXT,
+        target_user INT,
+        action      TEXT NOT NULL,
+        meta        JSONB NOT NULL DEFAULT '{}',
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+
+      const countRows = await sql(`SELECT COUNT(*)::INT AS count FROM admin_logs`);
+      const logs = await sql(`
+        SELECT al.*,
+          u.first_name, u.username, u.telegram_id
+        FROM admin_logs al
+        LEFT JOIN users u ON u.id = al.target_user
+        ORDER BY al.created_at DESC
+        LIMIT $1 OFFSET $2
+      `, [limit, offset]);
+
+      return res.json({
+        ok: true,
+        logs,
+        total: countRows[0].count,
+        page,
+        pages: Math.ceil(countRows[0].count / limit)
+      });
+    }
+
+    return res.status(400).json({ ok: false, error: `Unknown action: "${action}"` });
 
   } catch (err) {
-    console.error('[ADMIN_API] Error:', err.message, err.stack?.split('\n')[1]);
-    return res.status(500).json({
-      ok:     false,
-      error:  'internal_server_error',
-      detail: err.message,
-    });
+    console.error('[Admin handler error]', action, err.message);
+    return res.status(500).json({ ok: false, error: err.message });
   }
 };
