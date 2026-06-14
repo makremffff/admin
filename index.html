@@ -379,6 +379,39 @@ tbody tr:last-child td { border-bottom: none; }
   padding: 5px 12px; font-size: 12px;
 }
 
+/* ─── Direct Messages — user search ──────────────────────────────── */
+.dm-search-results {
+  position: absolute; top: calc(100% + 4px); right: 0; left: 0; z-index: 60;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow);
+  max-height: 260px; overflow-y: auto;
+  opacity: 0; pointer-events: none; transform: translateY(-4px);
+  transition: all 0.15s;
+}
+.dm-search-results.show { opacity: 1; pointer-events: all; transform: translateY(0); }
+.dm-search-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; cursor: pointer; transition: background 0.1s;
+  border-bottom: 1px solid var(--border);
+}
+.dm-search-item:last-child { border-bottom: none; }
+.dm-search-item:hover { background: var(--bg3); }
+.dm-search-empty { padding: 14px; text-align: center; color: var(--text3); font-size: 12px; }
+.dm-selected-card {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+}
+.dm-clear-btn {
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.dm-clear-btn:hover { background: var(--red-bg); color: var(--red); border-color: rgba(239,68,68,0.3); }
+.dm-hint { color: var(--text3); font-size: 12px; padding: 2px 0; }
+
 /* ─── Toast ──────────────────────────────────────────────────────── */
 .toast-container { position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
 .toast {
@@ -591,6 +624,10 @@ tbody tr:last-child td { border-bottom: none; }
         <div class="nav-item" onclick="goto('notifications')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span class="nav-label">الإشعارات</span>
+        </div>
+        <div class="nav-item" onclick="goto('messages')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span class="nav-label">التواصل المباشر</span>
         </div>
       </div>
 
@@ -820,6 +857,52 @@ tbody tr:last-child td { border-bottom: none; }
         </div>
       </div>
 
+      <!-- Direct Messages -->
+      <div class="section" id="section-messages">
+        <div class="charts-row">
+          <div class="card">
+            <div class="card-header"><span class="card-title">إرسال رسالة مباشرة لأي مستخدم</span></div>
+            <div class="card-body">
+              <div class="form-group" style="position:relative">
+                <label class="form-label">البحث عن مستخدم</label>
+                <input type="text" class="form-input" id="dm-user-search" placeholder="الاسم، اسم المستخدم، أو Telegram ID..." oninput="debounce(dmSearchUsers,350)(this.value)" autocomplete="off" />
+                <div class="dm-search-results" id="dm-search-results"></div>
+              </div>
+              <div id="dm-selected-user" style="margin-bottom:16px"></div>
+
+              <div class="form-group">
+                <label class="form-label">نص الرسالة</label>
+                <textarea class="form-textarea" id="dm-text" placeholder="اكتب رسالتك هنا..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">رابط صورة (اختياري)</label>
+                <input type="text" class="form-input" id="dm-photo" placeholder="https://..." />
+              </div>
+              <div class="form-group">
+                <label class="form-label">أزرار (نص|رابط — سطر لكل زر)</label>
+                <textarea class="form-textarea" id="dm-buttons" placeholder="اضغط هنا|https://t.me/..." style="min-height:60px"></textarea>
+              </div>
+              <button class="btn btn-primary" id="dm-send-btn" onclick="sendDirectMessage()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                إرسال الرسالة
+              </button>
+              <div id="dm-send-status" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title" id="dm-history-title">سجل الرسائل المباشرة</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>المستخدم</th><th>الرسالة</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+                <tbody id="dm-history-tbody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="dm-history-pagination"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Analytics -->
       <div class="section" id="section-analytics">
         <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -905,6 +988,7 @@ tbody tr:last-child td { border-bottom: none; }
     <div class="tabs" id="user-detail-tabs">
       <div class="tab active" onclick="switchTab('info')">المعلومات</div>
       <div class="tab" onclick="switchTab('actions')">الإجراءات</div>
+      <div class="tab" onclick="switchTab('messages-tab')">رسالة مباشرة</div>
       <div class="tab" onclick="switchTab('history')">السجل</div>
       <div class="tab" onclick="switchTab('withdrawals-tab')">السحوبات</div>
       <div class="tab" onclick="switchTab('referrals-tab')">الإحالات</div>
@@ -960,6 +1044,7 @@ let usersPage = 1, usersFilter = 'all', withdrawalsPage = 1, wFilter = 'all', au
 let analyticsPeriod = 30;
 let currentUserId = null;
 let currentUserDetail = null;
+let dmSelectedUser = null, dmSearchList = [], dmHistoryPage = 1;
 let growthChartInst, activityChartInst, riskChartInst;
 let analyticCharts = {};
 
@@ -1006,8 +1091,8 @@ async function api(action, opts = {}) {
 // ═══════════════════════════════════════════════════════════════════════════
 const PAGE_TITLES = {
   dashboard: 'الإحصائيات', users: 'المستخدمون', withdrawals: 'السحوبات',
-  competitions: 'المسابقات', notifications: 'الإشعارات', analytics: 'التحليلات',
-  security: 'مركز الأمان', auditlog: 'سجل الأحداث'
+  competitions: 'المسابقات', notifications: 'الإشعارات', messages: 'التواصل المباشر',
+  analytics: 'التحليلات', security: 'مركز الأمان', auditlog: 'سجل الأحداث'
 };
 
 function goto(section) {
@@ -1025,6 +1110,7 @@ function goto(section) {
   else if (section === 'withdrawals') loadWithdrawals();
   else if (section === 'competitions') loadCompetitions();
   else if (section === 'notifications') loadNotifLog();
+  else if (section === 'messages') loadMessagesSection();
   else if (section === 'analytics') loadAnalytics();
   else if (section === 'security') loadSecurity();
   else if (section === 'auditlog') loadAuditLog();
@@ -1312,6 +1398,37 @@ function switchTab(tab) {
         </div>
       </div>
     `;
+  } else if (tab === 'messages-tab') {
+    body.innerHTML = `
+      <div class="form-group">
+        <label class="form-label">نص الرسالة إلى ${u.first_name || u.username || 'المستخدم'}</label>
+        <textarea class="form-textarea" id="udm-text" placeholder="اكتب رسالتك هنا..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">رابط صورة (اختياري)</label>
+        <input type="text" class="form-input" id="udm-photo" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">أزرار (نص|رابط — سطر لكل زر)</label>
+        <textarea class="form-textarea" id="udm-buttons" placeholder="اضغط هنا|https://t.me/..." style="min-height:50px"></textarea>
+      </div>
+      <button class="btn btn-primary" id="udm-send-btn" onclick="sendUserDirectMessage(${u.id})">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        إرسال الرسالة
+      </button>
+      <div id="udm-send-status" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
+
+      <div style="margin-top:22px">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">آخر الرسائل المرسلة لهذا المستخدم</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>الرسالة</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+            <tbody id="udm-history-tbody"><tr><td colspan="3" style="text-align:center;padding:14px;color:var(--text3)">جاري التحميل...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    loadUdmHistory(u.id);
   } else if (tab === 'history') {
     body.innerHTML = `
       <div class="table-wrap">
@@ -1650,6 +1767,192 @@ async function loadNotifLog() {
     </tr>
   `).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3)">لا توجد إشعارات</td></tr>';
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Direct Messages — talk to ANY user via the bot
+// ═══════════════════════════════════════════════════════════════════════════
+async function dmSearchUsers(q) {
+  const box = document.getElementById('dm-search-results');
+  q = (q || '').trim();
+  if (q.length < 2) { box.classList.remove('show'); box.innerHTML = ''; return; }
+  const r = await api('users', { query: `&search=${encodeURIComponent(q)}&limit=8` });
+  if (!r.ok) return;
+  dmSearchList = r.users || [];
+  box.innerHTML = dmSearchList.map((u, i) => `
+    <div class="dm-search-item" onclick="dmSelectUser(${i})">
+      <div class="avatar">${(u.first_name||u.username||'?')[0]}</div>
+      <div>
+        <div class="user-name">${u.first_name||u.username||'مجهول'}</div>
+        <div class="user-id">@${u.username||'—'} · #${u.telegram_id}</div>
+      </div>
+    </div>
+  `).join('') || '<div class="dm-search-empty">لا توجد نتائج</div>';
+  box.classList.add('show');
+}
+
+document.addEventListener('click', e => {
+  const box = document.getElementById('dm-search-results');
+  const input = document.getElementById('dm-user-search');
+  if (!box || !input) return;
+  if (!box.contains(e.target) && e.target !== input) box.classList.remove('show');
+});
+
+function dmSelectUser(i) {
+  dmSelectedUser = dmSearchList[i];
+  document.getElementById('dm-search-results').classList.remove('show');
+  document.getElementById('dm-user-search').value = '';
+  dmHistoryPage = 1;
+  renderDmSelectedUser();
+  loadDmHistory();
+}
+
+function dmClearUser() {
+  dmSelectedUser = null;
+  dmHistoryPage = 1;
+  renderDmSelectedUser();
+  loadDmHistory();
+}
+
+function renderDmSelectedUser() {
+  const el = document.getElementById('dm-selected-user');
+  const title = document.getElementById('dm-history-title');
+  if (!el) return;
+  if (!dmSelectedUser) {
+    el.innerHTML = '<div class="dm-hint">لم يتم اختيار مستخدم — استخدم البحث أعلاه (بالاسم، اسم المستخدم، أو Telegram ID). يعرض السجل أدناه كل الرسائل المرسلة.</div>';
+    if (title) title.textContent = 'سجل الرسائل المباشرة';
+    return;
+  }
+  const u = dmSelectedUser;
+  el.innerHTML = `
+    <div class="dm-selected-card">
+      <div class="avatar">${(u.first_name||u.username||'?')[0]}</div>
+      <div style="flex:1">
+        <div class="user-name">${u.first_name||u.username||'مجهول'}</div>
+        <div class="user-id">@${u.username||'—'} · #${u.telegram_id}</div>
+      </div>
+      <div class="dm-clear-btn" onclick="dmClearUser()" title="إزالة الاختيار">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+  `;
+  if (title) title.textContent = `سجل الرسائل — ${u.first_name || u.username || ('#'+u.telegram_id)}`;
+}
+
+async function sendDirectMessage() {
+  if (!dmSelectedUser) return toast('اختر مستخدمًا أولاً من البحث أعلاه', 'error');
+  const text  = document.getElementById('dm-text').value.trim();
+  const photo = document.getElementById('dm-photo').value.trim();
+  const btnsRaw = document.getElementById('dm-buttons').value;
+  if (!text && !photo) return toast('اكتب نص الرسالة', 'error');
+
+  const buttons = btnsRaw.split('\n').filter(Boolean).map(line => {
+    const [label, url] = line.split('|');
+    return { label: label?.trim(), url: url?.trim() };
+  }).filter(b => b.label && b.url);
+
+  const btn = document.getElementById('dm-send-btn');
+  const status = document.getElementById('dm-send-status');
+  btn.disabled = true; btn.style.opacity = '0.6';
+  status.textContent = 'جاري الإرسال...'; status.style.color = 'var(--text2)';
+  try {
+    const r = await api('direct_message_send', {
+      body: { userId: dmSelectedUser.id, text, photoUrl: photo || undefined, buttons, adminNote: 'admin' }
+    });
+    if (r.ok) {
+      toast('تم إرسال الرسالة بنجاح', 'success');
+      status.textContent = 'تم الإرسال ✓'; status.style.color = 'var(--green)';
+      document.getElementById('dm-text').value = '';
+      document.getElementById('dm-photo').value = '';
+      document.getElementById('dm-buttons').value = '';
+    } else {
+      toast(r.error || 'فشل الإرسال', 'error');
+      status.textContent = `فشل: ${r.error || 'تحقق من BOT_TOKEN'}`; status.style.color = 'var(--red)';
+    }
+    loadDmHistory();
+  } finally {
+    btn.disabled = false; btn.style.opacity = '1';
+  }
+}
+
+async function loadDmHistory() {
+  const q = dmSelectedUser ? `&userId=${dmSelectedUser.id}&page=${dmHistoryPage}` : `&page=${dmHistoryPage}`;
+  const r = await api('direct_messages', { query: q });
+  if (!r.ok) return;
+  const tbody = document.getElementById('dm-history-tbody');
+  tbody.innerHTML = r.messages.map(m => `
+    <tr>
+      <td><div class="user-cell">
+        <div class="avatar">${(m.first_name||m.username||'?')[0]}</div>
+        <div><div class="user-name">${m.first_name||m.username||'مجهول'}</div><div class="user-id">${m.user_telegram_id||m.telegram_id}</div></div>
+      </div></td>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.message_text || (m.photo_url ? '🖼️ صورة' : '—')}</td>
+      <td>${m.status === 'sent'
+        ? '<span class="badge badge-green">تم الإرسال</span>'
+        : `<span class="badge badge-red" title="${(m.error_detail||'').replace(/"/g,'&quot;')}">فشل</span>`}</td>
+      <td style="font-size:12px;color:var(--text3)">${fDate(m.created_at)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3)">لا توجد رسائل</td></tr>';
+  renderPagination('dm-history-pagination', r.page, r.pages, p => { dmHistoryPage = p; loadDmHistory(); });
+}
+
+function loadMessagesSection() {
+  renderDmSelectedUser();
+  dmHistoryPage = 1;
+  loadDmHistory();
+}
+
+// Per-user quick send — from the user detail modal
+async function sendUserDirectMessage(userId) {
+  const text  = document.getElementById('udm-text').value.trim();
+  const photo = document.getElementById('udm-photo').value.trim();
+  const btnsRaw = document.getElementById('udm-buttons').value;
+  if (!text && !photo) return toast('اكتب نص الرسالة', 'error');
+
+  const buttons = btnsRaw.split('\n').filter(Boolean).map(line => {
+    const [label, url] = line.split('|');
+    return { label: label?.trim(), url: url?.trim() };
+  }).filter(b => b.label && b.url);
+
+  const btn = document.getElementById('udm-send-btn');
+  const status = document.getElementById('udm-send-status');
+  btn.disabled = true; btn.style.opacity = '0.6';
+  status.textContent = 'جاري الإرسال...'; status.style.color = 'var(--text2)';
+  try {
+    const r = await api('direct_message_send', {
+      body: { userId, text, photoUrl: photo || undefined, buttons, adminNote: 'admin' }
+    });
+    if (r.ok) {
+      toast('تم إرسال الرسالة بنجاح', 'success');
+      status.textContent = 'تم الإرسال ✓'; status.style.color = 'var(--green)';
+      document.getElementById('udm-text').value = '';
+      document.getElementById('udm-photo').value = '';
+      document.getElementById('udm-buttons').value = '';
+      loadUdmHistory(userId);
+    } else {
+      toast(r.error || 'فشل الإرسال', 'error');
+      status.textContent = `فشل: ${r.error || 'تحقق من BOT_TOKEN'}`; status.style.color = 'var(--red)';
+    }
+  } finally {
+    btn.disabled = false; btn.style.opacity = '1';
+  }
+}
+
+async function loadUdmHistory(userId) {
+  const r = await api('direct_messages', { query: `&userId=${userId}&page=1` });
+  const tbody = document.getElementById('udm-history-tbody');
+  if (!tbody) return;
+  if (!r.ok) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:14px;color:var(--text3)">تعذر التحميل</td></tr>'; return; }
+  tbody.innerHTML = r.messages.map(m => `
+    <tr>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.message_text || (m.photo_url ? '🖼️ صورة' : '—')}</td>
+      <td>${m.status === 'sent'
+        ? '<span class="badge badge-green">تم</span>'
+        : `<span class="badge badge-red" title="${(m.error_detail||'').replace(/"/g,'&quot;')}">فشل</span>`}</td>
+      <td style="font-size:12px;color:var(--text3)">${fDate(m.created_at)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="3" style="text-align:center;padding:14px;color:var(--text3)">لا توجد رسائل سابقة</td></tr>';
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Analytics
