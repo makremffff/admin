@@ -871,6 +871,10 @@ tbody tr:last-child td { border-bottom: none; }
               <div id="dm-selected-user" style="margin-bottom:16px"></div>
 
               <div class="form-group">
+                <label class="form-label">العنوان (اختياري)</label>
+                <input type="text" class="form-input" id="dm-title" placeholder="عنوان الرسالة" />
+              </div>
+              <div class="form-group">
                 <label class="form-label">نص الرسالة</label>
                 <textarea class="form-textarea" id="dm-text" placeholder="اكتب رسالتك هنا..."></textarea>
               </div>
@@ -1401,6 +1405,10 @@ function switchTab(tab) {
   } else if (tab === 'messages-tab') {
     body.innerHTML = `
       <div class="form-group">
+        <label class="form-label">العنوان (اختياري)</label>
+        <input type="text" class="form-input" id="udm-title" placeholder="عنوان الرسالة" />
+      </div>
+      <div class="form-group">
         <label class="form-label">نص الرسالة إلى ${u.first_name || u.username || 'المستخدم'}</label>
         <textarea class="form-textarea" id="udm-text" placeholder="اكتب رسالتك هنا..."></textarea>
       </div>
@@ -1823,6 +1831,7 @@ function renderDmSelectedUser() {
     return;
   }
   const u = dmSelectedUser;
+  const chatLink = u.username ? `https://t.me/${u.username}` : null;
   el.innerHTML = `
     <div class="dm-selected-card">
       <div class="avatar">${(u.first_name||u.username||'?')[0]}</div>
@@ -1830,6 +1839,14 @@ function renderDmSelectedUser() {
         <div class="user-name">${u.first_name||u.username||'مجهول'}</div>
         <div class="user-id">@${u.username||'—'} · #${u.telegram_id}</div>
       </div>
+      ${u.username
+        ? `<a class="btn btn-ghost btn-sm" href="${chatLink}" target="_blank" rel="noopener" style="text-decoration:none" title="فتح محادثة المستخدم في تليجرام">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+             فتح المحادثة
+           </a>`
+        : `<span class="btn btn-ghost btn-sm" style="opacity:.5;cursor:not-allowed" title="لا يوجد يوزرنيم لهذا المستخدم — لا يمكن فتح المحادثة مباشرة">
+             فتح المحادثة
+           </span>`}
       <div class="dm-clear-btn" onclick="dmClearUser()" title="إزالة الاختيار">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </div>
@@ -1840,6 +1857,7 @@ function renderDmSelectedUser() {
 
 async function sendDirectMessage() {
   if (!dmSelectedUser) return toast('اختر مستخدمًا أولاً من البحث أعلاه', 'error');
+  const title = document.getElementById('dm-title').value.trim();
   const text  = document.getElementById('dm-text').value.trim();
   const photo = document.getElementById('dm-photo').value.trim();
   const btnsRaw = document.getElementById('dm-buttons').value;
@@ -1856,11 +1874,12 @@ async function sendDirectMessage() {
   status.textContent = 'جاري الإرسال...'; status.style.color = 'var(--text2)';
   try {
     const r = await api('direct_message_send', {
-      body: { userId: dmSelectedUser.id, text, photoUrl: photo || undefined, buttons, adminNote: 'admin' }
+      body: { userId: dmSelectedUser.id, text, photoUrl: photo || undefined, buttons, title: title || undefined, adminNote: 'admin' }
     });
     if (r.ok) {
       toast('تم إرسال الرسالة بنجاح', 'success');
       status.textContent = 'تم الإرسال ✓'; status.style.color = 'var(--green)';
+      document.getElementById('dm-title').value = '';
       document.getElementById('dm-text').value = '';
       document.getElementById('dm-photo').value = '';
       document.getElementById('dm-buttons').value = '';
@@ -1885,7 +1904,7 @@ async function loadDmHistory() {
         <div class="avatar">${(m.first_name||m.username||'?')[0]}</div>
         <div><div class="user-name">${m.first_name||m.username||'مجهول'}</div><div class="user-id">${m.user_telegram_id||m.telegram_id}</div></div>
       </div></td>
-      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.message_text || (m.photo_url ? '🖼️ صورة' : '—')}</td>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.title ? `<b>${m.title}</b> — ` : ''}${m.message_text || (m.photo_url ? '🖼️ صورة' : '—')}</td>
       <td>${m.status === 'sent'
         ? '<span class="badge badge-green">تم الإرسال</span>'
         : `<span class="badge badge-red" title="${(m.error_detail||'').replace(/"/g,'&quot;')}">فشل</span>`}</td>
@@ -1903,6 +1922,7 @@ function loadMessagesSection() {
 
 // Per-user quick send — from the user detail modal
 async function sendUserDirectMessage(userId) {
+  const title = document.getElementById('udm-title').value.trim();
   const text  = document.getElementById('udm-text').value.trim();
   const photo = document.getElementById('udm-photo').value.trim();
   const btnsRaw = document.getElementById('udm-buttons').value;
@@ -1919,11 +1939,12 @@ async function sendUserDirectMessage(userId) {
   status.textContent = 'جاري الإرسال...'; status.style.color = 'var(--text2)';
   try {
     const r = await api('direct_message_send', {
-      body: { userId, text, photoUrl: photo || undefined, buttons, adminNote: 'admin' }
+      body: { userId, text, photoUrl: photo || undefined, buttons, title: title || undefined, adminNote: 'admin' }
     });
     if (r.ok) {
       toast('تم إرسال الرسالة بنجاح', 'success');
       status.textContent = 'تم الإرسال ✓'; status.style.color = 'var(--green)';
+      document.getElementById('udm-title').value = '';
       document.getElementById('udm-text').value = '';
       document.getElementById('udm-photo').value = '';
       document.getElementById('udm-buttons').value = '';
@@ -1944,7 +1965,7 @@ async function loadUdmHistory(userId) {
   if (!r.ok) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:14px;color:var(--text3)">تعذر التحميل</td></tr>'; return; }
   tbody.innerHTML = r.messages.map(m => `
     <tr>
-      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.message_text || (m.photo_url ? '🖼️ صورة' : '—')}</td>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.title ? `<b>${m.title}</b> — ` : ''}${m.message_text || (m.photo_url ? '🖼️ صورة' : '—')}</td>
       <td>${m.status === 'sent'
         ? '<span class="badge badge-green">تم</span>'
         : `<span class="badge badge-red" title="${(m.error_detail||'').replace(/"/g,'&quot;')}">فشل</span>`}</td>
