@@ -55,23 +55,61 @@ async function logAdminAction(adminNote, targetUserId, action, meta = {}) {
 //  Telegram Bot Helper
 // ══════════════════════════════════════════════════════════════════════════════
 async function sendTelegramMessage(chatId, text, extra = {}) {
-  if (!BOT_TOKEN) return { ok: false };
-  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: String(chatId), text, parse_mode: 'Markdown', ...extra })
-  });
-  return await res.json();
+  if (!BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN غير مُعرّف في متغيرات البيئة' };
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: String(chatId), text, parse_mode: 'Markdown', ...extra })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      console.error('[sendTelegramMessage error]', data);
+      return { ok: false, description: data.description || `HTTP ${res.status}`, error_code: data.error_code };
+    }
+    return data;
+  } catch (e) {
+    console.error('[sendTelegramMessage exception]', e.message);
+    return { ok: false, description: e.message };
+  }
 }
 
 async function sendTelegramPhoto(chatId, photo, caption, extra = {}) {
-  if (!BOT_TOKEN) return { ok: false };
-  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: String(chatId), photo, caption, parse_mode: 'Markdown', ...extra })
-  });
-  return await res.json();
+  if (!BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN غير مُعرّف في متغيرات البيئة' };
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: String(chatId), photo, caption, parse_mode: 'Markdown', ...extra })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      console.error('[sendTelegramPhoto error]', data);
+      return { ok: false, description: data.description || `HTTP ${res.status}`, error_code: data.error_code };
+    }
+    return data;
+  } catch (e) {
+    console.error('[sendTelegramPhoto exception]', e.message);
+    return { ok: false, description: e.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Direct Admin <-> User Messages
+// ══════════════════════════════════════════════════════════════════════════════
+async function ensureAdminMessagesTable() {
+  await sql(`CREATE TABLE IF NOT EXISTS admin_messages (
+    id           SERIAL PRIMARY KEY,
+    user_id      INT REFERENCES users(id) ON DELETE CASCADE,
+    telegram_id  BIGINT NOT NULL,
+    message_text TEXT,
+    photo_url    TEXT,
+    buttons      JSONB,
+    status       TEXT NOT NULL DEFAULT 'sent',
+    error_detail TEXT,
+    admin_note   TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -378,6 +416,88 @@ module.exports = async function handler(req, res) {
       }
 
       return res.json({ ok: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  DIRECT MESSAGE — send a message to ANY single user via the bot
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'direct_message_send' && req.method === 'POST') {
+      const { userId, telegramId, text, photoUrl, buttons, adminNote } = body;
+
+      if (!text?.trim() && !photoUrl?.trim()) {
+        return res.status(400).json({ ok: false, error: 'نص الرسالة أو الصورة مطلوب' });
+      }
+
+      let userRows;
+      if (userId) userRows = await sql(`SELECT * FROM users WHERE id = $1`, [userId]);
+      else if (telegramId) userRows = await sql(`SELECT * FROM users WHERE telegram_id = $1`, [telegramId]);
+      else return res.status(400).json({ ok: false, error: 'userId أو telegramId مطلوب' });
+
+      const user = userRows?.[0];
+      if (!user) return res.status(404).json({ ok: false, error: 'المستخدم غير موجود' });
+
+      let inlineKeyboard = null;
+      if (buttons && buttons.length > 0) {
+        inlineKeyboard = { inline_keyboard: buttons.map(row =>
+          Array.isArray(row)
+            ? row.map(btn => ({ text: btn.label, url: btn.url }))
+            : [{ text: row.label, url: row.url }]
+        )};
+      }
+      const extra = inlineKeyboard ? { reply_markup: inlineKeyboard } : {};
+
+      let result;
+      if (photoUrl?.trim()) result = await sendTelegramPhoto(user.telegram_id, photoUrl.trim(), text || '', extra);
+      else result = await sendTelegramMessage(user.telegram_id, text, extra);
+
+      const status = result?.ok ? 'sent' : 'failed';
+      const errorDetail = result?.ok ? null : (result?.description || 'فشل غير معروف');
+
+      await ensureAdminMessagesTable();
+      await sql(`
+        INSERT INTO admin_messages (user_id, telegram_id, message_text, photo_url, buttons, status, error_detail, admin_note)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      `, [user.id, user.telegram_id, text || null, photoUrl || null, JSON.stringify(buttons || []), status, errorDetail, adminNote || 'admin']);
+
+      await logAdminAction(adminNote, user.id, 'direct_message', { status, error: errorDetail });
+
+      if (!result?.ok) {
+        return res.status(200).json({ ok: false, sent: false, error: errorDetail });
+      }
+      return res.json({ ok: true, sent: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  DIRECT MESSAGES — history log (optionally per user)
+    // ══════════════════════════════════════════════════════════════════════
+    if (action === 'direct_messages') {
+      await ensureAdminMessagesTable();
+
+      const userId = req.query.userId ? parseInt(req.query.userId, 10) : null;
+      const page   = parseInt(req.query.page  || '1', 10);
+      const limit  = parseInt(req.query.limit || '20', 10);
+      const offset = (page - 1) * limit;
+
+      const where  = userId ? `WHERE m.user_id = $1` : '';
+      const params = userId ? [userId] : [];
+
+      const countRows = await sql(`SELECT COUNT(*)::INT AS count FROM admin_messages m ${where}`, params);
+      const messages = await sql(`
+        SELECT m.*, u.first_name, u.username, u.telegram_id AS user_telegram_id
+        FROM admin_messages m
+        LEFT JOIN users u ON u.id = m.user_id
+        ${where}
+        ORDER BY m.created_at DESC
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+      `, [...params, limit, offset]);
+
+      return res.json({
+        ok: true,
+        messages,
+        total: countRows[0].count,
+        page,
+        pages: Math.ceil(countRows[0].count / limit) || 1
+      });
     }
 
     // ══════════════════════════════════════════════════════════════════════
