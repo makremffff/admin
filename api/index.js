@@ -54,15 +54,35 @@ async function logAdminAction(adminNote, targetUserId, action, meta = {}) {
 // ══════════════════════════════════════════════════════════════════════════════
 //  Telegram Bot Helper
 // ══════════════════════════════════════════════════════════════════════════════
+// Low-level POST helper to the Telegram Bot API
+async function telegramPost(method, payload) {
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  return { res, data };
+}
+
 async function sendTelegramMessage(chatId, text, extra = {}) {
   if (!BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN غير مُعرّف في متغيرات البيئة' };
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: String(chatId), text, parse_mode: 'Markdown', ...extra })
-    });
-    const data = await res.json();
+    const payload = { chat_id: String(chatId), text, parse_mode: 'Markdown', ...extra };
+    let { res, data } = await telegramPost('sendMessage', payload);
+
+    // ── Markdown fallback ──────────────────────────────────────────────
+    // Telegram rejects the ENTIRE request (text + buttons + everything)
+    // if the message contains unescaped Markdown chars (_ * ` [ ]), which
+    // commonly happens with usernames/links typed by the admin. Retry as
+    // plain text so the message (with its inline buttons) still arrives
+    // instead of silently failing.
+    if (!data.ok && data.error_code === 400 && /can't parse entities/i.test(data.description || '')) {
+      const plain = { ...payload };
+      delete plain.parse_mode;
+      ({ res, data } = await telegramPost('sendMessage', plain));
+    }
+
     if (!res.ok || !data.ok) {
       console.error('[sendTelegramMessage error]', data);
       return { ok: false, description: data.description || `HTTP ${res.status}`, error_code: data.error_code };
@@ -77,12 +97,26 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
 async function sendTelegramPhoto(chatId, photo, caption, extra = {}) {
   if (!BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN غير مُعرّف في متغيرات البيئة' };
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: String(chatId), photo, caption, parse_mode: 'Markdown', ...extra })
-    });
-    const data = await res.json();
+    const payload = { chat_id: String(chatId), photo, caption, parse_mode: 'Markdown', ...extra };
+    let { res, data } = await telegramPost('sendPhoto', payload);
+
+    // ── Markdown fallback (same reasoning as sendTelegramMessage) ───────
+    if (!data.ok && data.error_code === 400 && /can't parse entities/i.test(data.description || '')) {
+      const plain = { ...payload };
+      delete plain.parse_mode;
+      ({ res, data } = await telegramPost('sendPhoto', plain));
+    }
+
+    // ── Bad-photo fallback ───────────────────────────────────────────────
+    // If Telegram refuses the image itself (broken URL, unsupported type,
+    // too large...), don't drop the whole message — send the text + title +
+    // buttons anyway so the user still gets the content.
+    if (!data.ok && data.error_code === 400 &&
+        /(wrong (type|file)|failed to get http url content|wrong remote file|PHOTO_INVALID_DIMENSIONS|file must be non-empty|wrong file identifier)/i.test(data.description || '')) {
+      console.error('[sendTelegramPhoto] photo rejected, falling back to text-only:', data.description);
+      return await sendTelegramMessage(chatId, caption || '', extra);
+    }
+
     if (!res.ok || !data.ok) {
       console.error('[sendTelegramPhoto error]', data);
       return { ok: false, description: data.description || `HTTP ${res.status}`, error_code: data.error_code };
@@ -110,6 +144,7 @@ async function ensureAdminMessagesTable() {
     admin_note   TEXT,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await sql(`ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS title TEXT`);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -422,7 +457,7 @@ module.exports = async function handler(req, res) {
     //  DIRECT MESSAGE — send a message to ANY single user via the bot
     // ══════════════════════════════════════════════════════════════════════
     if (action === 'direct_message_send' && req.method === 'POST') {
-      const { userId, telegramId, text, photoUrl, buttons, adminNote } = body;
+      const { userId, telegramId, text, photoUrl, buttons, title, adminNote } = body;
 
       if (!text?.trim() && !photoUrl?.trim()) {
         return res.status(400).json({ ok: false, error: 'نص الرسالة أو الصورة مطلوب' });
@@ -436,6 +471,9 @@ module.exports = async function handler(req, res) {
       const user = userRows?.[0];
       if (!user) return res.status(404).json({ ok: false, error: 'المستخدم غير موجود' });
 
+      // Prefix the title (if provided) the same way the broadcast notifications do
+      const fullText = title?.trim() ? `*${title.trim()}*\n\n${text || ''}` : (text || '');
+
       let inlineKeyboard = null;
       if (buttons && buttons.length > 0) {
         inlineKeyboard = { inline_keyboard: buttons.map(row =>
@@ -447,17 +485,17 @@ module.exports = async function handler(req, res) {
       const extra = inlineKeyboard ? { reply_markup: inlineKeyboard } : {};
 
       let result;
-      if (photoUrl?.trim()) result = await sendTelegramPhoto(user.telegram_id, photoUrl.trim(), text || '', extra);
-      else result = await sendTelegramMessage(user.telegram_id, text, extra);
+      if (photoUrl?.trim()) result = await sendTelegramPhoto(user.telegram_id, photoUrl.trim(), fullText, extra);
+      else result = await sendTelegramMessage(user.telegram_id, fullText, extra);
 
       const status = result?.ok ? 'sent' : 'failed';
       const errorDetail = result?.ok ? null : (result?.description || 'فشل غير معروف');
 
       await ensureAdminMessagesTable();
       await sql(`
-        INSERT INTO admin_messages (user_id, telegram_id, message_text, photo_url, buttons, status, error_detail, admin_note)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-      `, [user.id, user.telegram_id, text || null, photoUrl || null, JSON.stringify(buttons || []), status, errorDetail, adminNote || 'admin']);
+        INSERT INTO admin_messages (user_id, telegram_id, message_text, photo_url, buttons, title, status, error_detail, admin_note)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      `, [user.id, user.telegram_id, text || null, photoUrl || null, JSON.stringify(buttons || []), title || null, status, errorDetail, adminNote || 'admin']);
 
       await logAdminAction(adminNote, user.id, 'direct_message', { status, error: errorDetail });
 
