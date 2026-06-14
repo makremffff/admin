@@ -401,13 +401,75 @@ tbody tr:last-child td { border-bottom: none; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 /* ─── Responsive ─────────────────────────────────────────────────── */
+.mobile-menu-btn { display: none; }
+.sidebar-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 45; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.sidebar-backdrop.show { opacity: 1; pointer-events: all; }
+.status-text { white-space: nowrap; }
+
 @media (max-width: 768px) {
-  .sidebar { position: fixed; inset-block: 0; right: 0; z-index: 50; transform: translateX(0); }
-  .sidebar.collapsed { transform: translateX(100%); width: var(--sidebar-w); }
-  .charts-row { grid-template-columns: 1fr; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .form-row { grid-template-columns: 1fr; }
+  .mobile-menu-btn { display: flex; }
+
+  .sidebar {
+    position: fixed; inset-block: 0; right: 0; z-index: 50;
+    width: 80%; max-width: 290px;
+    transform: translateX(100%);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.45);
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar.collapsed { width: 80%; max-width: 290px; }
+  .sidebar-footer { display: none; }
+
+  .topbar { padding: 0 12px; gap: 8px; height: 54px; }
+  .topbar-title { font-size: 14px; }
   .topbar-search { display: none; }
+  .status-text { display: none; }
+  .topbar-status { gap: 0; }
+
+  .content { padding: 12px; }
+
+  .charts-row { grid-template-columns: 1fr; gap: 12px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-card { padding: 13px 14px; }
+  .stat-icon { width: 30px; height: 30px; margin-bottom: 10px; }
+  .stat-value { font-size: 18px; }
+  .stat-label { font-size: 11px; }
+
+  .form-row { grid-template-columns: 1fr; }
+
+  .modal-overlay { padding: 0; }
+  .modal, .modal.modal-lg {
+    width: 100%; height: 100%; max-width: none; max-height: none;
+    border-radius: 0; transform: none;
+  }
+  .modal-overlay.show .modal { transform: none; }
+  .modal-body { padding: 16px; }
+  .modal-head { padding: 14px 16px; }
+  .tabs { padding: 0 12px; overflow-x: auto; }
+
+  .card-header { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+  .card-body { padding: 14px; }
+  .filters-bar { padding: 10px 14px; gap: 8px; }
+  .filters-bar .form-input { width: 100% !important; margin-top: 4px; }
+  .filters-bar > div[style*="margin-right"] { width: 100%; margin-right: 0 !important; }
+
+  table { font-size: 12px; }
+  thead th, tbody td { padding: 8px 8px; }
+  .detail-row { flex-wrap: wrap; gap: 4px; }
+  .detail-label { min-width: 0; flex-basis: 100%; }
+
+  .comp-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .stat-value { font-size: 16px; }
+  table { font-size: 11px; }
+  thead th, tbody td { padding: 7px 6px; }
+  .topbar-title { font-size: 13px; }
+  .btn { font-size: 12px; padding: 7px 11px; }
 }
 
 /* ─── Scrollbar ──────────────────────────────────────────────────── */
@@ -481,6 +543,8 @@ tbody tr:last-child td { border-bottom: none; }
 
 <!-- App -->
 <div id="app" style="display:none">
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
 
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
@@ -557,6 +621,9 @@ tbody tr:last-child td { border-bottom: none; }
   <div class="main">
     <!-- Topbar -->
     <header class="topbar">
+      <div class="topbar-btn mobile-menu-btn" onclick="toggleMobileSidebar()" title="القائمة">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </div>
       <div class="topbar-title" id="page-title">الإحصائيات</div>
       <div class="topbar-search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -564,7 +631,7 @@ tbody tr:last-child td { border-bottom: none; }
       </div>
       <div class="topbar-status">
         <div class="status-dot"></div>
-        متصل
+        <span class="status-text">متصل</span>
       </div>
       <div class="topbar-btn" onclick="refreshCurrent()" title="تحديث">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -732,10 +799,11 @@ tbody tr:last-child td { border-bottom: none; }
                 <div class="notif-btn-row" id="preview-btns"></div>
               </div>
               <div style="margin-top:14px">
-                <button class="btn btn-primary" onclick="sendNotification()">
+                <button class="btn btn-primary" id="send-notif-btn" onclick="sendNotification()">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   إرسال الآن
                 </button>
+                <div id="notif-progress" style="display:none;margin-top:10px;font-size:12px;color:var(--text2)"></div>
               </div>
             </div>
           </div>
@@ -961,6 +1029,8 @@ function goto(section) {
   else if (section === 'security') loadSecurity();
   else if (section === 'auditlog') loadAuditLog();
   else if (section === 'dashboard') loadDashboard();
+
+  if (isMobile()) closeMobileSidebar();
 }
 
 function refreshCurrent() { goto(currentSection); }
@@ -968,6 +1038,18 @@ function refreshCurrent() { goto(currentSection); }
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
   sb.classList.toggle('collapsed');
+}
+
+function isMobile() { return window.innerWidth <= 768; }
+
+function toggleMobileSidebar() {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+  document.getElementById('sidebar-backdrop').classList.toggle('show');
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-backdrop').classList.remove('show');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1515,18 +1597,44 @@ async function sendNotification() {
   const buttons = btnsRaw.split('\n').filter(Boolean).map(line => {
     const [label, url] = line.split('|');
     return { label: label?.trim(), url: url?.trim() };
-  });
+  }).filter(b => b.label);
 
   const userIds = target === 'user' && userId ? [parseInt(userId)] : undefined;
+  if (target === 'user' && !userIds?.length) return toast('أدخل Telegram ID للمستخدم', 'error');
 
-  const r = await api('send_notification', {
-    body: { target, title, text: body, photoUrl: photo || undefined, buttons: buttons.filter(b => b.label), userIds, adminNote: 'admin' }
-  });
+  const btn = document.getElementById('send-notif-btn');
+  const progressEl = document.getElementById('notif-progress');
+  btn.disabled = true; btn.style.opacity = '0.6';
+  if (progressEl) { progressEl.style.display = 'block'; progressEl.textContent = 'جاري الإرسال...'; }
 
-  if (r.ok) {
-    toast(`تم الإرسال — ${r.sentCount || 0} مستخدم`, 'success');
+  try {
+    if (target === 'all') {
+      let notifId = null, offset = 0, totalSent = 0, total = 0, done = false;
+      while (!done) {
+        const r = await api('send_notification', {
+          body: { target, title, text: body, photoUrl: photo || undefined, buttons, notifId, batchOffset: offset, adminNote: 'admin' }
+        });
+        if (!r.ok) { toast(r.error || 'حدث خطأ', 'error'); break; }
+        notifId = r.notifId;
+        total = r.total;
+        totalSent += r.sentCount || 0;
+        offset = r.nextOffset;
+        done = r.done;
+        if (progressEl) progressEl.textContent = `جاري الإرسال... ${Math.min(totalSent, total)}/${total}`;
+      }
+      if (done) toast(`تم الإرسال — ${totalSent}/${total} مستخدم`, 'success');
+    } else {
+      const r = await api('send_notification', {
+        body: { target, title, text: body, photoUrl: photo || undefined, buttons, userIds, adminNote: 'admin' }
+      });
+      if (r.ok) toast(`تم الإرسال — ${r.sentCount || 0} مستخدم`, 'success');
+      else toast(r.error || 'حدث خطأ', 'error');
+    }
     loadNotifLog();
-  } else toast(r.error, 'error');
+  } finally {
+    btn.disabled = false; btn.style.opacity = '1';
+    if (progressEl) progressEl.style.display = 'none';
+  }
 }
 
 async function loadNotifLog() {
