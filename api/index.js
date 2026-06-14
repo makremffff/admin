@@ -339,8 +339,18 @@ module.exports = async function handler(req, res) {
 
         case 'approve_withdrawal': {
           const wId = parseInt(value, 10);
-          await sql(`UPDATE withdrawals SET status = 'done' WHERE id = $1 AND user_id = $2`, [wId, userId]);
+          const wRows = await sql(`SELECT * FROM withdrawals WHERE id = $1 AND user_id = $2`, [wId, userId]);
+          if (!wRows[0]) return res.status(404).json({ ok: false, error: 'Withdrawal not found' });
+
+          await sql(`UPDATE withdrawals SET status = 'done' WHERE id = $1`, [wId]);
           await logAdminAction(adminNote, userId, 'approve_withdrawal', { withdrawal_id: wId, reason });
+
+          try {
+            await sendTelegramMessage(user.telegram_id,
+              `✅ *تم تنفيذ طلب السحب*\n\nتم تحويل مبلغ *$${parseFloat(wRows[0].amount).toFixed(2)}* إلى محفظتك بنجاح.`);
+          } catch (e) {
+            console.error('[notify error]', e.message);
+          }
           break;
         }
 
@@ -351,6 +361,13 @@ module.exports = async function handler(req, res) {
             await sql(`UPDATE withdrawals SET status = 'rejected' WHERE id = $1`, [wId]);
             // Refund balance
             await sql(`UPDATE users SET balance_usd = balance_usd + $1 WHERE id = $2`, [wRows[0].amount, userId]);
+
+            try {
+              await sendTelegramMessage(user.telegram_id,
+                `❌ *تم رفض طلب السحب*\n\nتم رفض طلب سحب بمبلغ *$${parseFloat(wRows[0].amount).toFixed(2)}* وإعادة المبلغ إلى رصيدك.${reason ? `\n\nالسبب: ${reason}` : ''}`);
+            } catch (e) {
+              console.error('[notify error]', e.message);
+            }
           }
           await logAdminAction(adminNote, userId, 'reject_withdrawal', { withdrawal_id: wId, reason });
           break;
@@ -488,7 +505,7 @@ module.exports = async function handler(req, res) {
     //  NOTIFICATIONS
     // ══════════════════════════════════════════════════════════════════════
     if (action === 'send_notification' && req.method === 'POST') {
-      const { target, userIds, title, text, photoUrl, buttons, scheduledAt } = body;
+      const { target, userIds, title, text, photoUrl, buttons, scheduledAt, notifId: bodyNotifId, batchOffset } = body;
 
       if (!text) return res.status(400).json({ ok: false, error: 'text required' });
 
@@ -506,7 +523,6 @@ module.exports = async function handler(req, res) {
 
       const extra = inlineKeyboard ? { reply_markup: inlineKeyboard } : {};
 
-      // Store in notification log
       await sql(`CREATE TABLE IF NOT EXISTS notification_logs (
         id           SERIAL PRIMARY KEY,
         target       TEXT NOT NULL,
@@ -520,39 +536,93 @@ module.exports = async function handler(req, res) {
         created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
 
-      const notif = await sql(`
-        INSERT INTO notification_logs (target, title, body, photo_url, buttons, scheduled_at)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id
-      `, [target, title, text, photoUrl, JSON.stringify(buttons || []), scheduledAt || null]);
+      const sendOne = async (chatId) => {
+        if (photoUrl) await sendTelegramPhoto(chatId, photoUrl, fullText, extra);
+        else await sendTelegramMessage(chatId, fullText, extra);
+      };
 
-      if (scheduledAt && new Date(scheduledAt) > new Date()) {
-        // Scheduled — just save, don't send now
+      // ── Scheduled — only on first call, just save and return ──────────
+      if (scheduledAt && new Date(scheduledAt) > new Date() && !bodyNotifId) {
+        const notif = await sql(`
+          INSERT INTO notification_logs (target, title, body, photo_url, buttons, scheduled_at)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING id
+        `, [target, title, text, photoUrl, JSON.stringify(buttons || []), scheduledAt]);
         return res.json({ ok: true, scheduled: true, notifId: notif[0].id });
       }
 
-      // Send now
-      let recipients = [];
+      // ── Broadcast to ALL users — processed in small batches to avoid
+      //    function-timeout (the client loops calling this action with an
+      //    increasing batchOffset until "done" is true) ─────────────────
       if (target === 'all') {
-        recipients = await sql(`SELECT telegram_id FROM users WHERE shadow_banned = FALSE`);
-      } else if (target === 'group' && userIds?.length) {
+        const BATCH_SIZE = 20;
+        let notifId = bodyNotifId;
+        let offset = parseInt(batchOffset, 10) || 0;
+
+        if (!notifId) {
+          const notif = await sql(`
+            INSERT INTO notification_logs (target, title, body, photo_url, buttons)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id
+          `, [target, title, text, photoUrl, JSON.stringify(buttons || [])]);
+          notifId = notif[0].id;
+        }
+
+        const totalRows = await sql(`SELECT COUNT(*)::INT AS count FROM users WHERE shadow_banned = FALSE`);
+        const total = totalRows[0].count;
+
+        const recipients = await sql(
+          `SELECT telegram_id FROM users WHERE shadow_banned = FALSE ORDER BY id LIMIT $1 OFFSET $2`,
+          [BATCH_SIZE, offset]
+        );
+
+        let sentCount = 0;
+        for (const r of recipients) {
+          try {
+            await sendOne(r.telegram_id);
+            sentCount++;
+          } catch (e) {
+            console.error('[notify error]', e.message);
+          }
+        }
+
+        const nextOffset = offset + BATCH_SIZE;
+        const done = nextOffset >= total;
+
+        await sql(
+          `UPDATE notification_logs SET sent_count = sent_count + $1, sent_at = CASE WHEN $2 THEN NOW() ELSE sent_at END WHERE id = $3`,
+          [sentCount, done, notifId]
+        );
+
+        if (done) await logAdminAction(body.adminNote, null, 'send_notification', { target, title });
+
+        return res.json({ ok: true, notifId, sentCount, total, nextOffset, done });
+      }
+
+      // ── Targeted send — single user (by Telegram ID) or a small group ──
+      let recipients = [];
+      if (target === 'group' && userIds?.length) {
         recipients = await sql(`SELECT telegram_id FROM users WHERE id = ANY($1::int[])`, [userIds]);
       } else if (target === 'user' && userIds?.length === 1) {
-        recipients = await sql(`SELECT telegram_id FROM users WHERE id = $1`, [userIds[0]]);
+        recipients = await sql(`SELECT telegram_id FROM users WHERE telegram_id = $1`, [userIds[0]]);
       }
+
+      if (!recipients.length) {
+        return res.status(400).json({ ok: false, error: 'لم يتم العثور على مستخدم بهذا الـ Telegram ID' });
+      }
+
+      const notif = await sql(`
+        INSERT INTO notification_logs (target, title, body, photo_url, buttons)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
+      `, [target, title, text, photoUrl, JSON.stringify(buttons || [])]);
 
       let sentCount = 0;
       for (const r of recipients) {
         try {
-          if (photoUrl) {
-            await sendTelegramPhoto(r.telegram_id, photoUrl, fullText, extra);
-          } else {
-            await sendTelegramMessage(r.telegram_id, fullText, extra);
-          }
+          await sendOne(r.telegram_id);
           sentCount++;
-          // Small delay to avoid Telegram flood limits
-          if (recipients.length > 10) await new Promise(resolve => setTimeout(resolve, 50));
-        } catch(e) {
+        } catch (e) {
           console.error('[notify error]', e.message);
         }
       }
@@ -561,7 +631,7 @@ module.exports = async function handler(req, res) {
         [sentCount, notif[0].id]);
 
       await logAdminAction(body.adminNote, null, 'send_notification', { target, sentCount, title });
-      return res.json({ ok: true, sentCount, notifId: notif[0].id });
+      return res.json({ ok: true, sentCount, notifId: notif[0].id, done: true });
     }
 
     if (action === 'notifications_log') {
