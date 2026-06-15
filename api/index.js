@@ -68,7 +68,7 @@ async function telegramPost(method, payload) {
 async function sendTelegramMessage(chatId, text, extra = {}) {
   if (!BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN غير مُعرّف في متغيرات البيئة' };
   try {
-    const payload = { chat_id: String(chatId), text, parse_mode: 'Markdown', ...extra };
+    let payload = { chat_id: String(chatId), text, parse_mode: 'Markdown', ...extra };
     let { res, data } = await telegramPost('sendMessage', payload);
 
     // ── Markdown fallback ──────────────────────────────────────────────
@@ -78,9 +78,22 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
     // plain text so the message (with its inline buttons) still arrives
     // instead of silently failing.
     if (!data.ok && data.error_code === 400 && /can't parse entities/i.test(data.description || '')) {
-      const plain = { ...payload };
-      delete plain.parse_mode;
-      ({ res, data } = await telegramPost('sendMessage', plain));
+      payload = { ...payload };
+      delete payload.parse_mode;
+      ({ res, data } = await telegramPost('sendMessage', payload));
+    }
+
+    // ── Inline-keyboard fallback ─────────────────────────────────────────
+    // If Telegram rejects the inline buttons (invalid/missing URL —
+    // BUTTON_URL_INVALID, BUTTON_TYPE_INVALID, malformed reply_markup),
+    // it rejects the ENTIRE message. Retry without the buttons so the
+    // text still reaches the user instead of silently failing.
+    if (!data.ok && data.error_code === 400 && payload.reply_markup &&
+        /(button|keyboard|reply.?markup)/i.test(data.description || '')) {
+      console.error('[sendTelegramMessage] reply_markup rejected, retrying without buttons:', data.description);
+      payload = { ...payload };
+      delete payload.reply_markup;
+      ({ res, data } = await telegramPost('sendMessage', payload));
     }
 
     if (!res.ok || !data.ok) {
@@ -97,14 +110,25 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
 async function sendTelegramPhoto(chatId, photo, caption, extra = {}) {
   if (!BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN غير مُعرّف في متغيرات البيئة' };
   try {
-    const payload = { chat_id: String(chatId), photo, caption, parse_mode: 'Markdown', ...extra };
+    let payload = { chat_id: String(chatId), photo, caption, parse_mode: 'Markdown', ...extra };
     let { res, data } = await telegramPost('sendPhoto', payload);
 
     // ── Markdown fallback (same reasoning as sendTelegramMessage) ───────
     if (!data.ok && data.error_code === 400 && /can't parse entities/i.test(data.description || '')) {
-      const plain = { ...payload };
-      delete plain.parse_mode;
-      ({ res, data } = await telegramPost('sendPhoto', plain));
+      payload = { ...payload };
+      delete payload.parse_mode;
+      ({ res, data } = await telegramPost('sendPhoto', payload));
+    }
+
+    // ── Inline-keyboard fallback ─────────────────────────────────────────
+    // Same reasoning as sendTelegramMessage: an invalid button must not
+    // take down the photo + caption with it.
+    if (!data.ok && data.error_code === 400 && payload.reply_markup &&
+        /(button|keyboard|reply.?markup)/i.test(data.description || '')) {
+      console.error('[sendTelegramPhoto] reply_markup rejected, retrying without buttons:', data.description);
+      payload = { ...payload };
+      delete payload.reply_markup;
+      ({ res, data } = await telegramPost('sendPhoto', payload));
     }
 
     // ── Bad-photo fallback ───────────────────────────────────────────────
@@ -474,15 +498,29 @@ module.exports = async function handler(req, res) {
       // Prefix the title (if provided) the same way the broadcast notifications do
       const fullText = title?.trim() ? `*${title.trim()}*\n\n${text || ''}` : (text || '');
 
+      const normalizeButtonUrl = (raw) => {
+        const u = (raw || '').trim();
+        if (!u) return null;
+        return /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(u) ? u : `https://${u}`;
+      };
+
       let inlineKeyboard = null;
       if (buttons && buttons.length > 0) {
-        inlineKeyboard = { inline_keyboard: buttons.map(row =>
-          Array.isArray(row)
-            ? row.map(btn => ({ text: btn.label, url: btn.url }))
-            : [{ text: row.label, url: row.url }]
-        )};
+        const rows = buttons
+          .map(row => {
+            const cells = Array.isArray(row) ? row : [row];
+            return cells
+              .map(btn => {
+                const label = (btn?.label || '').trim();
+                const url = normalizeButtonUrl(btn?.url);
+                return (label && url) ? { text: label, url } : null;
+              })
+              .filter(Boolean);
+          })
+          .filter(row => row.length > 0);
+
+        if (rows.length > 0) inlineKeyboard = { inline_keyboard: rows };
       }
-      const extra = inlineKeyboard ? { reply_markup: inlineKeyboard } : {};
 
       let result;
       if (photoUrl?.trim()) result = await sendTelegramPhoto(user.telegram_id, photoUrl.trim(), fullText, extra);
@@ -672,11 +710,33 @@ module.exports = async function handler(req, res) {
 
       let inlineKeyboard = null;
       if (buttons && buttons.length > 0) {
-        inlineKeyboard = { inline_keyboard: buttons.map(row =>
-          Array.isArray(row)
-            ? row.map(btn => ({ text: btn.label, url: btn.url }))
-            : [{ text: row.label, url: row.url }]
-        )};
+        // Telegram requires every inline button to carry a valid `url`.
+        // If even ONE button is missing a url, or has a url without a
+        // scheme (e.g. "t.me/..." instead of "https://t.me/..."), Telegram
+        // returns 400 BUTTON_URL_INVALID / BUTTON_TYPE_INVALID for the
+        // WHOLE request — meaning no text, no photo, nothing gets
+        // delivered. Normalize/validate here so a bad button doesn't take
+        // the entire broadcast down with it.
+        const normalizeUrl = (raw) => {
+          const u = (raw || '').trim();
+          if (!u) return null;
+          return /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(u) ? u : `https://${u}`;
+        };
+
+        const rows = buttons
+          .map(row => {
+            const cells = Array.isArray(row) ? row : [row];
+            return cells
+              .map(btn => {
+                const label = (btn?.label || '').trim();
+                const url = normalizeUrl(btn?.url);
+                return (label && url) ? { text: label, url } : null;
+              })
+              .filter(Boolean);
+          })
+          .filter(row => row.length > 0);
+
+        if (rows.length > 0) inlineKeyboard = { inline_keyboard: rows };
       }
 
       const extra = inlineKeyboard ? { reply_markup: inlineKeyboard } : {};
@@ -695,8 +755,8 @@ module.exports = async function handler(req, res) {
       )`);
 
       const sendOne = async (chatId) => {
-        if (photoUrl) await sendTelegramPhoto(chatId, photoUrl, fullText, extra);
-        else await sendTelegramMessage(chatId, fullText, extra);
+        if (photoUrl) return await sendTelegramPhoto(chatId, photoUrl, fullText, extra);
+        return await sendTelegramMessage(chatId, fullText, extra);
       };
 
       // ── Scheduled — only on first call, just save and return ──────────
@@ -735,11 +795,14 @@ module.exports = async function handler(req, res) {
         );
 
         let sentCount = 0;
+        let lastError = null;
         for (const r of recipients) {
           try {
-            await sendOne(r.telegram_id);
-            sentCount++;
+            const result = await sendOne(r.telegram_id);
+            if (result?.ok !== false) sentCount++;
+            else lastError = result.description || 'فشل الإرسال';
           } catch (e) {
+            lastError = e.message;
             console.error('[notify error]', e.message);
           }
         }
@@ -754,7 +817,7 @@ module.exports = async function handler(req, res) {
 
         if (done) await logAdminAction(body.adminNote, null, 'send_notification', { target, title });
 
-        return res.json({ ok: true, notifId, sentCount, total, nextOffset, done });
+        return res.json({ ok: true, notifId, sentCount, total, nextOffset, done, lastError });
       }
 
       // ── Targeted send — single user (by Telegram ID) or a small group ──
@@ -776,11 +839,14 @@ module.exports = async function handler(req, res) {
       `, [target, title, text, photoUrl, JSON.stringify(buttons || [])]);
 
       let sentCount = 0;
+      let lastError = null;
       for (const r of recipients) {
         try {
-          await sendOne(r.telegram_id);
-          sentCount++;
+          const result = await sendOne(r.telegram_id);
+          if (result?.ok !== false) sentCount++;
+          else lastError = result.description || 'فشل الإرسال';
         } catch (e) {
+          lastError = e.message;
           console.error('[notify error]', e.message);
         }
       }
@@ -789,7 +855,7 @@ module.exports = async function handler(req, res) {
         [sentCount, notif[0].id]);
 
       await logAdminAction(body.adminNote, null, 'send_notification', { target, sentCount, title });
-      return res.json({ ok: true, sentCount, notifId: notif[0].id, done: true });
+      return res.json({ ok: true, sentCount, notifId: notif[0].id, done: true, lastError });
     }
 
     if (action === 'notifications_log') {
