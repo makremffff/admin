@@ -1880,7 +1880,7 @@ async function sendNotification() {
 
   try {
     if (target === 'all') {
-      let notifId = null, offset = 0, totalSent = 0, total = 0, done = false, lastError = null;
+      let notifId = null, offset = 0, totalSent = 0, total = 0, done = false;
       while (!done) {
         const r = await api('send_notification', {
           body: { target, title, text: body, photoUrl: photo || undefined, buttons, notifId, batchOffset: offset, adminNote: 'admin' }
@@ -1891,22 +1891,15 @@ async function sendNotification() {
         totalSent += r.sentCount || 0;
         offset = r.nextOffset;
         done = r.done;
-        if (r.lastError) lastError = r.lastError;
         if (progressEl) progressEl.textContent = `جاري الإرسال... ${Math.min(totalSent, total)}/${total}`;
       }
-      if (done) {
-        if (totalSent > 0) {
-          toast(`تم الإرسال — ${totalSent}/${total} مستخدم${lastError ? ' (بعض الإشعارات فشلت: ' + lastError + ')' : ''}`, 'success');
-        } else {
-          toast(lastError ? `فشل الإرسال: ${lastError}` : 'لم يتم إرسال أي إشعار', 'error');
-        }
-      }
+      if (done) toast(`تم الإرسال — ${totalSent}/${total} مستخدم`, 'success');
     } else {
       const r = await api('send_notification', {
         body: { target, title, text: body, photoUrl: photo || undefined, buttons, userIds, adminNote: 'admin' }
       });
-      if (r.ok && (r.sentCount || 0) > 0) toast(`تم الإرسال — ${r.sentCount} مستخدم`, 'success');
-      else toast(r.error || r.lastError || 'فشل الإرسال', 'error');
+      if (r.ok) toast(`تم الإرسال — ${r.sentCount || 0} مستخدم`, 'success');
+      else toast(r.error || 'حدث خطأ', 'error');
     }
     loadNotifLog();
   } finally {
