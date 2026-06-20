@@ -1,2237 +1,1347 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>BigLeague — مركز التحكم</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#07090f">
+<meta name="color-scheme" content="dark">
+<title>لوحة التحكم — BigLeague</title>
 <style>
-/* ═══ VARIABLES ════════════════════════════════════════════════════════════ */
-:root{
-  --bg:#020c1a;--bg2:#061224;--surface:#0b1628;--surface2:#0f1d35;
-  --border:rgba(61,137,255,0.1);--border2:rgba(61,137,255,0.18);--border3:rgba(61,137,255,0.28);
-  --text:#ddeeff;--text2:#6e96c8;--text3:#2e4a6a;
-  --blue:#3d89ff;--blue-dim:rgba(61,137,255,0.12);--blue-glow:rgba(61,137,255,0.25);
-  --teal:#00e5b3;--teal-dim:rgba(0,229,179,0.1);
-  --green:#22c55e;--green-dim:rgba(34,197,94,0.1);
-  --red:#f87171;--red-dim:rgba(248,113,113,0.1);
-  --amber:#fbbf24;--amber-dim:rgba(251,191,36,0.1);
-  --sky:#38bdf8;--sky-dim:rgba(56,189,248,0.1);
-  --sidebar-w:220px;--topbar-h:56px;
-  --r:10px;--r-sm:7px;--r-lg:16px;
-  --shadow:0 8px 40px rgba(0,0,0,0.6);
-  --transition:all 0.18s cubic-bezier(0.4,0,0.2,1);
-}
-*,::before,::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--text);
-  font-family:'Tajawal',sans-serif;font-size:14px;line-height:1.6;overflow:hidden}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:var(--border3)}
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=DynaPuff:wght@500;600;700&family=Permanent+Marker&display=swap');
 
-/* ═══ LOGIN ════════════════════════════════════════════════════════════════ */
-#login-screen{
-  position:fixed;inset:0;z-index:1000;display:flex;
-  align-items:center;justify-content:center;overflow:hidden;
-  background:radial-gradient(ellipse 140% 100% at 50% 110%,#061224 0%,var(--bg) 60%);
-}
-.login-grid{
-  position:absolute;inset:0;
-  background-image:linear-gradient(var(--border) 1px,transparent 1px),
-                   linear-gradient(90deg,var(--border) 1px,transparent 1px);
-  background-size:48px 48px;opacity:0.6;pointer-events:none;
-}
-.login-wrap{
-  position:relative;z-index:1;text-align:center;
-  display:flex;flex-direction:column;align-items:center;gap:0;
-}
-.login-badge{
-  width:72px;height:72px;border-radius:20px;margin-bottom:28px;
-  background:linear-gradient(135deg,rgba(61,137,255,0.2),rgba(0,229,179,0.1));
-  border:1px solid var(--border2);
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 40px rgba(61,137,255,0.15),inset 0 1px 0 rgba(255,255,255,0.06);
-}
-.login-h{font-family:'Cairo',sans-serif;font-size:26px;font-weight:700;color:var(--text);margin-bottom:6px}
-.login-sub{font-size:13px;color:var(--text2);margin-bottom:36px}
-.login-card{
-  background:rgba(11,22,40,0.9);border:1px solid var(--border2);
-  border-radius:var(--r-lg);padding:36px;width:360px;
-  backdrop-filter:blur(20px);
-  box-shadow:0 24px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(61,137,255,0.05);
-}
-.login-input{
-  width:100%;background:var(--bg2);border:1px solid var(--border2);
-  border-radius:var(--r-sm);padding:13px 16px;color:var(--text);
-  font-family:'Tajawal',sans-serif;font-size:16px;
-  outline:none;text-align:center;letter-spacing:4px;
-  transition:var(--transition);margin-bottom:14px;
-}
-.login-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-dim)}
-.login-btn{
-  width:100%;padding:13px;border:none;border-radius:var(--r-sm);
-  background:linear-gradient(135deg,#2563eb,var(--blue));
-  color:#fff;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:600;
-  cursor:pointer;transition:var(--transition);
-  box-shadow:0 4px 20px rgba(61,137,255,0.35);
-}
-.login-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
-.login-btn:active{transform:translateY(0)}
-.login-err{color:var(--red);font-size:12px;margin-top:12px;min-height:18px}
-.login-version{position:absolute;bottom:20px;font-size:11px;color:var(--text3)}
+  /* ── Reset & Base ───────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #07090f;
+    --surface:   rgba(255,255,255,.035);
+    --surface-2: rgba(255,255,255,.07);
+    --line:      rgba(255,255,255,.07);
 
-/* ═══ APP LAYOUT ═══════════════════════════════════════════════════════════ */
-#app{display:flex;height:100vh;overflow:hidden}
+    --gold:      #f5c840;
+    --gold-dim:  #d4a72c;
+    --gold-bg:   rgba(245,200,64,.14);
+    --gold-ink:  #1a1406;
 
-/* ═══ SIDEBAR ══════════════════════════════════════════════════════════════ */
-.sidebar{
-  width:var(--sidebar-w);background:var(--surface);
-  border-left:1px solid var(--border);
-  display:flex;flex-direction:column;flex-shrink:0;
-  position:relative;z-index:10;transition:width 0.28s cubic-bezier(0.4,0,0.2,1);
-  overflow:hidden;
-}
-.sidebar.collapsed{width:58px}
-.sidebar-header{
-  padding:16px 14px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:10px;min-height:var(--topbar-h);
-}
-.s-logo{
-  width:34px;height:34px;border-radius:9px;flex-shrink:0;
-  background:linear-gradient(135deg,rgba(61,137,255,0.25),rgba(0,229,179,0.12));
-  border:1px solid var(--border2);
-  display:flex;align-items:center;justify-content:center;
-}
-.s-brand{overflow:hidden;white-space:nowrap}
-.s-brand-name{font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;color:var(--text);line-height:1.2}
-.s-brand-sub{font-size:11px;color:var(--text3);margin-top:1px}
-.sidebar-nav{flex:1;padding:10px 8px;overflow-y:auto;overflow-x:hidden}
-.nav-item{
-  display:flex;align-items:center;gap:9px;
-  padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;
-  color:var(--text2);transition:var(--transition);
-  white-space:nowrap;position:relative;margin-bottom:1px;
-}
-.nav-item:hover{background:var(--bg2);color:var(--text)}
-.nav-item.active{background:var(--blue-dim);color:var(--blue)}
-.nav-item.active::after{
-  content:'';position:absolute;left:0;top:4px;bottom:4px;
-  width:2px;background:var(--blue);border-radius:0 2px 2px 0;
-}
-.nav-icon{display:flex;flex-shrink:0;width:17px;height:17px;align-items:center;justify-content:center}
-.nav-label{font-size:13px;font-weight:500;overflow:hidden}
-.nav-badge{
-  margin-right:auto;background:var(--red-dim);color:var(--red);
-  border:1px solid rgba(248,113,113,0.25);
-  font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0;
-}
-.nav-divider{height:1px;background:var(--border);margin:8px 10px}
-.nav-section-label{
-  font-size:10px;font-weight:600;color:var(--text3);
-  text-transform:uppercase;letter-spacing:1px;
-  padding:8px 10px 4px;white-space:nowrap;overflow:hidden;
-  transition:opacity 0.2s;
-}
-.sidebar.collapsed .nav-section-label{opacity:0}
-.sidebar-footer{padding:10px 8px;border-top:1px solid var(--border)}
-.online-pill{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 10px;border-radius:var(--r-sm);
-  background:var(--teal-dim);border:1px solid rgba(0,229,179,0.15);
-  margin-bottom:6px;white-space:nowrap;overflow:hidden;
-}
-.online-pulse{
-  width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0;
-  box-shadow:0 0 6px var(--teal);
-  animation:pulseRing 2s infinite;
-}
-@keyframes pulseRing{0%,100%{box-shadow:0 0 4px var(--teal)}50%{box-shadow:0 0 12px var(--teal),0 0 20px rgba(0,229,179,0.3)}}
-.online-label{font-size:12px;color:var(--teal);font-weight:500}
-.collapse-toggle{
-  display:flex;align-items:center;gap:9px;padding:8px 10px;
-  border-radius:var(--r-sm);cursor:pointer;color:var(--text3);
-  transition:var(--transition);width:100%;
-}
-.collapse-toggle:hover{background:var(--bg2);color:var(--text2)}
+    --emerald:    #34d399;
+    --emerald-bg: rgba(52,211,153,.14);
+    --rose:       #fb7185;
+    --rose-bg:    rgba(251,113,133,.14);
+    --amber:      #fbbf24;
+    --amber-bg:   rgba(251,191,36,.14);
+    --violet:     #a78bfa;
+    --violet-bg:  rgba(167,139,250,.14);
 
-/* ═══ MAIN ═════════════════════════════════════════════════════════════════ */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    --text:  rgba(255,255,255,.94);
+    --text2: rgba(255,255,255,.52);
+    --text3: rgba(255,255,255,.32);
 
-/* ═══ TOPBAR ═══════════════════════════════════════════════════════════════ */
-.topbar{
-  height:var(--topbar-h);background:var(--surface);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:12px;padding:0 20px;flex-shrink:0;
-}
-.topbar-menu-btn{display:none}
-.topbar-title{font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;flex:1;color:var(--text)}
-.topbar-search{
-  display:flex;align-items:center;gap:8px;
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:var(--r-sm);padding:7px 12px;width:210px;
-  transition:var(--transition);
-}
-.topbar-search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-dim)}
-.topbar-search input{background:none;border:none;outline:none;color:var(--text);
-  font-family:'Tajawal',sans-serif;font-size:13px;width:100%}
-.topbar-search input::placeholder{color:var(--text3)}
-.topbar-divider{width:1px;height:24px;background:var(--border)}
-.topbar-btn{
-  width:34px;height:34px;border-radius:var(--r-sm);
-  background:var(--bg2);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;color:var(--text2);transition:var(--transition);
-}
-.topbar-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border2)}
-.status-indicator{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);
-  animation:statusGlow 2.5s infinite}
-@keyframes statusGlow{0%,100%{box-shadow:0 0 4px var(--teal)}50%{box-shadow:0 0 10px var(--teal)}}
-
-/* ═══ CONTENT ══════════════════════════════════════════════════════════════ */
-.content{flex:1;overflow-y:auto;padding:20px}
-.section{display:none}
-.section.active{display:block;animation:fadeUp 0.2s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-
-/* ═══ PAGE HEADER ══════════════════════════════════════════════════════════ */
-.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px}
-.page-title{font-family:'Cairo',sans-serif;font-size:20px;font-weight:700;color:var(--text)}
-.page-actions{display:flex;gap:8px;flex-wrap:wrap}
-
-/* ═══ KPI STRIP ════════════════════════════════════════════════════════════ */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:20px}
-.kpi-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);padding:16px 18px;
-  display:flex;align-items:center;gap:14px;
-  transition:var(--transition);position:relative;overflow:hidden;cursor:default;
-}
-.kpi-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
-.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--kpi-accent,var(--blue));opacity:0.5}
-.kpi-icon{
-  width:40px;height:40px;border-radius:10px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  background:var(--kpi-icon-bg,var(--blue-dim));
-}
-.kpi-body{flex:1;min-width:0}
-.kpi-value{font-family:'Cairo',sans-serif;font-size:22px;font-weight:700;line-height:1;color:var(--text);margin-bottom:3px}
-.kpi-label{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kpi-delta{font-size:11px;margin-top:4px}
-.kpi-delta.up{color:var(--teal)}
-.kpi-delta.down{color:var(--red)}
-
-/* ═══ GRID ROWS ════════════════════════════════════════════════════════════ */
-.row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.row-3{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
-
-/* ═══ CARD ═════════════════════════════════════════════════════════════════ */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-.card-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:13px 18px;border-bottom:1px solid var(--border);
-}
-.card-title{font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;color:var(--text)}
-.card-actions{display:flex;gap:8px;align-items:center}
-.card-body{padding:18px}
-.chart-wrap{height:200px;position:relative}
-
-/* ═══ TABLE ════════════════════════════════════════════════════════════════ */
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-thead th{
-  background:var(--bg2);padding:9px 14px;
-  font-size:11px;font-weight:600;color:var(--text3);
-  text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);
-  text-transform:uppercase;letter-spacing:0.5px;
-}
-tbody td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:rgba(61,137,255,0.03)}
-
-/* ═══ AVATAR ═══════════════════════════════════════════════════════════════ */
-.avatar{
-  width:32px;height:32px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;
-  background:var(--blue-dim);color:var(--blue);border:1px solid var(--border2);
-}
-.user-cell{display:flex;align-items:center;gap:10px}
-.user-name{font-size:13px;font-weight:500;color:var(--text)}
-.user-sub{font-size:11px;color:var(--text2)}
-
-/* ═══ BADGES ═══════════════════════════════════════════════════════════════ */
-.badge{display:inline-flex;align-items:center;gap:4px;
-  font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
-.badge-blue  {background:var(--blue-dim);  color:var(--blue);  border:1px solid rgba(61,137,255,.2)}
-.badge-teal  {background:var(--teal-dim);  color:var(--teal);  border:1px solid rgba(0,229,179,.2)}
-.badge-green {background:var(--green-dim); color:var(--green); border:1px solid rgba(34,197,94,.2)}
-.badge-red   {background:var(--red-dim);   color:var(--red);   border:1px solid rgba(248,113,113,.2)}
-.badge-amber {background:var(--amber-dim); color:var(--amber); border:1px solid rgba(251,191,36,.2)}
-.badge-sky   {background:var(--sky-dim);   color:var(--sky);   border:1px solid rgba(56,189,248,.2)}
-.badge-dim   {background:var(--bg2);       color:var(--text2); border:1px solid var(--border)}
-
-/* ═══ BUTTONS ══════════════════════════════════════════════════════════════ */
-.btn{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:8px 14px;border-radius:var(--r-sm);
-  font-family:'Tajawal',sans-serif;font-size:13px;font-weight:500;
-  cursor:pointer;border:none;transition:var(--transition);white-space:nowrap;
-}
-.btn-primary{background:var(--blue);color:#fff;box-shadow:0 2px 12px rgba(61,137,255,0.3)}
-.btn-primary:hover{filter:brightness(1.1);box-shadow:0 4px 20px rgba(61,137,255,0.45)}
-.btn-teal{background:var(--teal-dim);color:var(--teal);border:1px solid rgba(0,229,179,0.25)}
-.btn-teal:hover{background:rgba(0,229,179,0.15)}
-.btn-ghost{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
-.btn-ghost:hover{background:var(--surface2);color:var(--text);border-color:var(--border2)}
-.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
-.btn-danger:hover{background:rgba(248,113,113,0.18)}
-.btn-sm{padding:5px 10px;font-size:12px}
-.btn-xs{padding:3px 8px;font-size:11px}
-
-.tg-link{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:3px 9px;border-radius:7px;font-size:11px;font-weight:600;
-  background:var(--sky-dim);color:var(--sky);border:1px solid rgba(56,189,248,.2);
-  cursor:pointer;transition:var(--transition);text-decoration:none;white-space:nowrap;
-}
-.tg-link:hover{background:rgba(56,189,248,0.18)}
-.tg-link.disabled{opacity:0.35;cursor:not-allowed;pointer-events:none}
-
-/* ═══ FILTERS BAR ══════════════════════════════════════════════════════════ */
-.filters-bar{
-  display:flex;align-items:center;gap:8px;padding:10px 14px;
-  border-bottom:1px solid var(--border);flex-wrap:wrap;
-}
-.filter-chip{
-  padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;
-  cursor:pointer;border:1px solid var(--border);color:var(--text2);background:transparent;
-  transition:var(--transition);white-space:nowrap;
-}
-.filter-chip:hover{color:var(--text);border-color:var(--border2)}
-.filter-chip.active{background:var(--blue-dim);color:var(--blue);border-color:rgba(61,137,255,0.3)}
-
-/* ═══ FORM ═════════════════════════════════════════════════════════════════ */
-.form-group{margin-bottom:14px}
-.form-label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px}
-.form-input,.form-select,.form-textarea{
-  width:100%;background:var(--bg2);border:1px solid var(--border2);
-  border-radius:var(--r-sm);padding:10px 12px;color:var(--text);
-  font-family:'Tajawal',sans-serif;font-size:13px;outline:none;
-  transition:var(--transition);
-}
-.form-input:focus,.form-select:focus,.form-textarea:focus{
-  border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-dim);
-}
-.form-textarea{min-height:90px;resize:vertical}
-.form-select option{background:var(--surface2)}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-
-/* ═══ MODALS ═══════════════════════════════════════════════════════════════ */
-.modal-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,0.75);
-  backdrop-filter:blur(6px);z-index:500;
-  display:flex;align-items:center;justify-content:center;padding:16px;
-  opacity:0;pointer-events:none;transition:opacity 0.2s;
-}
-.modal-overlay.show{opacity:1;pointer-events:all}
-.modal{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r-lg);width:100%;max-width:540px;
-  box-shadow:var(--shadow);max-height:90vh;display:flex;flex-direction:column;
-  transform:translateY(10px);transition:transform 0.22s;
-}
-.modal-overlay.show .modal{transform:translateY(0)}
-.modal.modal-lg{max-width:700px}
-.modal.modal-xl{max-width:860px}
-.modal-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
-}
-.modal-title{font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;color:var(--text)}
-.modal-close{
-  width:30px;height:30px;border-radius:var(--r-sm);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;color:var(--text2);transition:var(--transition);
-}
-.modal-close:hover{background:var(--bg2);color:var(--text)}
-.modal-body{padding:20px;overflow-y:auto;flex:1}
-.modal-foot{
-  padding:14px 20px;border-top:1px solid var(--border);
-  display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;
-}
-
-/* ═══ TABS ═════════════════════════════════════════════════════════════════ */
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);overflow-x:auto}
-.tab{
-  padding:10px 16px;font-size:12px;font-weight:500;color:var(--text2);
-  cursor:pointer;border-bottom:2px solid transparent;
-  transition:var(--transition);white-space:nowrap;margin-bottom:-1px;flex-shrink:0;
-}
-.tab:hover{color:var(--text)}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-.tab-content{display:none;padding:16px 0}
-.tab-content.active{display:block}
-
-/* ═══ DETAIL ROWS ══════════════════════════════════════════════════════════ */
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-.detail-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px}
-.detail-item-label{font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px}
-.detail-item-value{font-size:14px;font-weight:600;color:var(--text)}
-
-/* ═══ RISK BAR ═════════════════════════════════════════════════════════════ */
-.risk-bar{display:flex;align-items:center;gap:8px}
-.risk-track{height:4px;background:var(--bg2);border-radius:4px;overflow:hidden;flex:1;max-width:80px}
-.risk-fill{height:100%;border-radius:4px;transition:width 0.5s ease}
-
-/* ═══ PAGINATION ═══════════════════════════════════════════════════════════ */
-.pagination{display:flex;gap:4px;padding:14px 16px;align-items:center}
-.page-btn{
-  width:30px;height:30px;border-radius:var(--r-sm);display:flex;
-  align-items:center;justify-content:center;font-size:12px;font-weight:500;
-  cursor:pointer;color:var(--text2);background:var(--bg2);border:1px solid var(--border);
-  transition:var(--transition);
-}
-.page-btn:hover{color:var(--text);border-color:var(--border2)}
-.page-btn.active{background:var(--blue-dim);color:var(--blue);border-color:rgba(61,137,255,0.3)}
-
-/* ═══ TOAST ════════════════════════════════════════════════════════════════ */
-#toast-zone{position:fixed;bottom:20px;left:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
-.toast{
-  display:flex;align-items:center;gap:10px;
-  padding:11px 16px;border-radius:var(--r-sm);
-  background:var(--surface2);border:1px solid var(--border2);
-  box-shadow:var(--shadow);font-size:13px;min-width:240px;
-  animation:toastIn 0.25s ease;
-}
-@keyframes toastIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
-.toast.success{border-right:3px solid var(--teal)}
-.toast.error  {border-right:3px solid var(--red)}
-.toast.info   {border-right:3px solid var(--blue)}
-
-/* ═══ SKELETON ═════════════════════════════════════════════════════════════ */
-.skeleton{
-  background:linear-gradient(90deg,var(--bg2) 25%,var(--surface2) 50%,var(--bg2) 75%);
-  background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;
-}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-/* ═══ EMPTY STATE ══════════════════════════════════════════════════════════ */
-.empty{text-align:center;padding:48px 20px;color:var(--text3)}
-.empty-icon{margin-bottom:12px;opacity:0.25}
-.empty-title{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:4px}
-.empty-sub{font-size:12px}
-
-/* ═══ COMPETITION CARDS ════════════════════════════════════════════════════ */
-.comp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-.comp-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);padding:18px;transition:var(--transition);
-}
-.comp-card:hover{border-color:var(--border2);transform:translateY(-1px)}
-.comp-card.active-comp{border-color:rgba(0,229,179,0.3);background:rgba(0,229,179,0.02)}
-.comp-name{font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px}
-.comp-dates{font-size:11px;color:var(--text2);margin-bottom:14px}
-.comp-metrics{display:flex;gap:20px;margin-bottom:14px}
-.comp-metric-val{font-family:'Cairo',sans-serif;font-size:18px;font-weight:700}
-.comp-metric-label{font-size:11px;color:var(--text3);margin-top:1px}
-.comp-actions{display:flex;gap:8px;flex-wrap:wrap}
-
-/* ═══ ONLINE USERS GRID ════════════════════════════════════════════════════ */
-.online-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.online-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);padding:14px;display:flex;gap:12px;
-  align-items:center;transition:var(--transition);cursor:pointer;
-}
-.online-card:hover{border-color:var(--border2);background:var(--surface2)}
-.online-card .avatar{width:40px;height:40px;font-size:16px;position:relative}
-.online-card-info{flex:1;min-width:0}
-.online-card-name{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.online-card-action{font-size:11px;color:var(--text2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.online-card-time{font-size:11px;color:var(--text3);margin-top:2px}
-.online-dot{
-  position:absolute;bottom:0;left:0;
-  width:10px;height:10px;border-radius:50%;
-  background:var(--teal);border:2px solid var(--surface);
-  animation:pulseRing 2s infinite;
-}
-
-/* ═══ NOTIF PREVIEW ════════════════════════════════════════════════════════ */
-.notif-preview{
-  background:var(--bg2);border:1px solid var(--border2);
-  border-radius:var(--r);padding:14px;margin-top:16px;
-}
-.notif-preview-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
-.notif-preview-title{font-weight:700;font-size:14px;margin-bottom:6px;color:var(--text)}
-.notif-preview-body{font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.5}
-.notif-btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.notif-preview-btn{
-  padding:6px 14px;border-radius:7px;font-size:12px;font-weight:500;
-  background:var(--blue-dim);color:var(--blue);border:1px solid rgba(61,137,255,0.25);
-}
-
-/* ═══ DM SEARCH DROP ═══════════════════════════════════════════════════════ */
-.dm-drop{
-  position:absolute;width:100%;background:var(--surface2);
-  border:1px solid var(--border2);border-radius:var(--r-sm);
-  box-shadow:var(--shadow);z-index:100;max-height:200px;overflow-y:auto;
-  opacity:0;pointer-events:none;transform:translateY(-4px);transition:var(--transition);
-}
-.dm-drop.open{opacity:1;pointer-events:all;transform:translateY(0)}
-.dm-drop-item{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;
-  cursor:pointer;transition:var(--transition);font-size:13px;
-}
-.dm-drop-item:hover{background:var(--bg2)}
-
-/* ═══ DANGER ZONE ══════════════════════════════════════════════════════════ */
-.danger-zone{
-  border:1px solid rgba(248,113,113,0.2);border-radius:var(--r);
-  padding:14px 16px;background:rgba(248,113,113,0.03);margin-top:16px;
-}
-.danger-zone-title{font-size:12px;font-weight:600;color:var(--red);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-
-/* ═══ MOBILE SIDEBAR ═══════════════════════════════════════════════════════ */
-.sidebar-backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,0.65);
-  z-index:40;opacity:0;pointer-events:none;transition:opacity 0.25s;
-}
-.sidebar-backdrop.show{opacity:1;pointer-events:all}
-
-/* ═══ RESPONSIVE ═══════════════════════════════════════════════════════════ */
-@media(max-width:900px){
-  .row-2,.row-3{grid-template-columns:1fr}
-  .kpi-grid{grid-template-columns:repeat(2,1fr)}
-}
-@media(max-width:768px){
-  .topbar-menu-btn{display:flex}
-  .sidebar{
-    position:fixed;inset-block:0;right:0;z-index:50;
-    width:82%;max-width:280px;
-    transform:translateX(110%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
-    box-shadow:-10px 0 40px rgba(0,0,0,0.5);
+    --nav-h:    72px;
+    --header-h: 64px;
+    --radius:    20px;
+    --radius-sm: 14px;
+    --shadow:    0 14px 32px -14px rgba(0,0,0,.65);
+    --shadow-sm: 0 6px 18px -8px rgba(0,0,0,.55);
   }
-  .sidebar.mobile-open{transform:translateX(0)}
-  .sidebar.collapsed{width:82%;max-width:280px}
-  .sidebar-footer{display:none}
-  .topbar{padding:0 12px;gap:8px}
-  .topbar-search{display:none}
-  .content{padding:12px}
-  .status-indicator .status-text{display:none}
-  .detail-grid{grid-template-columns:1fr}
-  .modal{max-width:none;width:100%;max-height:100vh;border-radius:0}
-  .modal-overlay{padding:0;align-items:flex-end}
-  .modal-overlay .modal{border-radius:var(--r-lg) var(--r-lg) 0 0}
-  .comp-grid{grid-template-columns:1fr}
-  .online-grid{grid-template-columns:1fr 1fr}
-  .form-row{grid-template-columns:1fr}
-  table{font-size:12px}
-  thead th,tbody td{padding:8px}
-}
-@media(max-width:420px){
-  .kpi-grid{grid-template-columns:1fr 1fr}
-  .online-grid{grid-template-columns:1fr}
-}
+  html, body { height: 100%; font-family:'Cairo', system-ui, -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif; }
+  body {
+    background: var(--bg); color: var(--text); font-size: 14px;
+    background-image: radial-gradient(circle at 50% -8%, rgba(245,200,64,.08), transparent 55%);
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(245,200,64,.22); border-radius: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  * { scrollbar-color: rgba(245,200,64,.22) transparent; scrollbar-width: thin; }
+
+  .num { font-family:'DynaPuff','Cairo',sans-serif; }
+  .brand-mark { font-family:'Permanent Marker', cursive; letter-spacing:.5px; }
+
+  /* ── Icon system (inline sprite only — no emoji, no external icons) ── */
+  .icon { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8;
+          stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; vertical-align: -3px; }
+  .icon-fill { fill: currentColor; stroke: none; }
+
+  /* ── App shell ───────────────────────────────────────────── */
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── Top header ──────────────────────────────────────────── */
+  .top-header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(7,9,15,.82); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    height: var(--header-h);
+    display: flex; align-items: center; padding: 0 20px;
+    gap: 12px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 12px; border: none;
+    background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--text2); transition: background .2s, color .2s;
+  }
+  .icon-btn:active { background: var(--surface-2); color: var(--gold); }
+  .icon-btn .icon { width: 19px; height: 19px; }
+  .top-header .title-area { flex: 1; text-align: center; }
+  .top-header .title-area h1 { font-size: 17px; font-weight: 800; }
+  .top-header .title-area .sub {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 12px; color: var(--text2); margin-top: 2px;
+  }
+  .tg-badge {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: rgba(41,182,246,.16); display: inline-flex; align-items: center; justify-content: center;
+    color: #4fc3f7; flex-shrink: 0;
+  }
+  .tg-badge .icon { width: 9px; height: 9px; stroke-width: 2.4; }
+  .notif-btn { position: relative; }
+  .notif-dot {
+    position: absolute; top: 7px; right: 7px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--gold);
+    border: 1.5px solid var(--bg);
+  }
+
+  /* ── Scrollable content ──────────────────────────────────── */
+  .page-content {
+    flex: 1; overflow-y: auto;
+    padding: 16px 16px calc(var(--nav-h) + 16px);
+    display: none;
+  }
+  .page-content.active { display: block; }
+
+  /* ── Greeting row ────────────────────────────────────────── */
+  .greeting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .greeting-text h2 { font-size: 16px; font-weight: 800; }
+  .greeting-text p  { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .admin-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold-bg), rgba(245,200,64,.04));
+    display: flex; align-items: center; justify-content: center; color: var(--gold);
+    position: relative; overflow: hidden; flex-shrink: 0;
+  }
+  .admin-avatar .icon { width: 22px; height: 22px; }
+  .admin-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .online-dot {
+    position: absolute; bottom: 1px; right: 1px;
+    width: 11px; height: 11px; border-radius: 50%; background: var(--emerald);
+    border: 2px solid var(--bg);
+  }
+
+  /* ── Date filter ─────────────────────────────────────────── */
+  .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .date-select {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 9px 14px; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--text2);
+  }
+  .date-select .icon { width: 16px; height: 16px; }
+  .date-select select {
+    border: none; background: transparent; font-size: 13px; font-weight: 600;
+    cursor: pointer; outline: none; font-family: inherit; color: var(--text);
+  }
+  .date-select select option { background: #14171f; color: var(--text); }
+
+  /* ── Stat Cards ──────────────────────────────────────────── */
+  .stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px;
+    box-shadow: var(--shadow-sm); display: flex; align-items: flex-start; gap: 12px;
+  }
+  .stat-icon {
+    width: 44px; height: 44px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .stat-icon .icon { width: 21px; height: 21px; }
+  .stat-icon.blue   { background: var(--gold-bg);    color: var(--gold);    }
+  .stat-icon.green  { background: var(--emerald-bg); color: var(--emerald); }
+  .stat-icon.purple { background: var(--violet-bg);  color: var(--violet);  }
+  .stat-icon.amber  { background: var(--amber-bg);   color: var(--amber);   }
+  .stat-icon.red    { background: var(--rose-bg);    color: var(--rose);    }
+  .stat-info { flex: 1; min-width: 0; }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat-value { font-size: 21px; font-weight: 700; letter-spacing: -.3px; }
+  .stat-change { font-size: 11px; margin-top: 4px; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+  .stat-change .icon { width: 12px; height: 12px; stroke-width: 2.4; }
+  .stat-change.up   { color: var(--emerald); }
+  .stat-change.down { color: var(--rose); }
+  .stat-change.down .icon { transform: rotate(90deg); }
+  .stat-change.neutral { color: var(--amber); }
+
+  /* ── Section card ────────────────────────────────────────── */
+  .section-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px;
+    box-shadow: var(--shadow-sm); margin-bottom: 14px;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; }
+  .section-action { font-size: 13px; font-weight: 700; color: var(--gold); cursor: pointer; }
+
+  /* ── Live / Online now ───────────────────────────────────── */
+  .live-title { gap: 8px; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); position: relative; flex-shrink: 0; }
+  .live-dot::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--emerald);
+    animation: livePulse 1.8s ease-out infinite;
+  }
+  @keyframes livePulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.6); opacity: 0; } }
+  .live-count {
+    font-size: 11px; font-weight: 700; color: var(--emerald); background: var(--emerald-bg);
+    border-radius: 20px; padding: 2px 9px; margin-right: 2px;
+  }
+  .online-strip {
+    display: flex; gap: 16px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none;
+  }
+  .online-strip::-webkit-scrollbar { display: none; }
+  .online-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; width: 58px; }
+  .online-avatar {
+    width: 46px; height: 46px; border-radius: 50%; overflow: hidden;
+    background: var(--surface-2); border: 2px solid var(--emerald);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: var(--text2);
+  }
+  .online-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .online-name { font-size: 10.5px; color: var(--text2); max-width: 58px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .online-empty { display: flex; align-items: center; gap: 8px; color: var(--text3); font-size: 12.5px; padding: 10px 2px; }
+  .online-empty .icon { width: 16px; height: 16px; }
+
+  /* ── Mini Chart ──────────────────────────────────────────── */
+  .chart-filter {
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 7px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--text2);
+  }
+  .chart-filter .icon { width: 13px; height: 13px; }
+  canvas#activityChart { width: 100% !important; height: 180px !important; margin-top: 10px; }
+  .chart-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-top: 6px; padding: 0 4px; }
+
+  /* ── Users list (home) ──────────────────────────────────────── */
+  .user-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--line);
+    cursor: pointer; transition: background .15s;
+  }
+  .user-row:last-child { border-bottom: none; }
+  .user-row:active { background: var(--surface-2); border-radius: 10px; padding: 10px 8px; margin: 0 -8px; }
+  .user-avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--gold-bg); display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: var(--gold); flex-shrink: 0; overflow: hidden;
+    position: relative;
+  }
+  .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .tg-icon {
+    position: absolute; bottom: -1px; right: -1px;
+    width: 16px; height: 16px; border-radius: 50%; background: #1a2a33;
+    border: 1.5px solid var(--bg); display: flex; align-items: center; justify-content: center;
+    color: #4fc3f7;
+  }
+  .tg-icon .icon { width: 8px; height: 8px; stroke-width: 2.6; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name  { font-size: 14px; font-weight: 700; }
+  .user-handle{ font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .user-meta  { text-align: left; flex-shrink: 0; }
+  .user-time  { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+  .user-pts   { font-size: 12px; font-weight: 700; color: var(--gold); }
+
+  /* ── Bottom Nav ──────────────────────────────────────────── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-h);
+    background: rgba(7,9,15,.88); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line);
+    display: flex; align-items: center; z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 4px; cursor: pointer;
+    padding: 6px 0; position: relative; color: var(--text2);
+  }
+  .nav-icon { display: flex; transition: transform .2s, color .2s; }
+  .nav-icon .icon { width: 22px; height: 22px; }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--text2); }
+  .nav-item.active { color: var(--gold); }
+  .nav-item.active .nav-label { color: var(--gold); }
+  .nav-item.active .nav-icon { transform: scale(1.08); }
+  .nav-center-btn {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold-ink); margin-bottom: 8px; box-shadow: 0 6px 18px -4px rgba(245,200,64,.55);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .nav-center-btn .icon { width: 22px; height: 22px; stroke-width: 2; }
+  .nav-badge {
+    position: absolute; top: 4px; right: calc(50% - 18px);
+    background: var(--rose); color: #1a0507; border-radius: 10px; font-size: 9px;
+    font-weight: 700; padding: 1px 5px; min-width: 16px; text-align: center;
+    border: 1.5px solid var(--bg);
+  }
+
+  /* ── Page: Users ─────────────────────────────────────────── */
+  .search-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border-radius: 14px; padding: 11px 14px;
+    border: 1px solid var(--line); margin-bottom: 12px; color: var(--text2);
+  }
+  .search-bar .icon { width: 17px; height: 17px; }
+  .search-bar input {
+    flex: 1; border: none; background: transparent; font-size: 14px;
+    outline: none; font-family: inherit; color: var(--text); text-align: right;
+  }
+  .search-bar input::placeholder { color: var(--text3); }
+  .filter-chips {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px;
+    scrollbar-width: none;
+  }
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; padding: 7px 14px; border-radius: 20px;
+    border: 1px solid var(--line); font-size: 12px; font-weight: 700;
+    cursor: pointer; background: var(--surface); color: var(--text2); white-space: nowrap;
+    transition: background .2s, color .2s, border-color .2s;
+  }
+  .chip.active { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
+
+  .user-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px;
+    box-shadow: var(--shadow-sm); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    transition: box-shadow .2s;
+  }
+  .user-card:active { box-shadow: var(--shadow); }
+  .user-card-info { flex: 1; min-width: 0; }
+  .user-card-name { font-size: 15px; font-weight: 700; }
+  .user-card-sub  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .user-card-stats { display: flex; gap: 12px; margin-top: 6px; }
+  .user-stat-pill {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; color: var(--text2);
+  }
+  .user-stat-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge {
+    padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .badge.banned  { background: var(--rose-bg);    color: var(--rose);    }
+  .badge.shadow  { background: var(--amber-bg);   color: var(--amber);   }
+  .badge.normal  { background: var(--emerald-bg); color: var(--emerald); }
+
+  /* ── Page: Withdrawals ───────────────────────────────────── */
+  .withdraw-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px;
+    box-shadow: var(--shadow-sm); margin-bottom: 10px;
+  }
+  .withdraw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .withdraw-user { font-size: 14px; font-weight: 700; }
+  .withdraw-status { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+  .withdraw-status .icon { width: 12px; height: 12px; }
+  .withdraw-status.pending  { background: var(--amber-bg);   color: var(--amber);   }
+  .withdraw-status.approved { background: var(--emerald-bg); color: var(--emerald); }
+  .withdraw-status.rejected { background: var(--rose-bg);    color: var(--rose);    }
+  .withdraw-status.paid     { background: var(--gold-bg);    color: var(--gold);    }
+  .withdraw-amount { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .withdraw-addr  { font-size: 11px; color: var(--text2); word-break: break-all; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 6px; }
+  .withdraw-addr .icon { width: 13px; height: 13px; margin-top: 1px; }
+  .withdraw-date  { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 5px; }
+  .withdraw-date .icon { width: 12px; height: 12px; }
+  .withdraw-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .action-btn {
+    flex: 1; padding: 10px; border-radius: 11px; border: none;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .2s;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .action-btn .icon { width: 14px; height: 14px; }
+  .action-btn:active { opacity: .75; }
+  .action-btn.approve { background: var(--emerald-bg); color: var(--emerald); }
+  .action-btn.reject  { background: var(--rose-bg);    color: var(--rose);    }
+  .action-btn.paid    { background: var(--gold-bg);    color: var(--gold);    }
+
+  /* ── Page: Broadcast ─────────────────────────────────────── */
+  .broadcast-wrap { padding: 4px 0; }
+  .form-label { font-size: 13px; font-weight: 700; color: var(--text2); margin-bottom: 8px; display: flex; align-items: center; gap: 7px; }
+  .form-label .icon { width: 16px; height: 16px; color: var(--gold); }
+  .form-textarea {
+    width: 100%; min-height: 130px; padding: 12px 14px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+    font-size: 14px; font-family: inherit; color: var(--text);
+    resize: none; outline: none; transition: box-shadow .2s, border-color .2s;
+    text-align: right; direction: rtl;
+  }
+  .form-textarea:focus { border-color: rgba(245,200,64,.4); box-shadow: 0 0 0 3px var(--gold-bg); }
+  .form-input {
+    width: 100%; padding: 12px 14px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+    font-size: 14px; font-family: inherit; color: var(--text);
+    outline: none; transition: box-shadow .2s, border-color .2s; text-align: right;
+  }
+  .form-input:focus { border-color: rgba(245,200,64,.4); box-shadow: 0 0 0 3px var(--gold-bg); }
+  .form-hint { font-size: 11.5px; color: var(--text2); margin-top: 8px; display: flex; align-items: flex-start; gap: 6px; }
+  .form-hint .icon { width: 14px; height: 14px; color: var(--amber); margin-top: 1px; }
+  .submit-btn {
+    width: 100%; padding: 14px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim)); color: var(--gold-ink);
+    font-size: 15px; font-weight: 800;
+    cursor: pointer; margin-top: 14px; transition: filter .2s, opacity .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 8px 20px -8px rgba(245,200,64,.5);
+  }
+  .submit-btn .icon { width: 17px; height: 17px; stroke-width: 2; }
+  .submit-btn:active { filter: brightness(.95); }
+  .submit-btn:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+  .broadcast-result {
+    margin-top: 14px; padding: 12px 14px; border-radius: 12px;
+    font-size: 13px; font-weight: 700; display: none; align-items: center; gap: 8px;
+  }
+  .broadcast-result .icon { width: 16px; height: 16px; }
+  .broadcast-result.success { background: var(--emerald-bg); color: var(--emerald); }
+  .broadcast-result.error   { background: var(--rose-bg);    color: var(--rose);    }
+
+  /* ── Modal ────────────────────────────────────────────────── */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+    z-index: 200; display: none; align-items: flex-end; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: #0c0f17; border: 1px solid var(--line); border-bottom: none;
+    border-radius: 24px 24px 0 0;
+    width: 100%; max-width: 600px; padding: 24px 20px 32px;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .modal-handle { width: 36px; height: 4px; border-radius: 2px; background: rgba(245,200,64,.25); margin: 0 auto 20px; }
+  .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; }
+  .detail-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { font-size: 13px; color: var(--text2); }
+  .detail-val { font-size: 13px; font-weight: 700; text-align: left; max-width: 55%; word-break: break-all; display: flex; align-items: center; gap: 6px; }
+  .detail-val .icon { width: 13px; height: 13px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-btn {
+    flex: 1; padding: 12px; border-radius: 12px; border: none;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .modal-btn .icon { width: 16px; height: 16px; }
+  .modal-btn.ban    { background: var(--rose-bg);    color: var(--rose);    }
+  .modal-btn.unban  { background: var(--emerald-bg); color: var(--emerald); }
+  .modal-btn.msg    { background: var(--gold-bg);    color: var(--gold);    }
+  .modal-btn.close  { background: var(--surface-2);  color: var(--text);   flex: 0 0 48px; }
+
+  /* ── Loading & Empty states ──────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%);
+    background-size: 200% 100%; animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); }
+  .empty-state .icon-wrap {
+    width: 52px; height: 52px; border-radius: 50%; background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: var(--text2);
+  }
+  .empty-state .icon-wrap .icon { width: 24px; height: 24px; }
+  .empty-state p { font-size: 14px; }
+  .toast {
+    position: fixed; bottom: calc(var(--nav-h) + 16px); left: 50%; transform: translateX(-50%);
+    background: #15181f; border: 1px solid var(--line); color: #fff; padding: 10px 18px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; z-index: 500;
+    opacity: 0; pointer-events: none; transition: opacity .3s; white-space: nowrap;
+    display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow);
+  }
+  .toast .icon { width: 15px; height: 15px; }
+  .toast.show { opacity: 1; }
+
+  /* ── Pagination ──────────────────────────────────────────── */
+  .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; }
+  .page-btn {
+    width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--surface); font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .page-btn .icon { width: 15px; height: 15px; }
+  .page-btn.active { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
+  .page-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* ── Logs ────────────────────────────────────────────────── */
+  .log-item { display: flex; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .log-item:last-child { border-bottom: none; }
+  .log-icon {
+    width: 32px; height: 32px; border-radius: 10px; background: var(--surface-2); color: var(--gold);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+  }
+  .log-icon .icon { width: 16px; height: 16px; }
+  .log-action { font-size: 13px; font-weight: 700; }
+  .log-user   { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .log-time   { font-size: 10px; color: var(--text3); margin-top: 3px; }
+  .log-meta   { font-size: 10px; color: var(--text3); margin-top: 3px; font-family: monospace; word-break: break-all; }
 </style>
 </head>
 <body>
 
-<!-- Login -->
-<div id="login-screen">
-  <div class="login-grid"></div>
-  <div class="login-wrap">
-    <div class="login-badge">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
-        <line x1="12" y1="22" x2="12" y2="15.5"/>
-        <polyline points="22 8.5 12 15.5 2 8.5"/>
-      </svg>
+<!-- ════════════════════════════════════════════════════════════ -->
+<!--  ICON SPRITE — inline, hand-authored, no emoji / no external requests -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 21v-6h6v6"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.6"/><path d="M21.3 20c0-2.8-1.8-4.8-4-5.5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v3"/><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="16.3" cy="14" r="1.3"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></symbol>
+  <symbol id="i-dollar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><text x="12" y="15.8" text-anchor="middle" font-size="10.5" font-weight="700" stroke="none" fill="currentColor" font-family="Arial">$</text></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/><path class="icon-fill" d="M10 9l5 3-5 3V9z"/></symbol>
+  <symbol id="i-trending-up" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/><path d="M6 15h4"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M4 4h16v12H9l-5 4V4z"/></symbol>
+  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.8 5.8l12.4 12.4"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17h.01"/></symbol>
+  <symbol id="i-gamepad" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 10v4M5 12h4"/><circle class="icon-fill" cx="16" cy="11" r="1"/><circle class="icon-fill" cx="18.5" cy="13.5" r="1"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6-6"/><path d="M13 5l1.5-1.5a3.5 3.5 0 1 1 5 5L18 10"/><path d="M11 19l-1.5 1.5a3.5 3.5 0 1 1-5-5L6 14"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"/><path d="M14 6l3 3"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 3h8l10 10-8 8L3 11V3z"/><circle class="icon-fill" cx="7.5" cy="7.5" r="1.4"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M5 5h14l2 7v7H3v-7l2-7z"/></symbol>
+  <symbol id="i-loader" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 2c3 1 5 4 5 8 0 3-2 6-5 9-3-3-5-6-5-9 0-4 2-7 5-8z"/><circle class="icon-fill" cx="12" cy="9" r="1.6"/><path d="M9 16l-3 5 5-2M15 16l3 5-5-2"/></symbol>
+</svg>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!--  APP SHELL                                                  -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Header -->
+  <header class="top-header">
+    <button class="icon-btn" onclick="toggleMenu()"><svg class="icon"><use href="#i-menu"></use></svg></button>
+    <div class="title-area">
+      <h1 id="page-title">لوحة التحكم</h1>
+      <div class="sub">
+        <span class="tg-badge"><svg class="icon"><use href="#i-send"></use></svg></span>
+        <span class="brand-mark">BigLeague Bot</span>
+      </div>
     </div>
-    <div class="login-card">
-      <div class="login-h">BigLeague Admin</div>
-      <div class="login-sub">مركز التحكم الإداري</div>
-      <input type="password" id="secret-input" class="login-input" placeholder="••••••••••••"
-        onkeydown="if(event.key==='Enter')doLogin()"/>
-      <button class="login-btn" onclick="doLogin()">دخول آمن</button>
-      <div id="login-err" class="login-err"></div>
+    <button class="icon-btn notif-btn" onclick="refreshCurrent()">
+      <svg class="icon"><use href="#i-bell"></use></svg>
+      <span class="notif-dot" id="notif-dot" style="display:none"></span>
+    </button>
+  </header>
+
+  <!-- ══════════════════════════════════════ PAGE: الرئيسية -->
+  <div id="page-home" class="page-content active">
+
+    <!-- Greeting -->
+    <div class="greeting-row">
+      <div class="greeting-text">
+        <h2>مرحباً، المدير</h2>
+        <p id="greeting-sub">إليك ملخص أداء البوت</p>
+      </div>
+      <div class="admin-avatar">
+        <svg class="icon"><use href="#i-shield"></use></svg>
+        <span class="online-dot"></span>
+      </div>
     </div>
-    <div class="login-version">BigLeague Control Tower v2.0</div>
+
+    <!-- Date Filter -->
+    <div class="filter-row">
+      <div class="date-select">
+        <svg class="icon"><use href="#i-calendar"></use></svg>
+        <select id="range-select" onchange="loadDashboard()">
+          <option value="7">آخر 7 أيام</option>
+          <option value="14">آخر 14 يوم</option>
+          <option value="30">آخر 30 يوم</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-grid" id="stat-grid">
+      <!-- Skeleton -->
+      <div class="stat-card"><div class="skeleton" style="width:44px;height:44px;border-radius:13px"></div><div style="flex:1"><div class="skeleton" style="height:12px;margin-bottom:8px;width:70%"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>
+      <div class="stat-card"><div class="skeleton" style="width:44px;height:44px;border-radius:13px"></div><div style="flex:1"><div class="skeleton" style="height:12px;margin-bottom:8px;width:70%"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>
+      <div class="stat-card"><div class="skeleton" style="width:44px;height:44px;border-radius:13px"></div><div style="flex:1"><div class="skeleton" style="height:12px;margin-bottom:8px;width:70%"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>
+      <div class="stat-card"><div class="skeleton" style="width:44px;height:44px;border-radius:13px"></div><div style="flex:1"><div class="skeleton" style="height:12px;margin-bottom:8px;width:70%"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>
+    </div>
+
+    <!-- Online Now (live presence) -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title live-title">
+          <span class="live-dot"></span>
+          متصل الآن
+          <span class="live-count num" id="online-count">0</span>
+        </span>
+      </div>
+      <div class="online-strip" id="online-strip">
+        <div class="online-empty" id="online-empty">
+          <svg class="icon"><use href="#i-inbox"></use></svg>
+          لا يوجد مستخدمون متصلون الآن
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">النشاط خلال آخر <span id="range-label" class="num">7</span> أيام</span>
+        <div class="chart-filter" onclick="cycleChartType()">
+          <span id="chart-type-label">الرسائل</span>
+          <svg class="icon"><use href="#i-chevron-down"></use></svg>
+        </div>
+      </div>
+      <canvas id="activityChart"></canvas>
+      <div class="chart-labels" id="chart-labels"></div>
+    </div>
+
+    <!-- Recent Users -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">آخر المستخدمين الجدد</span>
+        <span class="section-action" onclick="switchPage('users')">عرض الكل</span>
+      </div>
+      <div id="recent-users-list">
+        <div class="skeleton" style="height:52px;margin-bottom:10px;border-radius:12px"></div>
+        <div class="skeleton" style="height:52px;margin-bottom:10px;border-radius:12px"></div>
+        <div class="skeleton" style="height:52px;border-radius:12px"></div>
+      </div>
+    </div>
+
+  </div><!-- /page-home -->
+
+
+  <!-- ══════════════════════════════════════ PAGE: المستخدمين -->
+  <div id="page-users" class="page-content">
+    <div class="search-bar">
+      <svg class="icon"><use href="#i-search"></use></svg>
+      <input id="user-search" type="text" placeholder="ابحث بالاسم أو @username..."
+             oninput="debounceSearch()">
+    </div>
+    <div class="filter-chips">
+      <div class="chip active" data-filter="all"     onclick="setUserFilter(this,'all')">الكل</div>
+      <div class="chip"       data-filter="top"     onclick="setUserFilter(this,'top')">الأعلى نقاطاً</div>
+      <div class="chip"       data-filter="banned"  onclick="setUserFilter(this,'banned')">محظور</div>
+      <div class="chip"       data-filter="shadow"  onclick="setUserFilter(this,'shadow')">شادو بان</div>
+    </div>
+    <div id="users-list"></div>
+    <div class="pagination" id="users-pagination"></div>
   </div>
-</div>
 
-<!-- App -->
-<div id="app" style="display:none">
-  <div class="sidebar-backdrop" id="sb-backdrop" onclick="closeMobileSidebar()"></div>
 
-  <!-- Sidebar -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="s-logo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
-        </svg>
-      </div>
-      <div class="s-brand">
-        <div class="s-brand-name">BigLeague</div>
-        <div class="s-brand-sub">لوحة التحكم</div>
-      </div>
+  <!-- ══════════════════════════════════════ PAGE: السحوبات -->
+  <div id="page-withdrawals" class="page-content">
+    <div class="filter-chips">
+      <div class="chip active" data-wfilter="all"      onclick="setWFilter(this,'all')">الكل</div>
+      <div class="chip"       data-wfilter="pending"   onclick="setWFilter(this,'pending')">انتظار</div>
+      <div class="chip"       data-wfilter="approved"  onclick="setWFilter(this,'approved')">موافق</div>
+      <div class="chip"       data-wfilter="paid"      onclick="setWFilter(this,'paid')">مدفوع</div>
+      <div class="chip"       data-wfilter="rejected"  onclick="setWFilter(this,'rejected')">مرفوض</div>
+    </div>
+    <div id="withdrawals-list"></div>
+    <div class="pagination" id="w-pagination"></div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════ PAGE: الرسائل -->
+  <div id="page-broadcast" class="page-content">
+    <div class="section-card broadcast-wrap">
+      <label class="form-label"><svg class="icon"><use href="#i-send"></use></svg> إرسال رسالة للجميع</label>
+      <textarea id="bc-text" class="form-textarea"
+                placeholder="اكتب رسالة Telegram هنا... يدعم *Bold* و_Italic_ و`code`"></textarea>
+      <p class="form-hint"><svg class="icon"><use href="#i-alert"></use></svg> ستُرسل لجميع المستخدمين غير المحظورين — تأكد من المحتوى</p>
+      <button class="submit-btn" id="bc-btn" onclick="sendBroadcast()"><svg class="icon"><use href="#i-send"></use></svg> إرسال للجميع</button>
+      <div id="bc-result" class="broadcast-result"></div>
     </div>
 
-    <nav class="sidebar-nav">
-      <div class="nav-section-label">رئيسي</div>
-      <div class="nav-item active" data-page="dashboard" onclick="goto('dashboard')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
-        <span class="nav-label">نظرة عامة</span>
-      </div>
-      <div class="nav-item" data-page="analytics" onclick="goto('analytics')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-        <span class="nav-label">التحليلات</span>
-      </div>
-      <div class="nav-divider"></div>
-      <div class="nav-section-label">الإدارة</div>
-      <div class="nav-item" data-page="users" onclick="goto('users')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <span class="nav-label">المستخدمون</span>
-      </div>
-      <div class="nav-item" data-page="online" onclick="goto('online')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div>
-        <span class="nav-label">متصلون الآن</span>
-        <span class="nav-badge" id="online-badge" style="display:none">0</span>
-      </div>
-      <div class="nav-item" data-page="withdrawals" onclick="goto('withdrawals')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-        <span class="nav-label">السحوبات</span>
-        <span class="nav-badge" id="pending-badge" style="display:none">0</span>
-      </div>
-      <div class="nav-item" data-page="competitions" onclick="goto('competitions')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
-        <span class="nav-label">المسابقات</span>
-      </div>
-      <div class="nav-item" data-page="notifications" onclick="goto('notifications')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-        <span class="nav-label">الإشعارات</span>
-      </div>
-      <div class="nav-item" data-page="messages" onclick="goto('messages')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
-        <span class="nav-label">التواصل المباشر</span>
-      </div>
-      <div class="nav-divider"></div>
-      <div class="nav-section-label">النظام</div>
-      <div class="nav-item" data-page="security" onclick="goto('security')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <span class="nav-label">مركز الأمان</span>
-      </div>
-      <div class="nav-item" data-page="auditlog" onclick="goto('auditlog')">
-        <div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-        <span class="nav-label">سجل الأحداث</span>
-      </div>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="online-pill" id="sidebar-online-pill">
-        <div class="online-pulse"></div>
-        <span class="online-label"><span id="sidebar-online-count">—</span> متصل الآن</span>
-      </div>
-      <div class="collapse-toggle" onclick="toggleSidebar()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="collapse-icon"><polyline points="15 18 9 12 15 6"/></svg>
-        <span class="nav-label">طي القائمة</span>
-      </div>
+    <div class="section-card broadcast-wrap" style="margin-top:14px">
+      <label class="form-label"><svg class="icon"><use href="#i-mail"></use></svg> رسالة لمستخدم محدد</label>
+      <input id="dm-id" class="form-input" type="number" placeholder="Telegram ID">
+      <textarea id="dm-text" class="form-textarea" style="margin-top:8px"
+                placeholder="نص الرسالة..."></textarea>
+      <button class="submit-btn" id="dm-btn" onclick="sendDM()"><svg class="icon"><use href="#i-mail"></use></svg> إرسال</button>
+      <div id="dm-result" class="broadcast-result"></div>
     </div>
-  </aside>
+  </div>
 
-  <!-- Main -->
-  <div class="main">
-    <header class="topbar">
-      <div class="topbar-btn topbar-menu-btn" onclick="toggleMobileSidebar()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </div>
-      <div class="topbar-title" id="page-title">نظرة عامة</div>
-      <div class="topbar-search">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="بحث عن مستخدم..." id="global-search" oninput="onGlobalSearch(this.value)"/>
-      </div>
-      <div class="topbar-divider"></div>
-      <div class="status-indicator">
-        <div class="status-dot"></div>
-        <span class="status-text">متصل</span>
-      </div>
-      <div class="topbar-btn" onclick="refreshCurrent()" title="تحديث">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      </div>
-    </header>
 
-    <div class="content" id="content">
+  <!-- ══════════════════════════════════════ PAGE: السجل -->
+  <div id="page-logs" class="page-content">
+    <div class="filter-chips">
+      <div class="chip active" data-log=""              onclick="setLogFilter(this,'')">الكل</div>
+      <div class="chip"       data-log="game_round"    onclick="setLogFilter(this,'game_round')">لعبة</div>
+      <div class="chip"       data-log="ref_copy"      onclick="setLogFilter(this,'ref_copy')">إحالة</div>
+      <div class="chip"       data-log="sec_event"     onclick="setLogFilter(this,'sec_event')">أمان</div>
+      <div class="chip"       data-log="admin_adjust_pts" onclick="setLogFilter(this,'admin_adjust_pts')">ضبط نقاط</div>
+    </div>
+    <div class="section-card" style="padding:8px 16px">
+      <div id="logs-list"></div>
+    </div>
+    <div class="pagination" id="logs-pagination"></div>
+  </div>
 
-      <!-- ─── Dashboard ─────────────────────────────────────────────── -->
-      <div class="section active" id="section-dashboard">
-        <div class="kpi-grid" id="kpi-grid">
-          <div class="kpi-card skeleton" style="height:92px"></div>
-          <div class="kpi-card skeleton" style="height:92px"></div>
-          <div class="kpi-card skeleton" style="height:92px"></div>
-          <div class="kpi-card skeleton" style="height:92px"></div>
-        </div>
-        <div class="row-2" style="margin-bottom:14px">
-          <div class="card">
-            <div class="card-head"><span class="card-title">نمو المستخدمين — ٣٠ يوم</span></div>
-            <div class="card-body"><div class="chart-wrap"><canvas id="growthChart"></canvas></div></div>
-          </div>
-          <div class="card">
-            <div class="card-head"><span class="card-title">الإعلانات اليومية — ٣٠ يوم</span></div>
-            <div class="card-body"><div class="chart-wrap"><canvas id="activityChart"></canvas></div></div>
-          </div>
-        </div>
-        <div class="row-3">
-          <div class="card">
-            <div class="card-head"><span class="card-title">أحدث المستخدمين</span></div>
-            <div class="table-wrap">
-              <table id="recent-users-table">
-                <thead><tr><th>المستخدم</th><th>النقاط</th><th>الرصيد</th><th>الحالة</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head"><span class="card-title">توزيع المخاطر</span></div>
-            <div class="card-body"><div class="chart-wrap"><canvas id="riskChart"></canvas></div></div>
-          </div>
-        </div>
-      </div>
 
-      <!-- ─── Users ─────────────────────────────────────────────────── -->
-      <div class="section" id="section-users">
-        <div class="card">
-          <div class="card-head">
-            <span class="card-title">إدارة المستخدمين</span>
-            <div class="card-actions">
-              <input type="text" class="form-input" style="width:180px;padding:6px 10px" placeholder="بحث..." id="user-search" oninput="debounce(loadUsers,350)()"/>
-              <button class="btn btn-ghost btn-sm" onclick="exportUsers()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                CSV
-              </button>
-            </div>
-          </div>
-          <div class="filters-bar">
-            <div class="filter-chip active" onclick="setUserFilter('all',this)">الكل</div>
-            <div class="filter-chip" onclick="setUserFilter('banned',this)">محظور</div>
-            <div class="filter-chip" onclick="setUserFilter('risky',this)">مخاطر عالية</div>
-            <div class="filter-chip" onclick="setUserFilter('pending',this)">لديه سحوبات</div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr><th>المستخدم</th><th>النقاط</th><th>الرصيد</th><th>إحالات</th><th>إعلانات</th><th>Risk</th><th>الحالة</th><th>تاريخ التسجيل</th><th>تليغرام</th><th></th></tr>
-              </thead>
-              <tbody id="users-tbody"></tbody>
-            </table>
-          </div>
-          <div class="pagination" id="users-pagination"></div>
-        </div>
-      </div>
+  <!-- ── Bottom Nav ── -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="switchPage('home')">
+      <span class="nav-icon"><svg class="icon"><use href="#i-home"></use></svg></span>
+      <span class="nav-label">الرئيسية</span>
+    </div>
+    <div class="nav-item" id="nav-users" onclick="switchPage('users')">
+      <span class="nav-icon"><svg class="icon"><use href="#i-users"></use></svg></span>
+      <span class="nav-label">المستخدمين</span>
+    </div>
+    <div class="nav-item" id="nav-broadcast" onclick="switchPage('broadcast')">
+      <div class="nav-center-btn"><svg class="icon"><use href="#i-send"></use></svg></div>
+      <span class="nav-label" style="color:var(--gold)">البوت</span>
+    </div>
+    <div class="nav-item" id="nav-withdrawals" onclick="switchPage('withdrawals')">
+      <span class="nav-icon"><svg class="icon"><use href="#i-wallet"></use></svg></span>
+      <span class="nav-label">السحوبات</span>
+      <span class="nav-badge num" id="w-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" id="nav-logs" onclick="switchPage('logs')">
+      <span class="nav-icon"><svg class="icon"><use href="#i-list"></use></svg></span>
+      <span class="nav-label">السجل</span>
+    </div>
+  </nav>
 
-      <!-- ─── Online Users ──────────────────────────────────────────── -->
-      <div class="section" id="section-online">
-        <div class="page-header">
-          <div class="page-title">المتصلون الآن</div>
-          <div class="page-actions">
-            <div class="filter-chip active" onclick="setOnlineWindow(5,this)">٥ دقائق</div>
-            <div class="filter-chip" onclick="setOnlineWindow(15,this)">١٥ دقيقة</div>
-            <div class="filter-chip" onclick="setOnlineWindow(30,this)">٣٠ دقيقة</div>
-            <button class="btn btn-ghost btn-sm" onclick="loadOnline()" id="online-refresh-btn">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-              تحديث
-            </button>
-          </div>
-        </div>
-        <div class="card" style="margin-bottom:14px">
-          <div class="card-body" style="padding:12px 18px">
-            <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-              <div style="display:flex;align-items:center;gap:8px">
-                <div class="online-pulse" style="width:10px;height:10px"></div>
-                <span id="online-count-display" style="font-family:'Cairo',sans-serif;font-size:22px;font-weight:700">—</span>
-                <span style="font-size:13px;color:var(--text2)">مستخدم نشط</span>
-              </div>
-              <div style="font-size:12px;color:var(--text3)">آخر تحديث: <span id="online-last-update">—</span></div>
-              <div style="margin-right:auto;font-size:12px;color:var(--text3)">تحديث تلقائي كل <span id="online-countdown">30</span>ث</div>
-            </div>
-          </div>
-        </div>
-        <div class="online-grid" id="online-grid">
-          <div class="empty"><div class="empty-title">جارٍ التحميل...</div></div>
-        </div>
-      </div>
-
-      <!-- ─── Withdrawals ──────────────────────────────────────────── -->
-      <div class="section" id="section-withdrawals">
-        <div class="card">
-          <div class="card-head">
-            <span class="card-title">إدارة السحوبات</span>
-            <div class="card-actions">
-              <button class="btn btn-ghost btn-sm" onclick="exportWithdrawals()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                CSV
-              </button>
-            </div>
-          </div>
-          <div class="filters-bar">
-            <div class="filter-chip active" onclick="setWFilter('all',this)">الكل</div>
-            <div class="filter-chip" onclick="setWFilter('pending',this)">قيد المراجعة</div>
-            <div class="filter-chip" onclick="setWFilter('done',this)">مكتمل</div>
-            <div class="filter-chip" onclick="setWFilter('rejected',this)">مرفوض</div>
-          </div>
-          <div class="table-wrap">
-            <table><thead><tr><th>المستخدم</th><th>المبلغ</th><th>المحفظة</th><th>الحالة</th><th>التاريخ</th><th></th></tr></thead>
-            <tbody id="withdrawals-tbody"></tbody></table>
-          </div>
-          <div class="pagination" id="withdrawals-pagination"></div>
-        </div>
-      </div>
-
-      <!-- ─── Competitions ─────────────────────────────────────────── -->
-      <div class="section" id="section-competitions">
-        <div class="page-header">
-          <div class="page-title">المسابقات</div>
-          <button class="btn btn-primary" onclick="openModal('comp-modal')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            مسابقة جديدة
-          </button>
-        </div>
-        <div class="comp-grid" id="comp-grid">
-          <div class="empty"><div class="empty-title">جارٍ التحميل...</div></div>
-        </div>
-      </div>
-
-      <!-- ─── Notifications ────────────────────────────────────────── -->
-      <div class="section" id="section-notifications">
-        <div class="row-2">
-          <div class="card">
-            <div class="card-head"><span class="card-title">إرسال إشعار</span></div>
-            <div class="card-body">
-              <div class="form-group">
-                <label class="form-label">المستهدفون</label>
-                <select class="form-select" id="notif-target" onchange="onTargetChange()">
-                  <option value="all">جميع المستخدمين</option>
-                  <option value="user">مستخدم محدد</option>
-                </select>
-              </div>
-              <div class="form-group" id="notif-user-grp" style="display:none">
-                <label class="form-label">Telegram ID</label>
-                <input type="text" class="form-input" id="notif-user-id" placeholder="123456789"/>
-              </div>
-              <div class="form-group">
-                <label class="form-label">العنوان (اختياري)</label>
-                <input type="text" class="form-input" id="notif-title" oninput="updatePreview()"/>
-              </div>
-              <div class="form-group">
-                <label class="form-label">نص الإشعار</label>
-                <textarea class="form-textarea" id="notif-body" oninput="updatePreview()"></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">رابط صورة (اختياري)</label>
-                <input type="text" class="form-input" id="notif-photo" placeholder="https://..."/>
-              </div>
-              <div class="form-group">
-                <label class="form-label">أزرار — نص|رابط (سطر لكل زر)</label>
-                <textarea class="form-textarea" id="notif-buttons" placeholder="زر الدخول|https://t.me/..." style="min-height:60px" oninput="updatePreview()"></textarea>
-              </div>
-              <div class="notif-preview">
-                <div class="notif-preview-label">معاينة</div>
-                <div class="notif-preview-title" id="preview-title" style="display:none"></div>
-                <div class="notif-preview-body" id="preview-body" style="color:var(--text3)">ابدأ بكتابة الرسالة...</div>
-                <div class="notif-btn-row" id="preview-btns"></div>
-              </div>
-              <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
-                <button class="btn btn-primary" id="send-notif-btn" onclick="sendNotification()">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  إرسال
-                </button>
-                <div id="notif-progress" style="font-size:12px;color:var(--text2);display:none"></div>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head"><span class="card-title">سجل الإشعارات</span></div>
-            <div class="table-wrap">
-              <table><thead><tr><th>العنوان</th><th>المستهدف</th><th>الإرسال</th><th>التاريخ</th></tr></thead>
-              <tbody id="notif-log-tbody"></tbody></table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─── Direct Messages ──────────────────────────────────────── -->
-      <div class="section" id="section-messages">
-        <div class="row-2">
-          <div class="card">
-            <div class="card-head"><span class="card-title">رسالة مباشرة</span></div>
-            <div class="card-body">
-              <div class="form-group" style="position:relative">
-                <label class="form-label">البحث عن مستخدم</label>
-                <input type="text" class="form-input" id="dm-search"
-                  placeholder="اسم، يوزرنيم، أو Telegram ID..."
-                  oninput="debounce(dmSearchUsers,300)(this.value)" autocomplete="off"/>
-                <div class="dm-drop" id="dm-drop"></div>
-              </div>
-              <div id="dm-selected" style="margin-bottom:12px"></div>
-              <div class="form-group">
-                <label class="form-label">العنوان (اختياري)</label>
-                <input type="text" class="form-input" id="dm-title"/>
-              </div>
-              <div class="form-group">
-                <label class="form-label">نص الرسالة</label>
-                <textarea class="form-textarea" id="dm-text"></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">رابط صورة (اختياري)</label>
-                <input type="text" class="form-input" id="dm-photo" placeholder="https://..."/>
-              </div>
-              <div class="form-group">
-                <label class="form-label">أزرار — نص|رابط</label>
-                <textarea class="form-textarea" id="dm-buttons" style="min-height:55px" placeholder="زر|https://..."></textarea>
-              </div>
-              <div style="display:flex;gap:10px;align-items:center">
-                <button class="btn btn-primary" id="dm-send-btn" onclick="sendDM()">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  إرسال
-                </button>
-                <span id="dm-status" style="font-size:12px;color:var(--text2)"></span>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head"><span class="card-title" id="dm-history-title">سجل الرسائل</span></div>
-            <div class="table-wrap">
-              <table><thead><tr><th>المستخدم</th><th>الرسالة</th><th>الحالة</th><th>التاريخ</th></tr></thead>
-              <tbody id="dm-history-tbody"></tbody></table>
-            </div>
-            <div class="pagination" id="dm-pagination"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─── Analytics ─────────────────────────────────────────────── -->
-      <div class="section" id="section-analytics">
-        <div class="page-header">
-          <div class="page-title">التحليلات</div>
-          <div class="page-actions">
-            <div class="filter-chip active" onclick="setAnalyticsPeriod(7,this)">٧ أيام</div>
-            <div class="filter-chip" onclick="setAnalyticsPeriod(30,this)">٣٠ يوم</div>
-            <div class="filter-chip" onclick="setAnalyticsPeriod(90,this)">٩٠ يوم</div>
-            <button class="btn btn-ghost btn-sm" onclick="exportUsers()">تصدير مستخدمين</button>
-            <button class="btn btn-ghost btn-sm" onclick="exportWithdrawals()">تصدير سحوبات</button>
-          </div>
-        </div>
-        <div class="row-2">
-          <div class="card"><div class="card-head"><span class="card-title">نمو المستخدمين</span></div>
-            <div class="card-body"><div class="chart-wrap"><canvas id="aUsersChart"></canvas></div></div></div>
-          <div class="card"><div class="card-head"><span class="card-title">مشاهدات الإعلانات</span></div>
-            <div class="card-body"><div class="chart-wrap"><canvas id="aAdsChart"></canvas></div></div></div>
-        </div>
-        <div class="row-2">
-          <div class="card"><div class="card-head"><span class="card-title">الإحالات اليومية</span></div>
-            <div class="card-body"><div class="chart-wrap"><canvas id="aRefChart"></canvas></div></div></div>
-          <div class="card"><div class="card-head"><span class="card-title">السحوبات المكتملة ($)</span></div>
-            <div class="card-body"><div class="chart-wrap"><canvas id="aBalChart"></canvas></div></div></div>
-        </div>
-      </div>
-
-      <!-- ─── Security ──────────────────────────────────────────────── -->
-      <div class="section" id="section-security">
-        <div class="row-2">
-          <div class="card">
-            <div class="card-head"><span class="card-title">مستخدمون بمخاطر عالية</span></div>
-            <div class="table-wrap">
-              <table><thead><tr><th>المستخدم</th><th>Risk Score</th><th>الحالة</th><th></th></tr></thead>
-              <tbody id="risk-tbody"></tbody></table>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head"><span class="card-title">آخر الأنشطة</span></div>
-            <div class="table-wrap">
-              <table><thead><tr><th>المستخدم</th><th>الإجراء</th><th>الوقت</th></tr></thead>
-              <tbody id="activity-tbody"></tbody></table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─── Audit Log ──────────────────────────────────────────────── -->
-      <div class="section" id="section-auditlog">
-        <div class="card">
-          <div class="card-head"><span class="card-title">سجل الأحداث الإدارية</span></div>
-          <div class="table-wrap">
-            <table><thead><tr><th>الإجراء</th><th>المستهدف</th><th>ملاحظات</th><th>التاريخ</th></tr></thead>
-            <tbody id="audit-tbody"></tbody></table>
-          </div>
-          <div class="pagination" id="audit-pagination"></div>
-        </div>
-      </div>
-
-    </div><!-- /content -->
-  </div><!-- /main -->
 </div><!-- /app -->
-<div id="toast-zone"></div>
 
-<!-- ══════════════════ User Detail Modal ════════════════════════════════ -->
-<div class="modal-overlay" id="user-modal-overlay">
-  <div class="modal modal-xl">
-    <div class="modal-head">
-      <div class="modal-title" id="ud-modal-title">تفاصيل المستخدم</div>
-      <div class="modal-close" onclick="closeModal('user-modal-overlay')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-    </div>
-    <div class="tabs" id="ud-tabs">
-      <div class="tab active" onclick="udTab('overview',this)">نظرة عامة</div>
-      <div class="tab" onclick="udTab('activity',this)">النشاط</div>
-      <div class="tab" onclick="udTab('withdrawals',this)">السحوبات</div>
-      <div class="tab" onclick="udTab('ads',this)">الإعلانات</div>
-      <div class="tab" onclick="udTab('referrals',this)">الإحالات</div>
-      <div class="tab" onclick="udTab('messages',this)">الرسائل</div>
-      <div class="tab" onclick="udTab('admin',this)">إجراءات الإدارة</div>
-    </div>
-    <div class="modal-body">
-      <!-- Overview -->
-      <div id="ud-tab-overview" class="tab-content active">
-        <div id="ud-overview-content"></div>
-        <div class="danger-zone">
-          <div class="danger-zone-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            منطقة الخطر
-          </div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:10px">حذف المستخدم سيؤدي إلى إزالة جميع بياناته بشكل نهائي لا يمكن التراجع عنه.</p>
-          <button class="btn btn-danger btn-sm" onclick="openDeleteUserModal()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            حذف المستخدم نهائياً
-          </button>
-        </div>
-      </div>
-      <!-- Activity -->
-      <div id="ud-tab-activity" class="tab-content">
-        <div class="table-wrap"><table><thead><tr><th>الإجراء</th><th>التفاصيل</th><th>التاريخ</th></tr></thead>
-        <tbody id="ud-activity-tbody"></tbody></table></div>
-      </div>
-      <!-- Withdrawals -->
-      <div id="ud-tab-withdrawals" class="tab-content">
-        <div class="table-wrap"><table><thead><tr><th>المبلغ</th><th>المحفظة</th><th>الحالة</th><th>التاريخ</th><th></th></tr></thead>
-        <tbody id="ud-withdrawals-tbody"></tbody></table></div>
-      </div>
-      <!-- Ads -->
-      <div id="ud-tab-ads" class="tab-content">
-        <div class="table-wrap"><table><thead><tr><th>نوع الإعلان</th><th>المكافأة</th><th>التاريخ</th></tr></thead>
-        <tbody id="ud-ads-tbody"></tbody></table></div>
-      </div>
-      <!-- Referrals -->
-      <div id="ud-tab-referrals" class="tab-content">
-        <div class="table-wrap"><table><thead><tr><th>المستخدم</th><th>النقاط</th><th>تاريخ التسجيل</th></tr></thead>
-        <tbody id="ud-referrals-tbody"></tbody></table></div>
-      </div>
-      <!-- Messages -->
-      <div id="ud-tab-messages" class="tab-content">
-        <div style="margin-bottom:14px">
-          <button class="btn btn-teal btn-sm" onclick="openUdmModal()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            رسالة جديدة
-          </button>
-        </div>
-        <div class="table-wrap"><table><thead><tr><th>الرسالة</th><th>الحالة</th><th>التاريخ</th></tr></thead>
-        <tbody id="ud-messages-tbody"></tbody></table></div>
-      </div>
-      <!-- Admin Actions -->
-      <div id="ud-tab-admin" class="tab-content">
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-          <button class="btn btn-ghost btn-sm" onclick="udAction('ban')">حظر</button>
-          <button class="btn btn-ghost btn-sm" onclick="udAction('unban')">رفع الحظر</button>
-          <button class="btn btn-ghost btn-sm" onclick="udAction('reset_daily_ads')">إعادة تعيين الإعلانات</button>
-          <button class="btn btn-ghost btn-sm" onclick="udAdjust('pts')">تعديل النقاط</button>
-          <button class="btn btn-ghost btn-sm" onclick="udAdjust('balance')">تعديل الرصيد</button>
-          <button class="btn btn-ghost btn-sm" onclick="udAdjust('risk')">تعديل Risk Score</button>
-        </div>
-        <div class="table-wrap"><table><thead><tr><th>الإجراء</th><th>الملاحظات</th><th>التاريخ</th></tr></thead>
-        <tbody id="ud-admin-tbody"></tbody></table></div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal('user-modal-overlay')">إغلاق</button>
-      <button class="btn btn-teal btn-sm" id="ud-dm-quick" onclick="quickDmFromModal()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        رسالة سريعة
-      </button>
-    </div>
+<!-- ── User Detail Modal ── -->
+<div class="modal-backdrop" id="user-modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-content">
+    <div class="modal-handle"></div>
+    <h3 class="modal-title" id="modal-title">تفاصيل المستخدم</h3>
+    <div id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
   </div>
 </div>
 
-<!-- ══════════════════ Delete User Confirmation Modal ═══════════════════ -->
-<div class="modal-overlay" id="delete-user-modal">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title" style="color:var(--red)">تأكيد حذف المستخدم</div>
-      <div class="modal-close" onclick="closeModal('delete-user-modal')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div style="background:var(--red-dim);border:1px solid rgba(248,113,113,0.2);border-radius:var(--r-sm);padding:12px;margin-bottom:16px;font-size:13px;color:var(--red)">
-        ⚠️ هذا الإجراء نهائي ولا يمكن التراجع عنه. ستُحذف جميع بيانات المستخدم من قاعدة البيانات.
-      </div>
-      <div id="delete-user-info" style="margin-bottom:16px"></div>
-      <div class="form-group">
-        <label class="form-label">سبب الحذف</label>
-        <input type="text" class="form-input" id="delete-reason" placeholder="مثال: سبام، انتهاك سياسة الاستخدام"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">اكتب <strong style="color:var(--red)">DELETE</strong> للتأكيد</label>
-        <input type="text" class="form-input" id="delete-confirm-input" placeholder="DELETE" oninput="onDeleteConfirmInput()"/>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal('delete-user-modal')">إلغاء</button>
-      <button class="btn btn-danger btn-sm" id="delete-confirm-btn" onclick="executeDeleteUser()" disabled style="opacity:0.4">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        حذف نهائياً
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════ Quick DM Modal ═══════════════════════════════════ -->
-<div class="modal-overlay" id="udm-modal">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">رسالة مباشرة سريعة</div>
-      <div class="modal-close" onclick="closeModal('udm-modal')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="form-group"><label class="form-label">العنوان</label><input type="text" class="form-input" id="udm-title"/></div>
-      <div class="form-group"><label class="form-label">الرسالة</label><textarea class="form-textarea" id="udm-text"></textarea></div>
-      <div class="form-group"><label class="form-label">رابط صورة</label><input type="text" class="form-input" id="udm-photo" placeholder="https://..."/></div>
-      <div class="form-group"><label class="form-label">أزرار</label><textarea class="form-textarea" id="udm-buttons" style="min-height:55px" placeholder="نص|رابط"></textarea></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal('udm-modal')">إلغاء</button>
-      <button class="btn btn-primary btn-sm" onclick="sendUdm()">إرسال</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════ Competition Create Modal ══════════════════════════ -->
-<div class="modal-overlay" id="comp-modal">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">مسابقة جديدة</div>
-      <div class="modal-close" onclick="closeModal('comp-modal')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="form-group"><label class="form-label">اسم المسابقة</label><input type="text" class="form-input" id="comp-name"/></div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">تاريخ البداية</label><input type="datetime-local" class="form-input" id="comp-start"/></div>
-        <div class="form-group"><label class="form-label">تاريخ النهاية</label><input type="datetime-local" class="form-input" id="comp-end"/></div>
-      </div>
-      <div class="form-group"><label class="form-label">جائزة ($)</label><input type="number" class="form-input" id="comp-prize" min="0" step="0.01"/></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal('comp-modal')">إلغاء</button>
-      <button class="btn btn-primary btn-sm" onclick="createComp()">إنشاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════ Adjust Value Modal ═══════════════════════════════ -->
-<div class="modal-overlay" id="adjust-modal">
-  <div class="modal" style="max-width:380px">
-    <div class="modal-head">
-      <div class="modal-title" id="adjust-title">تعديل</div>
-      <div class="modal-close" onclick="closeModal('adjust-modal')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="form-group"><label class="form-label" id="adjust-label">القيمة</label><input type="number" class="form-input" id="adjust-value" step="any"/></div>
-      <div class="form-group"><label class="form-label">السبب</label><input type="text" class="form-input" id="adjust-reason"/></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal('adjust-modal')">إلغاء</button>
-      <button class="btn btn-primary btn-sm" onclick="submitAdjust()">تطبيق</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════ Comp Leaderboard Modal ════════════════════════════ -->
-<div class="modal-overlay" id="leaderboard-modal">
-  <div class="modal modal-lg">
-    <div class="modal-head">
-      <div class="modal-title" id="lb-title">لوحة المتصدرين</div>
-      <div class="modal-close" onclick="closeModal('leaderboard-modal')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="table-wrap"><table><thead><tr><th>الترتيب</th><th>المستخدم</th><th>المشاهدات</th><th>المكافأة</th></tr></thead>
-      <tbody id="lb-tbody"></tbody></table></div>
-    </div>
-  </div>
-</div>
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════════════════════════════
-const S = {
-  secret: '',
-  page: 'dashboard',
-  usersPage: 1, userFilter: 'all',
-  wPage: 1, wFilter: 'all',
-  auditPage: 1,
-  analyticsPeriod: 7,
-  onlineWindow: 5,
-  currentUserId: null,
-  currentUser: null,
-  dmUserId: null,
-  dmPage: 1,
-  adjustType: null,
-  analyticCharts: {},
-  onlineTimer: null,
-  onlineCountdown: 30,
+// ═══════════════════════════════════════════════════════════════
+//  Icon helper — every icon below is rendered from the inline
+//  sprite defined at the top of <body>. No emoji, no external
+//  icon requests anywhere in this file.
+// ═══════════════════════════════════════════════════════════════
+function icon(name, cls) {
+  return `<svg class="icon ${cls||''}"><use href="#i-${name}"></use></svg>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Config & State
+// ═══════════════════════════════════════════════════════════════
+const API_URL = '/api';
+let SECRET    = '';
+let dashData  = null;
+let chartInst = null;
+let onlinePollTimer = null;
+
+const state = {
+  users:      { page: 1, filter: 'all', search: '', total: 0 },
+  withdrawals:{ page: 1, filter: 'all', total: 0 },
+  logs:       { page: 1, filter: '',    total: 0 },
 };
 
-const PAGE_TITLES = {
-  dashboard:'نظرة عامة', analytics:'التحليلات', users:'المستخدمون',
-  online:'المتصلون الآن', withdrawals:'السحوبات', competitions:'المسابقات',
-  notifications:'الإشعارات', messages:'التواصل المباشر',
-  security:'مركز الأمان', auditlog:'سجل الأحداث'
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 //  API
-// ═══════════════════════════════════════════════════════════════════════════
-async function api(action, { method='GET', body=null, query='', raw=false } = {}) {
-  const url = `/api/admin?action=${action}${query}`;
-  const opts = {
-    method,
-    headers: { 'Content-Type':'application/json', 'X-Admin-Secret': S.secret }
-  };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(url, opts);
-  if (raw) return r;
-  return r.json().catch(() => ({ ok:false, error:'Parse error' }));
+// ═══════════════════════════════════════════════════════════════
+async function api(type, data = {}) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'X-Internal-Secret': SECRET },
+    body: JSON.stringify({ type, data }),
+  });
+  return r.json();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  AUTH
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  Init — يفتح مباشرة بدون login
+// ═══════════════════════════════════════════════════════════════
 async function doLogin() {
-  const input = document.getElementById('secret-input');
-  const err   = document.getElementById('login-err');
-  const secret = input.value.trim();
-  if (!secret) { err.textContent = 'أدخل مفتاح الوصول'; return; }
-  S.secret = secret;
-  const r = await api('stats');
-  if (!r.ok) { err.textContent = 'مفتاح خاطئ أو خطأ في الاتصال'; S.secret = ''; return; }
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  renderDashboard(r.stats);
-  loadNotifLog();
-  startOnlineCounter();
+  const res = await api('adminStats', { range: 7 });
+  if (res.ok) { dashData = res; renderDashboard(res); }
+  loadOnlineUsers();
+  onlinePollTimer = setInterval(loadOnlineUsers, 20000);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  NAVIGATION
-// ═══════════════════════════════════════════════════════════════════════════
-function goto(page) {
-  S.page = page;
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`section-${page}`)?.classList.add('active');
-  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
-  document.getElementById('page-title').textContent = PAGE_TITLES[page] || page;
-  if (window.innerWidth <= 768) closeMobileSidebar();
-  const loaders = {
-    dashboard: loadDashboard, analytics: loadAnalytics,
-    users: loadUsers, online: loadOnline,
-    withdrawals: loadWithdrawals, competitions: loadCompetitions,
-    notifications: loadNotifLog, messages: loadDmHistory,
-    security: loadSecurity, auditlog: loadAuditLog
-  };
-  loaders[page]?.();
+// ═══════════════════════════════════════════════════════════════
+//  Navigation
+// ═══════════════════════════════════════════════════════════════
+const pages = { home:'page-home', users:'page-users', withdrawals:'page-withdrawals',
+                broadcast:'page-broadcast', logs:'page-logs' };
+const titles = { home:'لوحة التحكم', users:'المستخدمين', withdrawals:'السحوبات',
+                 broadcast:'إرسال رسائل', logs:'سجل النشاط' };
+
+function switchPage(name) {
+  Object.values(pages).forEach(id => document.getElementById(id).classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(pages[name]).classList.add('active');
+  const nav = document.getElementById('nav-'+name);
+  if (nav) nav.classList.add('active');
+  document.getElementById('page-title').textContent = titles[name] || 'لوحة التحكم';
+
+  if (name === 'users'       && !document.getElementById('users-list').children.length) loadUsers();
+  if (name === 'withdrawals' && !document.getElementById('withdrawals-list').children.length) loadWithdrawals();
+  if (name === 'logs'        && !document.getElementById('logs-list').children.length) loadLogs();
 }
 
-function refreshCurrent() { goto(S.page); }
-
-function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  const ic = document.getElementById('collapse-icon');
-  sb.classList.toggle('collapsed');
-  ic.style.transform = sb.classList.contains('collapsed') ? 'rotate(180deg)' : '';
+function refreshCurrent() {
+  const active = document.querySelector('.page-content.active');
+  if (active?.id === 'page-home') loadDashboard();
+  else if (active?.id === 'page-users') loadUsers();
+  else if (active?.id === 'page-withdrawals') loadWithdrawals();
+  else if (active?.id === 'page-logs') loadLogs();
 }
 
-function toggleMobileSidebar() {
-  document.getElementById('sidebar').classList.toggle('mobile-open');
-  document.getElementById('sb-backdrop').classList.toggle('show');
-}
-function closeMobileSidebar() {
-  document.getElementById('sidebar').classList.remove('mobile-open');
-  document.getElementById('sb-backdrop').classList.remove('show');
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  DASHBOARD
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  Dashboard
+// ═══════════════════════════════════════════════════════════════
 async function loadDashboard() {
-  const r = await api('stats');
-  if (!r.ok) return;
-  renderDashboard(r.stats);
+  const range = parseInt(document.getElementById('range-select').value);
+  document.getElementById('range-label').textContent = fNum(range);
+  const res = await api('adminStats', { range });
+  if (!res.ok) return;
+  dashData = res;
+  renderDashboard(res);
 }
 
-function renderDashboard(s) {
-  document.getElementById('sidebar-online-count').textContent = s.onlineNow ?? '—';
-  const obadge = document.getElementById('online-badge');
-  if (s.onlineNow > 0) { obadge.textContent = s.onlineNow; obadge.style.display = ''; }
+function renderDashboard(res) {
+  const { stats, activity, recent_users, competition } = res;
+  document.getElementById('greeting-sub').textContent =
+    `المسابقة: ${competition?.name || 'Season 1'}`;
 
-  const pb = document.getElementById('pending-badge');
-  if (s.withdrawals?.pending > 0) { pb.textContent = s.withdrawals.pending; pb.style.display = ''; }
-  else pb.style.display = 'none';
+  // Update pending badge
+  if (stats.pending_withdrawals > 0) {
+    const b = document.getElementById('w-badge');
+    b.textContent = fNum(stats.pending_withdrawals);
+    b.style.display = 'block';
+    document.getElementById('notif-dot').style.display = 'block';
+  }
 
-  const kpis = [
-    { label:'إجمالي المستخدمين', value: fNum(s.totalUsers), delta: `+${fNum(s.newToday)} اليوم`, up:true,
-      color:'var(--blue)', iconBg:'var(--blue-dim)', icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
-    { label:'متصلون الآن', value: fNum(s.onlineNow), delta: 'آخر ١٥ دقيقة', up:true,
-      color:'var(--teal)', iconBg:'var(--teal-dim)', icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>` },
-    { label:'الإعلانات اليوم', value: fNum(s.adWatchesToday), delta: `${fNum(s.newWeek)} هذا الأسبوع`, up:true,
-      color:'var(--sky)', iconBg:'var(--sky-dim)', icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>` },
-    { label:'سحوبات معلقة', value: fNum(s.withdrawals?.pending), delta: `$${parseFloat(s.withdrawals?.paid_out||0).toFixed(2)} مدفوع`, up:false,
-      color:'var(--amber)', iconBg:'var(--amber-dim)', icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>` },
-    { label:'إجمالي النقاط', value: fNum(s.totalPts), delta: `${s.growthRate}% نمو أسبوعي`, up: parseFloat(s.growthRate) >= 0,
-      color:'var(--green)', iconBg:'var(--green-dim)', icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>` },
-    { label:'إجمالي الأرصدة', value: `$${parseFloat(s.totalBalance||0).toFixed(2)}`, delta: `${fNum(s.shadowBanned)} محظور`, up:false,
-      color:'var(--red)', iconBg:'var(--red-dim)', icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>` },
-  ];
-
-  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
-    <div class="kpi-card" style="--kpi-accent:${k.color};--kpi-icon-bg:${k.iconBg}">
-      <div class="kpi-icon">${k.icon}</div>
-      <div class="kpi-body">
-        <div class="kpi-value">${k.value}</div>
-        <div class="kpi-label">${k.label}</div>
-        <div class="kpi-delta ${k.up?'up':'down'}">${k.up?'▲':'▼'} ${k.delta}</div>
+  // Stat cards
+  const range = parseInt(document.getElementById('range-select').value);
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon blue">${icon('users')}</div>
+      <div class="stat-info">
+        <div class="stat-label">إجمالي المستخدمين</div>
+        <div class="stat-value num">${fNum(stats.total_users)}</div>
+        <div class="stat-change up">${icon('trending-up')} ${fNum(stats.new_users)} جديد (${fNum(range)}ي)</div>
       </div>
     </div>
-  `).join('');
+    <div class="stat-card">
+      <div class="stat-icon green">${icon('coin')}</div>
+      <div class="stat-info">
+        <div class="stat-label">إجمالي النقاط</div>
+        <div class="stat-value num">${fCompact(stats.total_pts)}</div>
+        <div class="stat-change neutral">موزّعة</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon amber">${icon('dollar')}</div>
+      <div class="stat-info">
+        <div class="stat-label">إجمالي الأرصدة</div>
+        <div class="stat-value num">$${stats.total_balance.toFixed(2)}</div>
+        <div class="stat-change ${stats.pending_withdrawals>0?'down':'up'}">
+          <span class="num">${fNum(stats.pending_withdrawals)}</span> سحب معلّق
+        </div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple">${icon('tv')}</div>
+      <div class="stat-info">
+        <div class="stat-label">إعلانات مشاهَدة</div>
+        <div class="stat-value num">${fNum(stats.total_ads)}</div>
+        <div class="stat-change up">${icon('trending-up')} ${fNum(stats.today_ads)} اليوم</div>
+      </div>
+    </div>`;
 
-  mkLineChart('growthChart', s.growthChart, 'مستخدمون', 'var(--blue)');
-  mkLineChart('activityChart', s.activityChart, 'إعلانات', 'var(--sky)');
+  // Chart
+  drawChart(activity);
 
-  const riskCtx = document.getElementById('riskChart');
-  if (riskCtx) {
-    if (riskCtx._chart) riskCtx._chart.destroy();
-    riskCtx._chart = new Chart(riskCtx, {
-      type:'doughnut',
-      data:{
-        labels:['آمن','منخفض','متوسط','عالي'],
-        datasets:[{
-          data:[s.riskStats?.safe||0, s.riskStats?.low||0, s.riskStats?.medium||0, s.riskStats?.high||0],
-          backgroundColor:['rgba(0,229,179,0.7)','rgba(61,137,255,0.7)','rgba(251,191,36,0.7)','rgba(248,113,113,0.7)'],
-          borderColor:'var(--surface)',borderWidth:2
-        }]
-      },
-      options:{plugins:{legend:{position:'bottom',labels:{color:'var(--text2)',font:{size:11}}}},cutout:'65%'}
-    });
+  // Recent users
+  const ul = document.getElementById('recent-users-list');
+  if (!recent_users?.length) {
+    ul.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>لا يوجد مستخدمون بعد</p></div>`;
+    return;
   }
-
-  const tbody = document.querySelector('#recent-users-table tbody');
-  if (tbody) {
-    tbody.innerHTML = (s.recentUsers||[]).map(u => `
-      <tr onclick="openUserDetail(${u.id})" style="cursor:pointer">
-        <td><div class="user-cell">
-          <div class="avatar">${(u.first_name||u.username||'?')[0]}</div>
-          <div><div class="user-name">${u.first_name||u.username||'مجهول'}</div>
-          <div class="user-sub">@${u.username||'—'}</div></div>
-        </div></td>
-        <td>${fNum(u.pts)}</td>
-        <td>$${parseFloat(u.balance_usd||0).toFixed(2)}</td>
-        <td>${u.shadow_banned ? badge('محظور','red') : badge('نشط','teal')}</td>
-      </tr>
-    `).join('') || emptyRow(4);
-  }
+  ul.innerHTML = recent_users.map(u => `
+    <div class="user-row" onclick="openUserModal(${u.telegram_id})">
+      <div class="user-avatar">
+        ${u.photo_url ? `<img src="${u.photo_url}" onerror="this.parentNode.textContent='${(u.first_name||'?')[0]}'">` : (u.first_name||'?')[0]}
+        <span class="tg-icon">${icon('send')}</span>
+      </div>
+      <div class="user-info">
+        <div class="user-name">${esc(u.first_name || '—')}</div>
+        <div class="user-handle">${u.username ? '@'+u.username : 'بدون username'}</div>
+      </div>
+      <div class="user-meta">
+        <div class="user-time">${timeAgo(u.created_at)}</div>
+        <div class="user-pts num">${fNum(Number(u.pts))} نقطة</div>
+      </div>
+    </div>`).join('');
 }
 
-function mkLineChart(id, data, label, color) {
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  if (ctx._chart) ctx._chart.destroy();
-  const labels = (data||[]).map(d => d.day?.slice(5) || '');
-  const values = (data||[]).map(d => Object.values(d)[1] || 0);
-  ctx._chart = new Chart(ctx, {
-    type:'line',
-    data:{
-      labels,
-      datasets:[{
-        label, data:values,
-        borderColor:color, backgroundColor:color.replace(')',',0.08)').replace('var','rgba'),
-        fill:true, tension:0.4, pointRadius:2, borderWidth:2
-      }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{color:'rgba(61,137,255,0.05)'},ticks:{color:'var(--text3)',font:{size:10}}},
-        y:{grid:{color:'rgba(61,137,255,0.05)'},ticks:{color:'var(--text3)',font:{size:10}}}
-      }
-    }
+// ── Online Now (live presence strip) ────────────────────────────
+async function loadOnlineUsers() {
+  // Expects backend type 'adminOnlineUsers' returning { ok, count, users:[{telegram_id,first_name,username,photo_url}] }
+  // Fails silently if the endpoint isn't implemented yet so it never blocks the rest of the dashboard.
+  try {
+    const res = await api('adminOnlineUsers', {});
+    if (!res.ok) return;
+    renderOnlineUsers(res.users || [], res.count ?? (res.users ? res.users.length : 0));
+  } catch (e) { /* offline / endpoint missing — ignore */ }
+}
+
+function renderOnlineUsers(users, count) {
+  document.getElementById('online-count').textContent = fNum(count);
+  const strip = document.getElementById('online-strip');
+  if (!users.length) {
+    strip.innerHTML = `<div class="online-empty">${icon('inbox')} لا يوجد مستخدمون متصلون الآن</div>`;
+    return;
+  }
+  strip.innerHTML = users.map(u => `
+    <div class="online-item" onclick="openUserModal(${u.telegram_id})">
+      <div class="online-avatar">
+        ${u.photo_url ? `<img src="${u.photo_url}" onerror="this.parentNode.textContent='${(u.first_name||'?')[0]}'">` : (u.first_name||'?')[0]}
+      </div>
+      <div class="online-name">${esc((u.first_name||'—').split(' ')[0])}</div>
+    </div>`).join('');
+}
+
+// ── Chart ───────────────────────────────────────────────────────
+function drawChart(activity) {
+  const canvas = document.getElementById('activityChart');
+  const ctx    = canvas.getContext('2d');
+  if (chartInst) { chartInst = null; }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const data   = activity || [];
+  const labels = data.map(d => fDay(d.day));
+  const values = data.map(d => Number(d.count));
+
+  document.getElementById('chart-labels').innerHTML =
+    labels.map(l=>`<span class="num">${l}</span>`).join('');
+
+  // Simple canvas line chart
+  const W = canvas.offsetWidth || 320;
+  const H = 160;
+  canvas.width  = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.height = H + 'px';
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  if (!values.length) return;
+  const max  = Math.max(...values, 1);
+  const padL = 36, padR = 10, padT = 10, padB = 30;
+  const cw   = W - padL - padR;
+  const ch   = H - padT - padB;
+  const step = values.length > 1 ? cw / (values.length - 1) : cw;
+
+  const px = i => padL + i * step;
+  const py = v => padT + ch - (v / max) * ch;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,.08)';
+  ctx.lineWidth   = 1;
+  for (let g = 0; g <= 4; g++) {
+    const y = padT + (ch / 4) * g;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + cw, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.font = '10px Cairo, sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(fCompact(max - (max/4)*g), padL - 4, y + 4);
+  }
+
+  // Area gradient
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + ch);
+  grad.addColorStop(0, 'rgba(245,200,64,.28)');
+  grad.addColorStop(1, 'rgba(245,200,64,.02)');
+  ctx.beginPath();
+  ctx.moveTo(px(0), py(values[0]));
+  for (let i = 1; i < values.length; i++) {
+    const cx1 = px(i-1) + step * .4;
+    const cx2 = px(i)   - step * .4;
+    ctx.bezierCurveTo(cx1, py(values[i-1]), cx2, py(values[i]), px(i), py(values[i]));
+  }
+  ctx.lineTo(px(values.length-1), padT+ch);
+  ctx.lineTo(px(0), padT+ch);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(px(0), py(values[0]));
+  for (let i = 1; i < values.length; i++) {
+    const cx1 = px(i-1) + step * .4;
+    const cx2 = px(i)   - step * .4;
+    ctx.bezierCurveTo(cx1, py(values[i-1]), cx2, py(values[i]), px(i), py(values[i]));
+  }
+  ctx.strokeStyle = '#f5c840'; ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Dots
+  values.forEach((v, i) => {
+    ctx.beginPath();
+    ctx.arc(px(i), py(v), 4, 0, Math.PI*2);
+    ctx.fillStyle = '#0c0f17'; ctx.fill();
+    ctx.strokeStyle = '#f5c840'; ctx.lineWidth = 2.5; ctx.stroke();
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  USERS
-// ═══════════════════════════════════════════════════════════════════════════
-function setUserFilter(f, el) {
-  S.userFilter = f; S.usersPage = 1;
-  document.querySelectorAll('#section-users .filter-chip').forEach(c => c.classList.remove('active'));
+// ═══════════════════════════════════════════════════════════════
+//  Users Page
+// ═══════════════════════════════════════════════════════════════
+let searchTimer;
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    state.users.search = document.getElementById('user-search').value;
+    state.users.page   = 1;
+    loadUsers();
+  }, 400);
+}
+
+function setUserFilter(el, filter) {
+  document.querySelectorAll('[data-filter]').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
+  state.users.filter = filter;
+  state.users.page   = 1;
   loadUsers();
 }
 
 async function loadUsers() {
-  const q = document.getElementById('user-search')?.value || '';
-  const r = await api('users', { query:`&page=${S.usersPage}&filter=${S.userFilter}&search=${encodeURIComponent(q)}` });
-  if (!r.ok) return;
+  const { page, filter, search } = state.users;
+  document.getElementById('users-list').innerHTML =
+    [1,2,3,4,5].map(()=>`<div class="skeleton" style="height:86px;border-radius:14px;margin-bottom:10px"></div>`).join('');
+  const res = await api('adminUsers', { page, filter, search, limit: 20 });
+  if (!res.ok) return;
+  state.users.total = res.total;
 
-  document.getElementById('users-tbody').innerHTML = r.users.map(u => `
-    <tr>
-      <td><div class="user-cell">
-        <div class="avatar">${(u.first_name||u.username||'?')[0]}</div>
-        <div><div class="user-name">${esc(u.first_name||u.username||'مجهول')}</div>
-        <div class="user-sub">${u.telegram_id}</div></div>
-      </div></td>
-      <td>${fNum(u.pts)}</td>
-      <td>$${parseFloat(u.balance_usd||0).toFixed(2)}</td>
-      <td>${fNum(u.referral_count)}</td>
-      <td>${fNum(u.total_ads_watched)}</td>
-      <td>${riskBadge(u.risk_score)}</td>
-      <td>${u.shadow_banned ? badge('محظور','red') : badge('نشط','teal')}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(u.created_at)}</td>
-      <td>${u.username ? `<a class="tg-link" href="https://t.me/${u.username}" target="_blank">TG</a>` : `<span class="tg-link disabled">TG</span>`}</td>
-      <td><button class="btn btn-ghost btn-xs" onclick="openUserDetail(${u.id})">عرض</button></td>
-    </tr>
-  `).join('') || emptyRow(10, 'لا توجد نتائج');
-
-  renderPagination('users-pagination', r.page, r.pages, p => { S.usersPage = p; loadUsers(); });
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  ONLINE USERS
-// ═══════════════════════════════════════════════════════════════════════════
-function setOnlineWindow(mins, el) {
-  S.onlineWindow = mins;
-  document.querySelectorAll('#section-online .filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  loadOnline();
-}
-
-function startOnlineCounter() {
-  clearInterval(S.onlineTimer);
-  S.onlineTimer = setInterval(() => {
-    S.onlineCountdown--;
-    const el = document.getElementById('online-countdown');
-    if (el) el.textContent = S.onlineCountdown;
-    if (S.onlineCountdown <= 0) {
-      S.onlineCountdown = 30;
-      if (S.page === 'online') loadOnline();
-      else updateOnlineBadge();
-    }
-  }, 1000);
-}
-
-async function updateOnlineBadge() {
-  const r = await api('online_users', { query:'&minutes=15' });
-  if (!r.ok) return;
-  document.getElementById('sidebar-online-count').textContent = r.count;
-  const badge = document.getElementById('online-badge');
-  if (r.count > 0) { badge.textContent = r.count; badge.style.display = ''; }
-}
-
-async function loadOnline() {
-  const r = await api('online_users', { query:`&minutes=${S.onlineWindow}` });
-  const countEl = document.getElementById('online-count-display');
-  const grid    = document.getElementById('online-grid');
-  const lastEl  = document.getElementById('online-last-update');
-  if (lastEl) lastEl.textContent = new Date().toLocaleTimeString('ar');
-  S.onlineCountdown = 30;
-  if (!r.ok) { if (countEl) countEl.textContent = '—'; return; }
-  if (countEl) countEl.textContent = r.count;
-  document.getElementById('sidebar-online-count').textContent = r.count;
-  const badge = document.getElementById('online-badge');
-  if (r.count > 0) { badge.textContent = r.count; badge.style.display = ''; }
-
-  if (!r.users.length) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">
-      <div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div>
-      <div class="empty-title">لا يوجد مستخدمون نشطون</div>
-      <div class="empty-sub">في آخر ${r.minutes} دقيقة</div>
-    </div>`;
+  const ul = document.getElementById('users-list');
+  if (!res.users.length) {
+    ul.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('search')}</div><p>لا توجد نتائج</p></div>`;
+    document.getElementById('users-pagination').innerHTML = '';
     return;
   }
 
-  grid.innerHTML = r.users.map(u => `
-    <div class="online-card" onclick="openUserDetail(${u.id})">
-      <div class="avatar" style="width:40px;height:40px;font-size:16px;position:relative">
-        ${(u.first_name||u.username||'?')[0]}
-        <div class="online-dot"></div>
+  ul.innerHTML = res.users.map(u => `
+    <div class="user-card" onclick="openUserModal(${u.telegram_id})">
+      <div class="user-avatar">
+        ${u.photo_url
+          ? `<img src="${u.photo_url}" onerror="this.parentNode.innerHTML='${(u.first_name||'?')[0]}'">`
+          : (u.first_name||'?')[0]}
+        <span class="tg-icon">${icon('send')}</span>
       </div>
-      <div class="online-card-info">
-        <div class="online-card-name">${esc(u.first_name||u.username||'مجهول')}</div>
-        <div class="online-card-action">${u.last_action || 'نشاط غير محدد'}</div>
-        <div class="online-card-time">${timeAgo(u.last_seen)}</div>
-      </div>
-      <div>${riskDot(u.risk_score)}</div>
-    </div>
-  `).join('');
-}
-
-function timeAgo(ts) {
-  if (!ts) return '—';
-  const secs = Math.floor((Date.now() - new Date(ts)) / 1000);
-  if (secs < 60)   return `منذ ${secs}ث`;
-  if (secs < 3600) return `منذ ${Math.floor(secs/60)}د`;
-  return `منذ ${Math.floor(secs/3600)}س`;
-}
-
-function riskDot(score) {
-  const c = score >= 100 ? 'var(--red)' : score >= 50 ? 'var(--amber)' : 'var(--teal)';
-  return `<div style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0"></div>`;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  USER DETAIL
-// ═══════════════════════════════════════════════════════════════════════════
-async function openUserDetail(id) {
-  S.currentUserId = id;
-  openModal('user-modal-overlay');
-  document.getElementById('ud-modal-title').textContent = 'جارٍ التحميل...';
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById('ud-tab-overview').classList.add('active');
-  document.querySelectorAll('#ud-tabs .tab').forEach(t => t.classList.remove('active'));
-  document.querySelector('#ud-tabs .tab').classList.add('active');
-
-  const r = await api('user_detail', { query:`&id=${id}` });
-  if (!r.ok) { toast('فشل تحميل بيانات المستخدم','error'); return; }
-  S.currentUser = r.user;
-
-  document.getElementById('ud-modal-title').textContent = r.user.first_name || r.user.username || `ID ${r.user.telegram_id}`;
-
-  const u = r.user;
-  document.getElementById('ud-overview-content').innerHTML = `
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-      <div class="avatar" style="width:56px;height:56px;font-size:22px">${(u.first_name||u.username||'?')[0]}</div>
-      <div>
-        <div style="font-family:'Cairo',sans-serif;font-size:18px;font-weight:700">${esc(u.first_name||u.username||'مجهول')}</div>
-        <div style="font-size:12px;color:var(--text2)">${u.username ? `@${u.username}` : '—'} · ${u.telegram_id}</div>
-        <div style="margin-top:6px;display:flex;gap:6px">
-          ${u.shadow_banned ? badge('محظور','red') : badge('نشط','teal')}
-          ${riskBadge(u.risk_score)}
-          ${u.username ? `<a class="tg-link" href="https://t.me/${u.username}" target="_blank">فتح في تليغرام</a>` : ''}
+      <div class="user-card-info">
+        <div class="user-card-name">${esc(u.first_name||'—')}</div>
+        <div class="user-card-sub">${u.username?'@'+u.username:'بدون username'} · <span class="num">#${u.telegram_id}</span></div>
+        <div class="user-card-stats">
+          <span class="user-stat-pill"><span class="dot" style="background:var(--gold)"></span><span class="num">${fNum(u.pts)}</span> نقطة</span>
+          <span class="user-stat-pill"><span class="dot" style="background:var(--emerald)"></span><span class="num">$${parseFloat(u.balance_usd).toFixed(2)}</span></span>
+          <span class="user-stat-pill"><span class="dot" style="background:var(--violet)"></span><span class="num">${u.daily_ads||0}</span> إعلان</span>
         </div>
       </div>
-    </div>
-    <div class="detail-grid">
-      ${dItem('النقاط', fNum(u.pts))}
-      ${dItem('الرصيد', `$${parseFloat(u.balance_usd||0).toFixed(4)}`)}
-      ${dItem('الإحالات', fNum(u.referral_count))}
-      ${dItem('إجمالي الإعلانات', fNum(u.total_ads))}
-      ${dItem('إعلانات اليوم', fNum(u.daily_ads))}
-      ${dItem('Risk Score', u.risk_score || '0')}
-      ${dItem('كود الإحالة', u.referral_code || '—')}
-      ${dItem('محال من', u.referred_by || '—')}
-      ${dItem('تاريخ الانضمام', fDate(u.created_at))}
-      ${dItem('آخر إعلان', fDate(u.last_ad_watch))}
-    </div>
-  `;
+      <span class="badge ${u.banned?'banned':u.shadow_banned?'shadow':'normal'}">
+        ${u.banned?'محظور':u.shadow_banned?'شادو':'نشط'}
+      </span>
+    </div>`).join('');
 
-  document.getElementById('ud-activity-tbody').innerHTML = r.activityLogs.map(a => `
-    <tr><td>${badge(a.action,'blue')}</td>
-    <td style="font-size:12px;color:var(--text2)">${esc(a.details||'—')}</td>
-    <td style="font-size:11px;color:var(--text3)">${fDate(a.created_at)}</td></tr>
-  `).join('') || emptyRow(3);
-
-  document.getElementById('ud-withdrawals-tbody').innerHTML = r.withdrawals.map(w => `
-    <tr>
-      <td style="font-weight:600">$${parseFloat(w.amount||0).toFixed(2)}</td>
-      <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis">${esc(w.address||'—')}</td>
-      <td>${wStatusBadge(w.status)}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(w.created_at)}</td>
-      <td>${w.status==='pending' ? `
-        <div style="display:flex;gap:4px">
-          <button class="btn btn-teal btn-xs" onclick="udWAction(${w.id},'approve')">قبول</button>
-          <button class="btn btn-danger btn-xs" onclick="udWAction(${w.id},'reject')">رفض</button>
-        </div>` : ''}
-      </td>
-    </tr>
-  `).join('') || emptyRow(5);
-
-  document.getElementById('ud-ads-tbody').innerHTML = r.adHistory.map(a => `
-    <tr>
-      <td>${badge(a.ad_type||'ad','blue')}</td>
-      <td style="font-weight:600">${fNum(a.reward)}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(a.created_at)}</td>
-    </tr>
-  `).join('') || emptyRow(3);
-
-  document.getElementById('ud-referrals-tbody').innerHTML = r.referrals.map(u => `
-    <tr onclick="openUserDetail(${u.id})" style="cursor:pointer">
-      <td><div class="user-cell">
-        <div class="avatar">${(u.first_name||u.username||'?')[0]}</div>
-        <div><div class="user-name">${esc(u.first_name||u.username||'مجهول')}</div></div>
-      </div></td>
-      <td>${fNum(u.pts)}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(u.created_at)}</td>
-    </tr>
-  `).join('') || emptyRow(3);
-
-  document.getElementById('ud-messages-tbody').innerHTML = (r.messages||[]).map(m => `
-    <tr>
-      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        ${m.title ? `<strong>${esc(m.title)}</strong> — ` : ''}${esc(m.message_text||'🖼️ صورة')}
-      </td>
-      <td>${m.status==='sent' ? badge('تم','green') : badge('فشل','red')}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(m.created_at)}</td>
-    </tr>
-  `).join('') || emptyRow(3);
-
-  document.getElementById('ud-admin-tbody').innerHTML = r.adminLogs.map(l => `
-    <tr>
-      <td>${badge(l.action,'blue')}</td>
-      <td style="font-size:12px;color:var(--text2)">${l.admin_note||'—'}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(l.created_at)}</td>
-    </tr>
-  `).join('') || emptyRow(3);
+  renderPagination('users-pagination', page, Math.ceil(res.total / 20), p => {
+    state.users.page = p; loadUsers();
+  });
 }
 
-function udTab(name, el) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('#ud-tabs .tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(`ud-tab-${name}`)?.classList.add('active');
+// ═══════════════════════════════════════════════════════════════
+//  Withdrawals Page
+// ═══════════════════════════════════════════════════════════════
+function setWFilter(el, filter) {
+  document.querySelectorAll('[data-wfilter]').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-}
-
-async function udAction(type) {
-  if (!S.currentUserId) return;
-  const reason = prompt('سبب الإجراء (اختياري):') || '';
-  const r = await api('user_action', { method:'POST', body:{ userId:S.currentUserId, type, reason } });
-  if (r.ok) { toast('تم تنفيذ الإجراء','success'); openUserDetail(S.currentUserId); }
-  else toast(r.error||'فشل','error');
-}
-
-let _adjustField = null;
-function udAdjust(field) {
-  _adjustField = field;
-  const titles = { pts:'تعديل النقاط', balance:'تعديل الرصيد', risk:'تعديل Risk Score' };
-  const labels  = { pts:'القيمة (+/-)', balance:'القيمة بالدولار (+/-)', risk:'درجة المخاطر (0-200)' };
-  document.getElementById('adjust-title').textContent = titles[field] || 'تعديل';
-  document.getElementById('adjust-label').textContent  = labels[field] || 'القيمة';
-  document.getElementById('adjust-value').value = '';
-  document.getElementById('adjust-reason').value = '';
-  openModal('adjust-modal');
-}
-
-async function submitAdjust() {
-  if (!S.currentUserId || !_adjustField) return;
-  const value  = document.getElementById('adjust-value').value;
-  const reason = document.getElementById('adjust-reason').value;
-  const typeMap = { pts:'adjust_pts', balance:'adjust_balance', risk:'adjust_risk' };
-  const r = await api('user_action', { method:'POST', body:{ userId:S.currentUserId, type:typeMap[_adjustField], value, reason } });
-  if (r.ok) { toast('تم التعديل','success'); closeModal('adjust-modal'); openUserDetail(S.currentUserId); }
-  else toast(r.error||'فشل','error');
-}
-
-async function udWAction(wId, action) {
-  if (!S.currentUserId) return;
-  const reason = action==='reject' ? (prompt('سبب الرفض:') || '') : '';
-  const type = action==='approve' ? 'approve_withdrawal' : 'reject_withdrawal';
-  const r = await api('user_action', { method:'POST', body:{ userId:S.currentUserId, type, value:wId, reason } });
-  if (r.ok) { toast(action==='approve' ? 'تم القبول' : 'تم الرفض','success'); openUserDetail(S.currentUserId); loadWithdrawals(); }
-  else toast(r.error||'فشل','error');
-}
-
-function quickDmFromModal() {
-  if (!S.currentUser) return;
-  document.getElementById('udm-title').value = '';
-  document.getElementById('udm-text').value = '';
-  document.getElementById('udm-photo').value = '';
-  document.getElementById('udm-buttons').value = '';
-  openModal('udm-modal');
-}
-
-function openUdmModal() { quickDmFromModal(); }
-
-async function sendUdm() {
-  if (!S.currentUserId) return;
-  const title   = document.getElementById('udm-title').value.trim();
-  const text    = document.getElementById('udm-text').value.trim();
-  const photo   = document.getElementById('udm-photo').value.trim();
-  const rawBtns = document.getElementById('udm-buttons').value.trim();
-  const buttons = parseBtns(rawBtns);
-  if (!text && !photo) { toast('أدخل نصاً أو صورة','error'); return; }
-  const r = await api('direct_message_send', { method:'POST', body:{ userId:S.currentUserId, title, text, photoUrl:photo, buttons } });
-  if (r.ok) { toast('تم الإرسال','success'); closeModal('udm-modal'); openUserDetail(S.currentUserId); }
-  else toast(r.error||'فشل الإرسال','error');
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  DELETE USER
-// ═══════════════════════════════════════════════════════════════════════════
-function openDeleteUserModal() {
-  if (!S.currentUser) return;
-  const u = S.currentUser;
-  document.getElementById('delete-user-info').innerHTML = `
-    <div class="detail-grid" style="grid-template-columns:1fr 1fr">
-      ${dItem('الاسم', esc(u.first_name||u.username||'مجهول'))}
-      ${dItem('Telegram ID', u.telegram_id)}
-      ${dItem('النقاط', fNum(u.pts))}
-      ${dItem('الرصيد', `$${parseFloat(u.balance_usd||0).toFixed(2)}`)}
-    </div>
-  `;
-  document.getElementById('delete-confirm-input').value = '';
-  document.getElementById('delete-reason').value = '';
-  document.getElementById('delete-confirm-btn').disabled = true;
-  document.getElementById('delete-confirm-btn').style.opacity = '0.4';
-  openModal('delete-user-modal');
-}
-
-function onDeleteConfirmInput() {
-  const val = document.getElementById('delete-confirm-input').value;
-  const btn = document.getElementById('delete-confirm-btn');
-  const ok  = val === 'DELETE';
-  btn.disabled = !ok;
-  btn.style.opacity = ok ? '1' : '0.4';
-}
-
-async function executeDeleteUser() {
-  if (!S.currentUserId) return;
-  const reason = document.getElementById('delete-reason').value.trim();
-  const btn    = document.getElementById('delete-confirm-btn');
-  btn.disabled = true; btn.textContent = 'جارٍ الحذف...';
-  const r = await api('delete_user', { method:'POST', body:{ userId:S.currentUserId, reason } });
-  if (r.ok) {
-    const d = r.deleted;
-    toast(`✅ تم الحذف: ${d.user} مستخدم، ${d.ads} إعلان، ${d.withdrawals} سحب، ${d.activity} نشاط`, 'success');
-    closeModal('delete-user-modal');
-    closeModal('user-modal-overlay');
-    loadUsers();
-    loadDashboard();
-  } else {
-    toast(r.error || 'فشل الحذف', 'error');
-    btn.disabled = false; btn.textContent = 'حذف نهائياً';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  WITHDRAWALS
-// ═══════════════════════════════════════════════════════════════════════════
-function setWFilter(f, el) {
-  S.wFilter = f; S.wPage = 1;
-  document.querySelectorAll('#section-withdrawals .filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  state.withdrawals.filter = filter;
+  state.withdrawals.page   = 1;
   loadWithdrawals();
 }
 
 async function loadWithdrawals() {
-  const r = await api('withdrawals', { query:`&page=${S.wPage}&filter=${S.wFilter}` });
-  if (!r.ok) return;
-  document.getElementById('withdrawals-tbody').innerHTML = r.withdrawals.map(w => `
-    <tr>
-      <td><div class="user-cell">
-        <div class="avatar">${(w.first_name||w.username||'?')[0]}</div>
-        <div>
-          <div class="user-name">${esc(w.first_name||w.username||'مجهول')}</div>
-          <div class="user-sub">${w.user_telegram_id}</div>
-        </div>
-      </div></td>
-      <td style="font-weight:700;color:var(--teal)">$${parseFloat(w.amount||0).toFixed(2)}</td>
-      <td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(w.address||'—')}</td>
-      <td>${wStatusBadge(w.status)}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(w.created_at)}</td>
-      <td>${w.status==='pending' ? `
-        <div style="display:flex;gap:4px">
-          <button class="btn btn-teal btn-xs" onclick="quickApprove(${w.id},${w.user_id||'null'})">قبول</button>
-          <button class="btn btn-danger btn-xs" onclick="quickReject(${w.id},${w.user_id||'null'})">رفض</button>
-        </div>` : ''}
-      </td>
-    </tr>
-  `).join('') || emptyRow(6,'لا توجد سحوبات');
-  renderPagination('withdrawals-pagination', r.page, r.pages, p => { S.wPage = p; loadWithdrawals(); });
-}
+  const { page, filter } = state.withdrawals;
+  document.getElementById('withdrawals-list').innerHTML =
+    [1,2,3].map(()=>`<div class="skeleton" style="height:130px;border-radius:14px;margin-bottom:10px"></div>`).join('');
+  const res = await api('adminWithdrawals', { page, status: filter, limit: 20 });
+  if (!res.ok) return;
 
-async function quickApprove(wId, userId) {
-  if (!userId) return;
-  const r = await api('user_action', { method:'POST', body:{ userId, type:'approve_withdrawal', value:wId } });
-  if (r.ok) { toast('تمت الموافقة','success'); loadWithdrawals(); }
-  else toast(r.error||'فشل','error');
-}
-async function quickReject(wId, userId) {
-  if (!userId) return;
-  const reason = prompt('سبب الرفض:') || '';
-  const r = await api('user_action', { method:'POST', body:{ userId, type:'reject_withdrawal', value:wId, reason } });
-  if (r.ok) { toast('تم الرفض وإعادة المبلغ','success'); loadWithdrawals(); }
-  else toast(r.error||'فشل','error');
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  COMPETITIONS
-// ═══════════════════════════════════════════════════════════════════════════
-async function loadCompetitions() {
-  const r = await api('competitions');
-  if (!r.ok) return;
-  const grid = document.getElementById('comp-grid');
-  if (!r.competitions.length) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">
-      <div class="empty-title">لا توجد مسابقات</div>
-      <div class="empty-sub">أنشئ مسابقة جديدة للبدء</div>
-    </div>`; return;
+  const wl = document.getElementById('withdrawals-list');
+  if (!res.withdrawals.length) {
+    wl.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('wallet')}</div><p>لا توجد سحوبات</p></div>`;
+    document.getElementById('w-pagination').innerHTML = '';
+    return;
   }
-  grid.innerHTML = r.competitions.map(c => `
-    <div class="comp-card ${c.active ? 'active-comp' : ''}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-        <div class="comp-name">${esc(c.name)}</div>
-        ${c.active ? badge('نشطة','teal') : badge('منتهية','dim')}
+
+  wl.innerHTML = res.withdrawals.map(w => `
+    <div class="withdraw-card">
+      <div class="withdraw-header">
+        <span class="withdraw-user">${esc(w.first_name||'?')} ${w.username?'@'+w.username:''}</span>
+        <span class="withdraw-status ${w.status}">${wStatusLabel(w.status)}</span>
       </div>
-      <div class="comp-dates">
-        ${fDate(c.start_at)} ← ${fDate(c.end_at)}
-      </div>
-      <div class="comp-metrics">
-        <div>
-          <div class="comp-metric-val">${fNum(c.participant_count)}</div>
-          <div class="comp-metric-label">مشارك</div>
-        </div>
-        <div>
-          <div class="comp-metric-val">$${parseFloat(c.prize_pool||0).toFixed(0)}</div>
-          <div class="comp-metric-label">جائزة</div>
-        </div>
-      </div>
-      <div class="comp-actions">
-        <button class="btn btn-ghost btn-sm" onclick="openLeaderboard(${c.id},'${esc(c.name)}')">المتصدرون</button>
-        ${c.active ? `<button class="btn btn-danger btn-sm" onclick="endComp(${c.id})">إنهاء</button>` : ''}
-      </div>
-    </div>
-  `).join('');
+      <div class="withdraw-amount num">$${parseFloat(w.amount).toFixed(2)} USDT</div>
+      <div class="withdraw-addr">${icon('pin')} <span>${esc(w.address)}${w.memo?' · '+esc(w.memo):''}</span></div>
+      <div class="withdraw-date">${icon('clock')} <span class="num">${fDateTime(w.created_at)}</span> · <span class="num">#${w.telegram_id}</span></div>
+      ${w.status==='pending' ? `
+      <div class="withdraw-actions">
+        <button class="action-btn approve" onclick="updateWithdrawal(${w.id},'approved',this)">${icon('check')} موافقة</button>
+        <button class="action-btn reject"  onclick="updateWithdrawal(${w.id},'rejected',this)">${icon('x')} رفض</button>
+        <button class="action-btn paid"    onclick="updateWithdrawal(${w.id},'paid',this)">${icon('card')} مدفوع</button>
+      </div>` : ''}
+      ${w.status==='approved' ? `
+      <div class="withdraw-actions">
+        <button class="action-btn paid" onclick="updateWithdrawal(${w.id},'paid',this)">${icon('card')} تأكيد الدفع</button>
+      </div>` : ''}
+    </div>`).join('');
+
+  renderPagination('w-pagination', page, Math.ceil(res.total / 20), p => {
+    state.withdrawals.page = p; loadWithdrawals();
+  });
 }
 
-async function createComp() {
-  const name  = document.getElementById('comp-name').value.trim();
-  const start = document.getElementById('comp-start').value;
-  const end   = document.getElementById('comp-end').value;
-  const prize = document.getElementById('comp-prize').value || 0;
-  if (!name || !start || !end) { toast('يرجى ملء جميع الحقول المطلوبة','error'); return; }
-  const r = await api('competition_create', { method:'POST', body:{ name, startAt:start, endAt:end, prizePool:prize } });
-  if (r.ok) { toast('تم إنشاء المسابقة','success'); closeModal('comp-modal'); loadCompetitions(); }
-  else toast(r.error||'فشل','error');
+async function updateWithdrawal(id, status, btn) {
+  btn.disabled = true; btn.innerHTML = icon('loader','spin');
+  const res = await api('adminUpdateWithdrawal', { id, status });
+  if (res.ok) { showToast(icon('check')+' تم التحديث'); loadWithdrawals(); }
+  else { showToast(icon('x')+' ' + res.error); btn.disabled = false; }
 }
 
-async function endComp(id) {
-  if (!confirm('هل أنت متأكد من إنهاء هذه المسابقة؟')) return;
-  const r = await api('competition_end', { method:'POST', body:{ compId:id } });
-  if (r.ok) { toast('تم إنهاء المسابقة','success'); loadCompetitions(); }
-  else toast(r.error||'فشل','error');
+// ═══════════════════════════════════════════════════════════════
+//  Activity Logs
+// ═══════════════════════════════════════════════════════════════
+const logIcons = {
+  game_round: 'gamepad', ref_copy: 'link', share: 'send', sec_event: 'shield',
+  admin_adjust_pts: 'edit', admin_adjust_balance: 'coin', default: 'tag'
+};
+
+function setLogFilter(el, action) {
+  document.querySelectorAll('[data-log]').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  state.logs.filter = action;
+  state.logs.page   = 1;
+  loadLogs();
 }
 
-async function openLeaderboard(id, name) {
-  document.getElementById('lb-title').textContent = `متصدرو: ${name}`;
-  openModal('leaderboard-modal');
-  document.getElementById('lb-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3)">جارٍ التحميل...</td></tr>';
-  const r = await api('competition_leaderboard', { query:`&id=${id}` });
-  if (!r.ok) { document.getElementById('lb-tbody').innerHTML = emptyRow(4,'فشل التحميل'); return; }
-  document.getElementById('lb-tbody').innerHTML = r.leaderboard.map(l => `
-    <tr>
-      <td><span style="font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;color:${l.rank<=3?'var(--amber)':'var(--text2)'}">#${l.rank}</span></td>
-      <td><div class="user-cell">
-        <div class="avatar">${(l.first_name||l.username||'?')[0]}</div>
-        <div><div class="user-name">${esc(l.first_name||l.username||'مجهول')}</div></div>
-      </div></td>
-      <td style="font-weight:600">${fNum(l.watch_count)}</td>
-      <td style="color:var(--teal);font-weight:600">${fNum(l.total_reward)}</td>
-    </tr>
-  `).join('') || emptyRow(4,'لا توجد بيانات');
-}
+async function loadLogs() {
+  const { page, filter } = state.logs;
+  document.getElementById('logs-list').innerHTML =
+    [1,2,3,4,5].map(()=>`<div class="skeleton" style="height:60px;margin-bottom:8px;border-radius:8px"></div>`).join('');
+  const res = await api('adminActivityLogs', { page, action: filter, limit: 30 });
+  if (!res.ok) return;
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  NOTIFICATIONS
-// ═══════════════════════════════════════════════════════════════════════════
-function onTargetChange() {
-  const t = document.getElementById('notif-target').value;
-  document.getElementById('notif-user-grp').style.display = t==='user' ? '' : 'none';
-}
-
-function updatePreview() {
-  const title = document.getElementById('notif-title')?.value.trim();
-  const body  = document.getElementById('notif-body')?.value.trim();
-  const btns  = document.getElementById('notif-buttons')?.value.trim();
-  const pTitle = document.getElementById('preview-title');
-  const pBody  = document.getElementById('preview-body');
-  const pBtns  = document.getElementById('preview-btns');
-  if (pTitle) { pTitle.textContent = title; pTitle.style.display = title ? '' : 'none'; }
-  if (pBody)  { pBody.textContent  = body || 'ابدأ بكتابة الرسالة...'; pBody.style.color = body ? 'var(--text2)' : 'var(--text3)'; }
-  if (pBtns)  {
-    pBtns.innerHTML = btns ? btns.split('\n').filter(l=>l.includes('|')).map(l => {
-      const [label] = l.split('|');
-      return `<div class="notif-preview-btn">${esc(label.trim())}</div>`;
-    }).join('') : '';
+  const ll = document.getElementById('logs-list');
+  if (!res.logs.length) {
+    ll.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>لا توجد سجلات</p></div>`;
+    return;
   }
-}
-
-async function sendNotification() {
-  const target  = document.getElementById('notif-target').value;
-  const title   = document.getElementById('notif-title').value.trim();
-  const text    = document.getElementById('notif-body').value.trim();
-  const photo   = document.getElementById('notif-photo').value.trim();
-  const rawBtns = document.getElementById('notif-buttons').value.trim();
-  const userId  = document.getElementById('notif-user-id')?.value.trim();
-  if (!text)    { toast('الرسالة مطلوبة','error'); return; }
-  if (target==='user' && !userId) { toast('أدخل Telegram ID','error'); return; }
-
-  const buttons = parseBtns(rawBtns);
-  const btn     = document.getElementById('send-notif-btn');
-  const prog    = document.getElementById('notif-progress');
-  btn.disabled  = true;
-  prog.style.display = '';
-
-  if (target === 'all') {
-    let notifId = null; let offset = 0; let done = false; let totalSent = 0;
-    while (!done) {
-      prog.textContent = `جارٍ الإرسال... ${totalSent} مرسل`;
-      const r = await api('send_notification', {
-        method:'POST',
-        body:{ target:'all', title, text, photoUrl:photo||null, buttons, notifId, batchOffset:offset }
-      });
-      if (!r.ok) { toast(r.error||'خطأ','error'); break; }
-      notifId = r.notifId; offset = r.nextOffset; totalSent += r.sentCount; done = r.done;
-    }
-    toast(`✅ تم الإرسال لـ ${fNum(totalSent)} مستخدم`, 'success');
-  } else {
-    const r = await api('send_notification', {
-      method:'POST',
-      body:{ target:'user', userIds:[userId], title, text, photoUrl:photo||null, buttons }
-    });
-    if (r.ok) toast(`✅ تم الإرسال لـ ${r.sentCount} مستخدم`, 'success');
-    else toast(r.error||'فشل', 'error');
-  }
-  btn.disabled = false; prog.style.display = 'none';
-  loadNotifLog();
-}
-
-async function loadNotifLog() {
-  const r = await api('notifications_log');
-  if (!r.ok) return;
-  const el = document.getElementById('notif-log-tbody');
-  if (!el) return;
-  el.innerHTML = r.logs.map(l => `
-    <tr>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.title||l.body.slice(0,30))}</td>
-      <td>${badge(l.target==='all'?'الكل':l.target,'blue')}</td>
-      <td style="font-weight:600">${fNum(l.sent_count)}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(l.created_at)}</td>
-    </tr>
-  `).join('') || emptyRow(4,'لا توجد إشعارات سابقة');
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  DIRECT MESSAGES
-// ═══════════════════════════════════════════════════════════════════════════
-async function dmSearchUsers(q) {
-  const drop = document.getElementById('dm-drop');
-  if (!q || q.length < 1) { drop.classList.remove('open'); return; }
-  const r = await api('search_users', { query:`&q=${encodeURIComponent(q)}&limit=8` });
-  if (!r.ok || !r.users.length) { drop.classList.remove('open'); return; }
-  drop.innerHTML = r.users.map(u => `
-    <div class="dm-drop-item" onclick='selectDmUser(${JSON.stringify(u)})'>
-      <div class="avatar">${(u.first_name||u.username||'?')[0]}</div>
-      <div>
-        <div style="font-size:13px;font-weight:500">${esc(u.first_name||u.username||'مجهول')}</div>
-        <div style="font-size:11px;color:var(--text2)">${u.telegram_id}</div>
+  ll.innerHTML = res.logs.map(l => {
+    const meta = l.meta && typeof l.meta === 'object' ? JSON.stringify(l.meta).slice(0,80) : '';
+    return `<div class="log-item">
+      <span class="log-icon">${icon(logIcons[l.action] || logIcons.default)}</span>
+      <div style="flex:1;min-width:0">
+        <div class="log-action">${l.action}</div>
+        <div class="log-user">${esc(l.first_name||'?')} ${l.username?'@'+l.username:''}</div>
+        ${meta ? `<div class="log-meta">${esc(meta)}</div>` : ''}
+        <div class="log-time num">${fDateTime(l.created_at)}</div>
       </div>
-    </div>
-  `).join('');
-  drop.classList.add('open');
+    </div>`;
+  }).join('');
 }
 
-function selectDmUser(u) {
-  S.dmUserId = u.id;
-  document.getElementById('dm-drop').classList.remove('open');
-  document.getElementById('dm-search').value = u.first_name || u.username || String(u.telegram_id);
-  document.getElementById('dm-selected').innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--blue-dim);border:1px solid var(--border2);border-radius:var(--r-sm)">
-      <div class="avatar">${(u.first_name||u.username||'?')[0]}</div>
-      <div>
-        <div style="font-size:13px;font-weight:500">${esc(u.first_name||u.username||'مجهول')}</div>
-        <div style="font-size:11px;color:var(--text2)">${u.telegram_id}</div>
-      </div>
-      <button class="btn btn-ghost btn-xs" style="margin-right:auto" onclick="clearDmUser()">✕</button>
-    </div>
+// ═══════════════════════════════════════════════════════════════
+//  User Detail Modal
+// ═══════════════════════════════════════════════════════════════
+async function openUserModal(tgId) {
+  document.getElementById('modal-body').innerHTML =
+    `<div class="skeleton" style="height:240px;border-radius:12px"></div>`;
+  document.getElementById('modal-actions').innerHTML = '';
+  document.getElementById('user-modal').classList.add('open');
+
+  const res = await api('adminUserDetail', { telegram_id: tgId });
+  if (!res.ok) { document.getElementById('modal-body').textContent = res.error; return; }
+  const u = res.user;
+  document.getElementById('modal-title').textContent = esc(u.first_name || '—');
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="detail-row"><span class="detail-key">Telegram ID</span><span class="detail-val num" style="font-family:monospace">${u.telegram_id}</span></div>
+    <div class="detail-row"><span class="detail-key">Username</span><span class="detail-val">${u.username?'@'+u.username:'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">النقاط (pts)</span><span class="detail-val num" style="color:var(--gold);font-weight:800">${fNum(u.pts)}</span></div>
+    <div class="detail-row"><span class="detail-key">الرصيد USDT</span><span class="detail-val num" style="color:var(--emerald);font-weight:800">$${parseFloat(u.balance_usd).toFixed(4)}</span></div>
+    <div class="detail-row"><span class="detail-key">الإعلانات اليوم</span><span class="detail-val num">${u.daily_ads||0} / 30</span></div>
+    <div class="detail-row"><span class="detail-key">إجمالي الإعلانات</span><span class="detail-val num">${res.ad_stats.total} إعلان</span></div>
+    <div class="detail-row"><span class="detail-key">مكافآت الإعلانات</span><span class="detail-val num">${fNum(res.ad_stats.total_reward)} نقطة</span></div>
+    <div class="detail-row"><span class="detail-key">الإحالات</span><span class="detail-val num">${res.referrals} شخص</span></div>
+    <div class="detail-row"><span class="detail-key">Risk Score</span><span class="detail-val num" style="${u.risk_score>50?'color:var(--rose)':''}">${u.risk_score}</span></div>
+    <div class="detail-row"><span class="detail-key">الحالة</span><span class="detail-val">
+      ${u.banned?`<span style="color:var(--rose);display:flex;align-items:center;gap:5px">${icon('ban')}محظور</span>`:u.shadow_banned?`<span style="color:var(--amber);display:flex;align-items:center;gap:5px">${icon('eye-off')}شادو بان</span>`:`<span style="color:var(--emerald);display:flex;align-items:center;gap:5px">${icon('check')}نشط</span>`}
+    </span></div>
+    <div class="detail-row"><span class="detail-key">تاريخ التسجيل</span><span class="detail-val num">${fDateTime(u.created_at)}</span></div>
+    <div class="detail-row"><span class="detail-key">آخر إعلان</span><span class="detail-val num">${u.last_ad_watch?fDateTime(u.last_ad_watch):'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">كود الإحالة</span><span class="detail-val" style="font-family:monospace">${u.referral_code||'—'}</span></div>
   `;
-  document.getElementById('dm-history-title').textContent = `رسائل: ${esc(u.first_name||u.username||'المستخدم')}`;
-  loadDmHistory(u.id);
+
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="modal-btn ${u.banned?'unban':'ban'}"
+            onclick="toggleBan(${u.telegram_id}, ${u.banned})">
+      ${u.banned?icon('check')+' رفع الحظر':icon('ban')+' حظر'}
+    </button>
+    <button class="modal-btn msg" onclick="quickDM(${u.telegram_id})">${icon('message')} رسالة</button>
+    <button class="modal-btn close" onclick="document.getElementById('user-modal').classList.remove('open')">${icon('x')}</button>
+  `;
 }
 
-function clearDmUser() {
-  S.dmUserId = null;
-  document.getElementById('dm-selected').innerHTML = '';
-  document.getElementById('dm-search').value = '';
-  document.getElementById('dm-history-title').textContent = 'سجل الرسائل';
-  loadDmHistory();
+function closeModal(e) {
+  if (e.target === document.getElementById('user-modal'))
+    document.getElementById('user-modal').classList.remove('open');
+}
+
+async function toggleBan(tgId, isBanned) {
+  const res = await api('banUser', { telegram_id: tgId, unban: isBanned });
+  if (res.ok) {
+    showToast(isBanned ? icon('check')+' تم رفع الحظر' : icon('ban')+' تم الحظر');
+    document.getElementById('user-modal').classList.remove('open');
+    if (document.getElementById('page-users').classList.contains('active')) loadUsers();
+  } else showToast(icon('x')+' ' + res.error);
+}
+
+function quickDM(tgId) {
+  document.getElementById('user-modal').classList.remove('open');
+  switchPage('broadcast');
+  document.getElementById('dm-id').value = tgId;
+  document.getElementById('dm-text').focus();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Broadcast
+// ═══════════════════════════════════════════════════════════════
+async function sendBroadcast() {
+  const text = document.getElementById('bc-text').value.trim();
+  if (!text) return;
+  if (!confirm('هل أنت متأكد من إرسال الرسالة لجميع المستخدمين؟')) return;
+  const btn = document.getElementById('bc-btn');
+  btn.disabled = true; btn.innerHTML = icon('loader','spin')+' جاري الإرسال...';
+  const res = await api('adminBroadcast', { text });
+  const el  = document.getElementById('bc-result');
+  el.style.display = 'flex';
+  if (res.ok) {
+    el.className = 'broadcast-result success';
+    el.innerHTML = `${icon('check')} أُرسلت لـ <span class="num">${fNum(res.sent)}</span> مستخدم · فشل <span class="num">${fNum(res.failed)}</span>`;
+  } else {
+    el.className = 'broadcast-result error';
+    el.innerHTML = `${icon('x')} ${esc(res.error || 'خطأ')}`;
+  }
+  btn.disabled = false; btn.innerHTML = icon('send')+' إرسال للجميع';
 }
 
 async function sendDM() {
-  if (!S.dmUserId) { toast('اختر مستخدماً أولاً','error'); return; }
-  const title   = document.getElementById('dm-title').value.trim();
-  const text    = document.getElementById('dm-text').value.trim();
-  const photo   = document.getElementById('dm-photo').value.trim();
-  const rawBtns = document.getElementById('dm-buttons').value.trim();
-  const buttons = parseBtns(rawBtns);
-  if (!text && !photo) { toast('أدخل نصاً أو صورة','error'); return; }
-  const btn = document.getElementById('dm-send-btn');
-  const sta = document.getElementById('dm-status');
-  btn.disabled = true; sta.textContent = 'جارٍ الإرسال...';
-  const r = await api('direct_message_send', { method:'POST', body:{ userId:S.dmUserId, title, text, photoUrl:photo, buttons } });
-  btn.disabled = false;
-  if (r.ok) {
-    toast('تم الإرسال','success'); sta.textContent = '✓ تم الإرسال';
-    document.getElementById('dm-title').value = '';
-    document.getElementById('dm-text').value  = '';
-    document.getElementById('dm-photo').value = '';
-    document.getElementById('dm-buttons').value = '';
-    loadDmHistory(S.dmUserId);
-  } else { toast(r.error||'فشل','error'); sta.textContent = `✗ ${r.error||'فشل'}`; }
+  const chatId = document.getElementById('dm-id').value.trim();
+  const text   = document.getElementById('dm-text').value.trim();
+  if (!chatId || !text) return;
+  const btn = document.getElementById('dm-btn');
+  btn.disabled = true; btn.innerHTML = icon('loader','spin');
+  const res = await api('adminBroadcast', { text, telegram_id: chatId });
+  const el  = document.getElementById('dm-result');
+  el.style.display = 'flex';
+  el.className = 'broadcast-result ' + (res.ok ? 'success' : 'error');
+  el.innerHTML = res.ok ? `${icon('check')} أُرسلت بنجاح` : `${icon('x')} ${esc(res.error || 'خطأ')}`;
+  btn.disabled = false; btn.innerHTML = icon('mail')+' إرسال';
 }
 
-async function loadDmHistory(userId) {
-  const uid = userId || S.dmUserId;
-  const q   = uid ? `&userId=${uid}&page=${S.dmPage}` : `&page=${S.dmPage}`;
-  const r   = await api('direct_messages', { query:q });
-  if (!r.ok) return;
-  const el  = document.getElementById('dm-history-tbody');
-  if (!el) return;
-  el.innerHTML = r.messages.map(m => `
-    <tr>
-      <td style="font-size:12px;color:var(--text2)">${esc(m.first_name||m.username||m.user_telegram_id||'—')}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        ${m.title ? `<strong>${esc(m.title)}</strong> ` : ''}${esc(m.message_text||'🖼️ صورة')}
-      </td>
-      <td>${m.status==='sent' ? badge('تم','green') : `<span title="${esc(m.error_detail||'')}">${badge('فشل','red')}</span>`}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(m.created_at)}</td>
-    </tr>
-  `).join('') || emptyRow(4,'لا توجد رسائل');
-  renderPagination('dm-pagination', r.page, r.pages, p => { S.dmPage = p; loadDmHistory(uid); });
+// ═══════════════════════════════════════════════════════════════
+//  Helpers
+// ═══════════════════════════════════════════════════════════════
+function fNum(n) {
+  return Number(n).toLocaleString('en-US');
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  ANALYTICS
-// ═══════════════════════════════════════════════════════════════════════════
-function setAnalyticsPeriod(p, el) {
-  S.analyticsPeriod = p;
-  document.querySelectorAll('#section-analytics .filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  loadAnalytics();
-}
-
-async function loadAnalytics() {
-  const r = await api('analytics', { query:`&period=${S.analyticsPeriod}` });
-  if (!r.ok) return;
-  const a = r.analytics;
-  mkLineChartA('aUsersChart', a.userGrowth,    'مستخدمون', d=>d.day?.slice(5), d=>d.users,    'var(--blue)');
-  mkLineChartA('aAdsChart',   a.dailyAds,      'مشاهدات',  d=>d.day?.slice(5), d=>d.watches,  'var(--sky)');
-  mkLineChartA('aRefChart',   a.referralStats, 'إحالات',   d=>d.day?.slice(5), d=>d.joins,    'var(--teal)');
-  mkLineChartA('aBalChart',   a.balanceStats,  'سحوبات',   d=>d.day?.slice(5), d=>parseFloat(d.withdrawn||0), 'var(--amber)');
-}
-
-function mkLineChartA(id, data, label, lFn, vFn, color) {
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  if (ctx._chart) ctx._chart.destroy();
-  ctx._chart = new Chart(ctx, {
-    type:'line',
-    data:{
-      labels:(data||[]).map(lFn),
-      datasets:[{label,data:(data||[]).map(vFn),borderColor:color,
-        backgroundColor:color.replace(')',',0.08)').replace('var','rgba'),
-        fill:true,tension:0.4,pointRadius:2,borderWidth:2}]
-    },
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{color:'rgba(61,137,255,0.05)'},ticks:{color:'var(--text3)',font:{size:10}}},
-        y:{grid:{color:'rgba(61,137,255,0.05)'},ticks:{color:'var(--text3)',font:{size:10}}}
-      }
-    }
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  SECURITY
-// ═══════════════════════════════════════════════════════════════════════════
-async function loadSecurity() {
-  const r = await api('security');
-  if (!r.ok) return;
-
-  document.getElementById('risk-tbody').innerHTML = r.highRiskUsers.map(u => `
-    <tr>
-      <td><div class="user-cell">
-        <div class="avatar">${(u.first_name||u.username||'?')[0]}</div>
-        <div><div class="user-name">${esc(u.first_name||u.username||'مجهول')}</div>
-        <div class="user-sub">${u.telegram_id}</div></div>
-      </div></td>
-      <td>
-        <div class="risk-bar">
-          <div class="risk-track"><div class="risk-fill" style="width:${Math.min(100,u.risk_score)}%;background:${u.risk_score>=100?'var(--red)':u.risk_score>=50?'var(--amber)':'var(--blue)'}"></div></div>
-          <span style="font-size:12px;font-weight:600">${u.risk_score}</span>
-        </div>
-      </td>
-      <td>${u.shadow_banned ? badge('محظور','red') : badge('مراقب','amber')}</td>
-      <td><button class="btn btn-ghost btn-xs" onclick="openUserDetail(${u.id})">عرض</button></td>
-    </tr>
-  `).join('') || emptyRow(4,'لا مستخدمون بمخاطر عالية');
-
-  document.getElementById('activity-tbody').innerHTML = r.recentActivity.slice(0,30).map(a => `
-    <tr>
-      <td>${esc(a.first_name||a.username||String(a.telegram_id))}</td>
-      <td>${badge(a.action,'blue')}</td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(a.created_at)}</td>
-    </tr>
-  `).join('') || emptyRow(3,'لا أنشطة');
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  AUDIT LOG
-// ═══════════════════════════════════════════════════════════════════════════
-async function loadAuditLog() {
-  const r = await api('admin_logs', { query:`&page=${S.auditPage}` });
-  if (!r.ok) return;
-  document.getElementById('audit-tbody').innerHTML = r.logs.map(l => `
-    <tr>
-      <td>${badge(l.action, l.action.includes('delete')?'red':'blue')}</td>
-      <td>${esc(l.first_name||l.username||String(l.target_user||'—'))}</td>
-      <td style="font-size:11px;color:var(--text2);max-width:200px">
-        ${l.admin_note||'—'}${l.meta&&Object.keys(l.meta).length?' · <code style="font-size:10px">'+JSON.stringify(l.meta).slice(0,60)+'</code>':''}
-      </td>
-      <td style="font-size:11px;color:var(--text3)">${fDate(l.created_at)}</td>
-    </tr>
-  `).join('') || emptyRow(4,'لا سجلات');
-  renderPagination('audit-pagination', r.page, r.pages, p => { S.auditPage = p; loadAuditLog(); });
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  EXPORTS
-// ═══════════════════════════════════════════════════════════════════════════
-async function exportUsers() {
-  const r = await api('export_users', { raw:true });
-  dlBlob(await r.blob(), 'users.csv');
-}
-async function exportWithdrawals() {
-  const r = await api('export_withdrawals', { raw:true });
-  dlBlob(await r.blob(), 'withdrawals.csv');
-}
-function dlBlob(blob, name) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = name; a.click();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  GLOBAL SEARCH
-// ═══════════════════════════════════════════════════════════════════════════
-function onGlobalSearch(q) {
-  if (q.length < 2) return;
-  goto('users');
-  document.getElementById('user-search').value = q;
-  loadUsers();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  HELPERS
-// ═══════════════════════════════════════════════════════════════════════════
-function fNum(n) { return (Number(n)||0).toLocaleString('ar-SA'); }
-function fDate(d) {
-  if (!d) return '—';
-  return new Intl.DateTimeFormat('ar',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(d));
+function fCompact(n) {
+  n = Number(n);
+  if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return String(n);
 }
 function esc(s) {
-  if (!s) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function badge(text, color) {
-  return `<span class="badge badge-${color}">${esc(text)}</span>`;
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const diff = (Date.now() - new Date(ts)) / 1000;
+  if (diff < 60)  return 'الآن';
+  if (diff < 3600) return `منذ ${Math.floor(diff/60)} دقيقة`;
+  if (diff < 86400) return `منذ ${Math.floor(diff/3600)} ساعة`;
+  return `منذ ${Math.floor(diff/86400)} يوم`;
 }
-function dItem(label, value) {
-  return `<div class="detail-item"><div class="detail-item-label">${label}</div><div class="detail-item-value">${value}</div></div>`;
+function fDateTime(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('ar-u-nu-latn', { dateStyle:'short', timeStyle:'short' });
 }
-function riskBadge(score) {
-  if (!score) return badge('آمن','teal');
-  if (score < 50)  return badge(`${score}`, 'blue');
-  if (score < 100) return badge(`${score}`, 'amber');
-  return badge(`${score}`, 'red');
+function fDay(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('ar-u-nu-latn', { month:'short', day:'numeric' });
 }
-function wStatusBadge(s) {
-  return s==='done' ? badge('مكتمل','green') : s==='pending' ? badge('معلق','amber') : badge('مرفوض','red');
-}
-function emptyRow(cols, text='لا توجد بيانات') {
-  return `<tr><td colspan="${cols}" style="text-align:center;padding:24px;color:var(--text3)">${text}</td></tr>`;
-}
-function parseBtns(raw) {
-  if (!raw.trim()) return [];
-  return raw.trim().split('\n').filter(l=>l.includes('|')).map(l => {
-    const i = l.indexOf('|');
-    return [{ label: l.slice(0,i).trim(), url: l.slice(i+1).trim() }];
-  });
-}
-function openModal(id) { document.getElementById(id)?.classList.add('show'); }
-function closeModal(id) { document.getElementById(id)?.classList.remove('show'); }
-function renderPagination(id, page, pages, cb) {
-  const el = document.getElementById(id);
-  if (!el || pages <= 1) { if (el) el.innerHTML = ''; return; }
-  const s = Math.max(1, page-2), e = Math.min(pages, page+2);
-  let h = '';
-  if (page>1) h += `<div class="page-btn" data-p="${page-1}">&#8249;</div>`;
-  for (let i=s; i<=e; i++) h += `<div class="page-btn ${i===page?'active':''}" data-p="${i}">${i}</div>`;
-  if (page<pages) h += `<div class="page-btn" data-p="${page+1}">&#8250;</div>`;
-  el.innerHTML = h;
-  el.querySelectorAll('.page-btn').forEach(b => b.addEventListener('click', () => cb(parseInt(b.dataset.p,10))));
-}
-function toast(msg, type='success') {
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  const icons = {
-    success:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-    error:  `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-    info:   `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
+function wStatusLabel(s) {
+  const map = {
+    pending:  icon('clock')+' انتظار',
+    approved: icon('check')+' موافق',
+    rejected: icon('x')+' مرفوض',
+    paid:     icon('card')+' مدفوع',
   };
-  el.innerHTML = `${icons[type]||icons.info} ${esc(msg)}`;
-  document.getElementById('toast-zone').appendChild(el);
-  setTimeout(() => el.remove(), 3800);
+  return map[s] || s;
 }
-function debounce(fn, ms) {
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+function showToast(html, dur=2500) {
+  const t = document.getElementById('toast');
+  t.innerHTML = html; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
 }
-
-// ─── Close modals on backdrop click ──────────────────────────────────────
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target===o) o.classList.remove('show'); });
-});
-
-// ─── Keyboard: Esc closes modals ─────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.show').forEach(o => o.classList.remove('show'));
-});
-
-// ─── Close dm dropdown on outside click ──────────────────────────────────
-document.addEventListener('click', e => {
-  if (!e.target.closest('#dm-search') && !e.target.closest('#dm-drop')) {
-    document.getElementById('dm-drop')?.classList.remove('open');
+function renderPagination(containerId, currentPage, totalPages, onPage) {
+  const el = document.getElementById(containerId);
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  let html = `<button class="page-btn" ${currentPage<=1?'disabled':''} onclick="(${onPage})(${currentPage-1})">${icon('chevron-right')}</button>`;
+  for (let p = Math.max(1,currentPage-2); p <= Math.min(totalPages,currentPage+2); p++) {
+    html += `<button class="page-btn ${p===currentPage?'active':''} num" onclick="(${onPage})(${p})">${p}</button>`;
   }
-});
+  html += `<button class="page-btn" ${currentPage>=totalPages?'disabled':''} onclick="(${onPage})(${currentPage+1})">${icon('chevron-left')}</button>`;
+  el.innerHTML = html;
+}
+function toggleMenu() { showToast(icon('rocket')+' قريباً'); }
+function cycleChartType() { if (dashData) drawChart(dashData.activity); }
+
+// بدء تلقائي
+document.addEventListener("DOMContentLoaded", doLogin);
 </script>
+
+<style>
+  /* spinner state for inline loading icons swapped into buttons */
+  .spin { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
 </body>
 </html>
