@@ -127,6 +127,8 @@ async function ensureSchema() {
   await sql(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banned BOOLEAN NOT NULL DEFAULT FALSE`);
   await sql(`ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_seen BOOLEAN NOT NULL DEFAULT FALSE`);
   await sql(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_game_round TIMESTAMPTZ`); // 🎮 Coin Rain — آخر جولة لعبة أُرسلت
+  await sql(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ`); // 🛡️ لوحة التحكم — تتبّع "متصل الآن"
+  await sql(`CREATE INDEX IF NOT EXISTS idx_users_last_seen ON users (last_seen_at DESC)`);
 
   // 🎮 جلسات اللعبة — تُنشأ من السيرفر حصراً، لا تُرسَل نقاط من العميل أبداً
   await sql(`CREATE TABLE IF NOT EXISTS game_sessions (
@@ -403,12 +405,13 @@ async function upsertUser(tgUser, startParam = null) {
   }
 
   await sql(`
-    INSERT INTO users (telegram_id, username, first_name, photo_url, referral_code, referred_by)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO users (telegram_id, username, first_name, photo_url, referral_code, referred_by, last_seen_at)
+    VALUES ($1, $2, $3, $4, $5, $6, NOW())
     ON CONFLICT (telegram_id) DO UPDATE SET
-      username   = EXCLUDED.username,
-      first_name = EXCLUDED.first_name,
-      photo_url  = COALESCE(EXCLUDED.photo_url, users.photo_url)
+      username     = EXCLUDED.username,
+      first_name   = EXCLUDED.first_name,
+      photo_url    = COALESCE(EXCLUDED.photo_url, users.photo_url),
+      last_seen_at = NOW()
   `, [telegram_id, username, first_name, photo_url, refCode, referredBy]);
 
   // Credit tickets + USDT to referrer — only for brand-new users
@@ -562,16 +565,25 @@ async function sendTelegramMessage(chatId, text) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  🛡️ Admin-only request types — لا تتطلب Telegram initData، تُحمى بـ
+//  INTERNAL_SECRET فقط (يُفحص داخل كل case على حدة، نفس نمط banUser/sendBotMsg)
+// ══════════════════════════════════════════════════════════════════════════════
+const ADMIN_TYPES = new Set([
+  'sendBotMsg', 'banUser',
+  'adminStats', 'adminOnlineUsers', 'adminUsers', 'adminWithdrawals',
+  'adminUpdateWithdrawal', 'adminActivityLogs', 'adminUserDetail', 'adminBroadcast'
+]);
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  Main Export
 // ══════════════════════════════════════════════════════════════════════════════
 module.exports = async function handler(req, res) {
-  // ── CORS ────────────────────────────────────────────────────────────────────
+  // ── CORS محدود — مش wildcard ────────────────────────────────────────────────
   const allowedOrigins = ['https://web.telegram.org','https://webk.telegram.org','https://webz.telegram.org'];
   const origin = req.headers['origin'] || '';
-  // Admin panel can run from any origin (protected by INTERNAL_SECRET)
-  res.setHeader('Access-Control-Allow-Origin',  allowedOrigins.includes(origin) ? origin : '*');
+  res.setHeader('Access-Control-Allow-Origin',  allowedOrigins.includes(origin) ? origin : allowedOrigins[0]);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Telegram-Init-Data, X-Internal-Secret');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Telegram-Init-Data');
   res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(204).end();
 
@@ -611,7 +623,7 @@ module.exports = async function handler(req, res) {
   let tgUser = null;
   let dbUser = null;
 
-  if (type !== 'sendBotMsg') {
+  if (!ADMIN_TYPES.has(type)) {
     tgUser = verifyInitData(rawInitData);
 
     if (!tgUser) {
@@ -648,239 +660,6 @@ module.exports = async function handler(req, res) {
     // ملاحظة: شيلنا الرد العام الموحّد لـ shadow ban (كان يكسر صفحات مثل init
     // لكل المحظورين). صار التعامل معه داخل كل case على حدة (watchAd / withdraw)
     // فقط — أي الأماكن اللي فيها مكسب فعلي (نقاط / فلوس).
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  //  🛡️ Admin Router — محمي بـ INTERNAL_SECRET فقط، لا يحتاج Telegram initData
-  // ══════════════════════════════════════════════════════════════════════════════
-  if (type && type.startsWith('admin')) {
-    const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
-    if (!INTERNAL_SECRET || providedSecret !== INTERNAL_SECRET) {
-      return res.status(403).json({ ok: false, error: 'Forbidden' });
-    }
-    try {
-      switch (type) {
-
-        // ── إحصاءات لوحة التحكم ───────────────────────────────────────────────
-        case 'adminStats': {
-          const range = data.range || 7; // أيام
-          const [totals, newUsers, activity, topUsers, recentUsers, pendingW, competition] = await Promise.all([
-            sql(`SELECT
-                   COUNT(*)                           AS total_users,
-                   SUM(pts)                           AS total_pts,
-                   SUM(balance_usd)                   AS total_balance,
-                   COUNT(*) FILTER (WHERE banned)     AS banned_count,
-                   COUNT(*) FILTER (WHERE shadow_banned) AS shadow_count
-                 FROM users`),
-            sql(`SELECT COUNT(*)::INT AS cnt FROM users
-                 WHERE created_at >= NOW() - INTERVAL '1 day' * $1`, [range]),
-            sql(`SELECT
-                   DATE(created_at AT TIME ZONE 'UTC') AS day,
-                   COUNT(*) AS cnt
-                 FROM activity_logs
-                 WHERE created_at >= NOW() - INTERVAL '1 day' * $1
-                 GROUP BY day ORDER BY day ASC`, [range]),
-            sql(`SELECT first_name, username, pts, balance_usd, telegram_id
-                 FROM users ORDER BY pts DESC LIMIT 5`),
-            sql(`SELECT id, first_name, username, telegram_id, pts, balance_usd, created_at, banned, photo_url
-                 FROM users ORDER BY created_at DESC LIMIT 10`),
-            sql(`SELECT COUNT(*)::INT AS cnt, SUM(amount) AS total FROM withdrawals WHERE status='pending'`),
-            sql(`SELECT * FROM competition WHERE active=TRUE LIMIT 1`),
-          ]);
-          const [adStats, gameStats, watchStats] = await Promise.all([
-            sql(`SELECT COUNT(*)::INT AS total_ads FROM ad_watches WHERE created_at >= NOW() - INTERVAL '1 day' * $1`, [range]),
-            sql(`SELECT COUNT(*)::INT AS total_games FROM game_sessions WHERE used=TRUE AND created_at >= NOW() - INTERVAL '1 day' * $1`, [range]),
-            sql(`SELECT COUNT(*)::INT AS today_ads FROM ad_watches WHERE created_at >= NOW() - INTERVAL '1 day'`),
-          ]);
-          return res.json({
-            ok: true,
-            stats: {
-              total_users:    Number(totals[0]?.total_users  || 0),
-              total_pts:      Number(totals[0]?.total_pts    || 0),
-              total_balance:  parseFloat(totals[0]?.total_balance || 0),
-              banned_count:   Number(totals[0]?.banned_count  || 0),
-              shadow_count:   Number(totals[0]?.shadow_count  || 0),
-              new_users:      newUsers[0]?.cnt || 0,
-              total_ads:      adStats[0]?.total_ads || 0,
-              today_ads:      watchStats[0]?.today_ads || 0,
-              total_games:    gameStats[0]?.total_games || 0,
-              pending_withdrawals: pendingW[0]?.cnt || 0,
-              pending_amount: parseFloat(pendingW[0]?.total || 0),
-            },
-            activity: activity.map(r => ({ day: r.day, count: Number(r.cnt) })),
-            top_users: topUsers,
-            recent_users: recentUsers,
-            competition: competition[0] || null,
-          });
-        }
-
-        // ── قائمة المستخدمين ──────────────────────────────────────────────────
-        case 'adminUsers': {
-          const page    = Math.max(1, parseInt(data.page  || 1, 10));
-          const limit   = Math.min(50, parseInt(data.limit || 20, 10));
-          const search  = data.search  || '';
-          const filter  = data.filter  || 'all'; // all|banned|shadow|top
-          const offset  = (page - 1) * limit;
-
-          let where = 'WHERE 1=1';
-          const params = [];
-          if (search) {
-            params.push(`%${search}%`);
-            where += ` AND (username ILIKE $${params.length} OR first_name ILIKE $${params.length} OR telegram_id::TEXT = $${params.length})`;
-          }
-          if (filter === 'banned')   where += ' AND banned=TRUE';
-          if (filter === 'shadow')   where += ' AND shadow_banned=TRUE';
-
-          const orderBy = filter === 'top' ? 'ORDER BY pts DESC' : 'ORDER BY created_at DESC';
-
-          params.push(limit, offset);
-          const [users, countRes] = await Promise.all([
-            sql(`SELECT id, telegram_id, first_name, username, photo_url, pts, balance_usd,
-                        daily_ads, risk_score, banned, shadow_banned, onboarding_seen,
-                        created_at, last_ad_watch, referred_by
-                 FROM users ${where} ${orderBy}
-                 LIMIT $${params.length - 1} OFFSET $${params.length}`, params),
-            sql(`SELECT COUNT(*)::INT AS total FROM users ${where}`, params.slice(0, -2)),
-          ]);
-          return res.json({
-            ok: true,
-            users: users.map(u => ({ ...u, pts: Number(u.pts), balance_usd: parseFloat(u.balance_usd) })),
-            total: countRes[0]?.total || 0,
-            page, limit,
-          });
-        }
-
-        // ── تفاصيل مستخدم واحد ────────────────────────────────────────────────
-        case 'adminUserDetail': {
-          const tid = data.telegram_id;
-          if (!tid) return res.status(400).json({ ok: false, error: 'telegram_id required' });
-          const [user, logs, referrals, withdraws, adWatches] = await Promise.all([
-            sql(`SELECT * FROM users WHERE telegram_id=$1`, [tid]),
-            sql(`SELECT action, meta, created_at FROM activity_logs
-                 WHERE user_id=(SELECT id FROM users WHERE telegram_id=$1)
-                 ORDER BY created_at DESC LIMIT 30`, [tid]),
-            sql(`SELECT COUNT(*)::INT AS cnt FROM users WHERE referred_by=$1`, [tid]),
-            sql(`SELECT * FROM withdrawals
-                 WHERE user_id=(SELECT id FROM users WHERE telegram_id=$1)
-                 ORDER BY created_at DESC LIMIT 10`, [tid]),
-            sql(`SELECT COUNT(*)::INT AS total, SUM(reward) AS total_reward
-                 FROM ad_watches
-                 WHERE user_id=(SELECT id FROM users WHERE telegram_id=$1)`, [tid]),
-          ]);
-          if (!user[0]) return res.status(404).json({ ok: false, error: 'User not found' });
-          return res.json({
-            ok: true,
-            user: { ...user[0], pts: Number(user[0].pts), balance_usd: parseFloat(user[0].balance_usd) },
-            logs,
-            referrals: referrals[0]?.cnt || 0,
-            withdrawals: withdraws,
-            ad_stats: { total: adWatches[0]?.total || 0, total_reward: Number(adWatches[0]?.total_reward || 0) },
-          });
-        }
-
-        // ── قائمة السحوبات ────────────────────────────────────────────────────
-        case 'adminWithdrawals': {
-          const page   = Math.max(1, parseInt(data.page  || 1, 10));
-          const limit  = Math.min(50, parseInt(data.limit || 20, 10));
-          const status = data.status || 'all';
-          const offset = (page - 1) * limit;
-          const where  = status !== 'all' ? `WHERE w.status=$1` : 'WHERE 1=1';
-          const params = status !== 'all' ? [status, limit, offset] : [limit, offset];
-          const [rows, cnt] = await Promise.all([
-            sql(`SELECT w.*, u.first_name, u.username, u.telegram_id
-                 FROM withdrawals w JOIN users u ON w.user_id=u.id
-                 ${where} ORDER BY w.created_at DESC
-                 LIMIT $${params.length - 1} OFFSET $${params.length}`, params),
-            sql(`SELECT COUNT(*)::INT AS total FROM withdrawals w ${where}`,
-                status !== 'all' ? [status] : []),
-          ]);
-          return res.json({ ok: true, withdrawals: rows, total: cnt[0]?.total || 0, page, limit });
-        }
-
-        // ── تحديث حالة سحب ───────────────────────────────────────────────────
-        case 'adminUpdateWithdrawal': {
-          const { id, status } = data;
-          if (!id || !['approved','rejected','paid'].includes(status))
-            return res.status(400).json({ ok: false, error: 'id and valid status required' });
-          await sql(`UPDATE withdrawals SET status=$1 WHERE id=$2`, [status, id]);
-          // لو رُفض: أعِد الرصيد للمستخدم
-          if (status === 'rejected') {
-            await sql(`UPDATE users u SET balance_usd = balance_usd + w.amount
-                       FROM withdrawals w WHERE w.id=$1 AND w.user_id=u.id`, [id]);
-          }
-          return res.json({ ok: true });
-        }
-
-        // ── ضبط نقاط مستخدم ──────────────────────────────────────────────────
-        case 'adminAdjustPts': {
-          const { telegram_id, pts, reason } = data;
-          if (!telegram_id || pts === undefined) return res.status(400).json({ ok: false, error: 'telegram_id and pts required' });
-          const rows = await sql(
-            `UPDATE users SET pts = GREATEST(0, pts + $1) WHERE telegram_id=$2
-             RETURNING id, pts`, [pts, telegram_id]);
-          if (!rows[0]) return res.status(404).json({ ok: false, error: 'User not found' });
-          await sql(`INSERT INTO activity_logs (user_id, action, meta) VALUES ($1, 'admin_adjust_pts', $2)`,
-            [rows[0].id, JSON.stringify({ delta: pts, reason: reason || 'admin' })]);
-          return res.json({ ok: true, new_pts: Number(rows[0].pts) });
-        }
-
-        // ── ضبط رصيد مستخدم ──────────────────────────────────────────────────
-        case 'adminAdjustBalance': {
-          const { telegram_id, amount, reason } = data;
-          if (!telegram_id || amount === undefined) return res.status(400).json({ ok: false, error: 'telegram_id and amount required' });
-          const rows = await sql(
-            `UPDATE users SET balance_usd = GREATEST(0, balance_usd + $1) WHERE telegram_id=$2
-             RETURNING id, balance_usd`, [amount, telegram_id]);
-          if (!rows[0]) return res.status(404).json({ ok: false, error: 'User not found' });
-          await sql(`INSERT INTO activity_logs (user_id, action, meta) VALUES ($1, 'admin_adjust_balance', $2)`,
-            [rows[0].id, JSON.stringify({ delta: amount, reason: reason || 'admin' })]);
-          return res.json({ ok: true, new_balance: parseFloat(rows[0].balance_usd) });
-        }
-
-        // ── إرسال رسالة broadcast ─────────────────────────────────────────────
-        case 'adminBroadcast': {
-          const { text, telegram_id } = data;
-          if (!text) return res.status(400).json({ ok: false, error: 'text required' });
-          if (telegram_id) {
-            // رسالة لمستخدم واحد
-            const result = await sendTelegramMessage(telegram_id, text);
-            return res.json({ ok: !!result?.ok });
-          }
-          // broadcast لكل المستخدمين
-          const users = await sql(`SELECT telegram_id FROM users WHERE banned=FALSE ORDER BY id`);
-          let sent = 0, failed = 0;
-          for (const u of users) {
-            const r = await sendTelegramMessage(Number(u.telegram_id), text).catch(() => null);
-            if (r?.ok) sent++; else failed++;
-            await new Promise(r => setTimeout(r, 50)); // throttle
-          }
-          return res.json({ ok: true, sent, failed, total: users.length });
-        }
-
-        // ── سجل النشاط ───────────────────────────────────────────────────────
-        case 'adminActivityLogs': {
-          const page   = Math.max(1, parseInt(data.page  || 1, 10));
-          const limit  = Math.min(100, parseInt(data.limit || 30, 10));
-          const action = data.action || '';
-          const offset = (page - 1) * limit;
-          const where  = action ? `WHERE l.action=$1` : 'WHERE 1=1';
-          const params = action ? [action, limit, offset] : [limit, offset];
-          const rows = await sql(`
-            SELECT l.id, l.action, l.meta, l.created_at,
-                   u.first_name, u.username, u.telegram_id
-            FROM activity_logs l JOIN users u ON l.user_id=u.id
-            ${where} ORDER BY l.created_at DESC
-            LIMIT $${params.length - 1} OFFSET $${params.length}`, params);
-          return res.json({ ok: true, logs: rows });
-        }
-
-        default:
-          return res.status(400).json({ ok: false, error: `Unknown admin type: "${type}"` });
-      }
-    } catch (err) {
-      console.error('[Admin error]', type, err.message);
-      return res.status(500).json({ ok: false, error: err.message });
-    }
   }
 
   // ── Router ─────────────────────────────────────────────────────────────────
@@ -1355,6 +1134,319 @@ module.exports = async function handler(req, res) {
         if (!chatId || !text) return res.status(400).json({ ok: false, error: 'chatId and text required' });
         const result = await sendTelegramMessage(chatId, text);
         return res.json({ ok: !!result.ok });
+      }
+
+      // ══════════════════════════════════════════════════════════════════
+      //  🛡️ Admin Panel — كل الـ cases تحت محمية بـ INTERNAL_SECRET فقط
+      // ══════════════════════════════════════════════════════════════════
+      case 'adminStats': {
+        const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
+        if (!INTERNAL_SECRET || providedSecret !== INTERNAL_SECRET) {
+          return res.status(403).json({ ok: false, error: 'Forbidden' });
+        }
+
+        const range = Math.max(1, Math.min(90, parseInt(data.range, 10) || 7));
+
+        const [totals, newUsersRows, adsRows, pendingRows, activityRows, recentRows, competition] = await Promise.all([
+          sql(`SELECT COUNT(*)::INT AS total_users,
+                      COALESCE(SUM(pts),0)::BIGINT AS total_pts,
+                      COALESCE(SUM(balance_usd),0)::NUMERIC AS total_balance
+               FROM users`),
+          sql(`SELECT COUNT(*)::INT AS count FROM users WHERE created_at >= NOW() - INTERVAL '${range} days'`),
+          sql(`SELECT COUNT(*)::INT AS total,
+                      COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)::INT AS today
+               FROM ad_watches`),
+          sql(`SELECT COUNT(*)::INT AS count FROM withdrawals WHERE status = 'pending'`),
+          sql(`SELECT DATE(created_at) AS day, COUNT(*)::INT AS count
+               FROM ad_watches
+               WHERE created_at >= NOW() - INTERVAL '${range} days'
+               GROUP BY DATE(created_at) ORDER BY day ASC`),
+          sql(`SELECT telegram_id, first_name, username, photo_url, pts, created_at
+               FROM users ORDER BY created_at DESC LIMIT 8`),
+          getActiveCompetition()
+        ]);
+
+        return res.json({
+          ok: true,
+          stats: {
+            total_users:         totals[0].total_users,
+            new_users:           newUsersRows[0].count,
+            total_pts:           Number(totals[0].total_pts),
+            total_balance:       parseFloat(totals[0].total_balance),
+            pending_withdrawals: pendingRows[0].count,
+            total_ads:           adsRows[0].total,
+            today_ads:           adsRows[0].today,
+          },
+          activity: activityRows.map(a => ({ day: a.day, count: a.count })),
+          recent_users: recentRows.map(u => ({
+            telegram_id: Number(u.telegram_id),
+            first_name:  u.first_name,
+            username:    u.username,
+            photo_url:   u.photo_url,
+            created_at:  u.created_at,
+            pts:         Number(u.pts)
+          })),
+          competition: { name: competition?.name || 'Season 1' }
+        });
+      }
+
+      case 'adminOnlineUsers': {
+        const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
+        if (!INTERNAL_SECRET || providedSecret !== INTERNAL_SECRET) {
+          return res.status(403).json({ ok: false, error: 'Forbidden' });
+        }
+
+        // "متصل الآن" = آخر ظهور خلال 5 دقائق (last_seen_at يُحدَّث مع كل طلب موثّق في upsertUser)
+        const rows = await sql(`
+          SELECT telegram_id, first_name, username, photo_url
+          FROM users
+          WHERE last_seen_at >= NOW() - INTERVAL '5 minutes'
+          ORDER BY last_seen_at DESC
+          LIMIT 50
+        `);
+
+        return res.json({
+          ok: true,
+          count: rows.length,
+          users: rows.map(u => ({
+            telegram_id: Number(u.telegram_id),
+            first_name:  u.first_name,
+            username:    u.username,
+            photo_url:   u.photo_url
+          }))
+        });
+      }
+
+      case 'adminUsers': {
+        const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
+        if (!INTERNAL_SECRET || providedSecret !== INTERNAL_SECRET) {
+          return res.status(403).json({ ok: false, error: 'Forbidden' });
+        }
+
+        const page   = Math.max(1, parseInt(data.page, 10) || 1);
+        const limit  = Math.min(50, Math.max(1, parseInt(data.limit, 10) || 20));
+        const offset = (page - 1) * limit;
+        const filter = data.filter || 'all';
+        const search = (data.search || '').trim();
+
+        const conditions = [];
+        const params     = [];
+        if (filter === 'banned') conditions.push(`banned = TRUE`);
+        if (filter === 'shadow') conditions.push(`shadow_banned = TRUE`);
+        if (search) {
+          params.push(`%${search}%`);
+          const likeIdx = params.length;
+          if (/^\d+$/.test(search)) {
+            params.push(search);
+            conditions.push(`(first_name ILIKE $${likeIdx} OR username ILIKE $${likeIdx} OR telegram_id::TEXT = $${params.length})`);
+          } else {
+            conditions.push(`(first_name ILIKE $${likeIdx} OR username ILIKE $${likeIdx})`);
+          }
+        }
+        const where   = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+        const orderBy = filter === 'top' ? 'pts DESC' : 'created_at DESC';
+
+        const [countRows, rows] = await Promise.all([
+          sql(`SELECT COUNT(*)::INT AS count FROM users ${where}`, params),
+          sql(`SELECT telegram_id, first_name, username, photo_url, pts, balance_usd, daily_ads, banned, shadow_banned
+               FROM users ${where} ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`, params)
+        ]);
+
+        return res.json({
+          ok: true,
+          users: rows.map(u => ({
+            telegram_id:   Number(u.telegram_id),
+            first_name:    u.first_name,
+            username:      u.username,
+            photo_url:     u.photo_url,
+            pts:           Number(u.pts),
+            balance_usd:   parseFloat(u.balance_usd),
+            daily_ads:     u.daily_ads,
+            banned:        u.banned,
+            shadow_banned: u.shadow_banned
+          })),
+          total: countRows[0].count
+        });
+      }
+
+      case 'adminWithdrawals': {
+        const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
+        if (!INTERNAL_SECRET || providedSecret !== INTERNAL_SECRET) {
+          return res.status(403).json({ ok: false, error: 'Forbidden' });
+        }
+
+        const page   = Math.max(1, parseInt(data.page, 10) || 1);
+        const limit  = Math.min(50, Math.max(1, parseInt(data.limit, 10) || 20));
+        const offset = (page - 1) * limit;
+        const status = (data.status && data.status !== 'all') ? data.status : null;
+
+        const where  = status ? `WHERE w.status = $1` : '';
+        const params = status ? [status] : [];
+
+        const [countRows, rows] = await Promise.all([
+          sql(`SELECT COUNT(*)::INT AS count FROM withdrawals w ${where}`, params),
+          sql(`SELECT w.id, w.address, w.memo, w.amount, w.status, w.created_at,
+                      u.first_name, u.username, u.telegram_id
+               FROM withdrawals w JOIN users u ON u.id = w.user_id
+               ${where}
+               ORDER BY w.created_at DESC LIMIT ${limit} OFFSET ${offset}`, params)
+        ]);
+
+        return res.json({
+          ok: true,
+          withdrawals: rows.map(w => ({
+            id:          w.id,
+            address:     w.address,
+            memo:        w.memo,
+            amount:      parseFloat(w.amount),
+            status:      w.status,
+            created_at:  w.created_at,
+            first_name:  w.first_name,
+            username:    w.username,
+            telegram_id: Number(w.telegram_id)
+          })),
+          total: countRows[0].count
+        });
+      }
+
+      case 'adminUpdateWithdrawal': {
+        const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
+        if (!INTERNAL_SECRET || providedSecret !== INTERNAL_SECRET) {
+          return res.status(403).json({ ok: false, error: 'Forbidden' });
+        }
+
+        const id      = parseInt(data.id, 10);
+        const status  = data.status;
+        const allowed = ['pending', 'approved', 'rejected', 'paid'];
+        if (!id || !allowed.includes(status)) {
+          return res.status(400).json({ ok: false, error: 'Invalid request' });
+        }
+
+        const wRows = await sql(`SELECT * FROM withdrawals WHERE id = $1`, [id]);
+        if (!wRows.length) return res.status(404).json({ ok: false, error: 'Withdrawal not found' });
+        const w = wRows[0];
+
+        // 🛡️ الرصيد اتخصم وقت إنشاء طلب السحب — الرفض لازم يرجّعه
+        if (status === 'rejected' && w.status !== 'rejected') {
+          await sql(`UPDATE users SET balance_usd = balance_usd + $1 WHERE id = $2`, [w.amount, w.user_id]);
+        }
+
+        await sql(`UPDATE withdrawals SET status = $1 WHERE id = $2`, [status, id]);
+
+        const uRows = await sql(`SELECT telegram_id FROM users WHERE id = $1`, [w.user_id]);
+        const labels = {
+          approved: '✅ Your withdrawal request has been approved',
+          rejected: '❌ Your withdrawal request was rejected — the amount was refunded to your balance',
+          paid:     '💸 Your withdrawal has been paid'
+        };
+        if (uRows.length && labels[status]) {
+          sendTelegramMessage(
+            Number(uRows[0].telegram_id),
+            `${labels[status]}\nAmount: *$${parseFloat(w.amount).toFixed(2)}*`
+          ).catch(e => console.error('[withdrawal status bot notify]', e.message));
+        }
+
+        return res.json({ ok: true });
+      }
+
+      case 'adminActivityLogs': {
+        const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
+        if (!INTERNAL_SECRET || providedSecret !== INTERNAL_SECRET) {
+          return res.status(403).json({ ok: false, error: 'Forbidden' });
+        }
+
+        const page         = Math.max(1, parseInt(data.page, 10) || 1);
+        const limit         = Math.min(100, Math.max(1, parseInt(data.limit, 10) || 30));
+        const offset        = (page - 1) * limit;
+        const actionFilter  = (data.action || '').trim();
+
+        const where  = actionFilter ? `WHERE al.action = $1` : '';
+        const params = actionFilter ? [actionFilter] : [];
+
+        const rows = await sql(`
+          SELECT al.action, al.meta, al.created_at, u.first_name, u.username
+          FROM activity_logs al
+          JOIN users u ON u.id = al.user_id
+          ${where}
+          ORDER BY al.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `, params);
+
+        return res.json({ ok: true, logs: rows });
+      }
+
+      case 'adminUserDetail': {
+        const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
+        if (!INTERNAL_SECRET || providedSecret !== INTERNAL_SECRET) {
+          return res.status(403).json({ ok: false, error: 'Forbidden' });
+        }
+
+        const tgId = data.telegram_id;
+        if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
+
+        const uRows = await sql(`SELECT * FROM users WHERE telegram_id = $1`, [tgId]);
+        if (!uRows.length) return res.status(404).json({ ok: false, error: 'User not found' });
+        const u = uRows[0];
+
+        const [adStats, refRows] = await Promise.all([
+          sql(`SELECT COUNT(*)::INT AS total, COALESCE(SUM(reward),0)::BIGINT AS total_reward
+               FROM ad_watches WHERE user_id = $1`, [u.id]),
+          sql(`SELECT COUNT(*)::INT AS count FROM users WHERE referred_by = $1`, [u.telegram_id])
+        ]);
+
+        return res.json({
+          ok: true,
+          user: {
+            telegram_id:   Number(u.telegram_id),
+            first_name:    u.first_name,
+            username:      u.username,
+            photo_url:     u.photo_url,
+            pts:           Number(u.pts),
+            balance_usd:   parseFloat(u.balance_usd),
+            daily_ads:     u.daily_ads,
+            risk_score:    u.risk_score,
+            banned:        u.banned,
+            shadow_banned: u.shadow_banned,
+            created_at:    u.created_at,
+            last_ad_watch: u.last_ad_watch,
+            referral_code: u.referral_code
+          },
+          ad_stats: {
+            total:        adStats[0].total,
+            total_reward: Number(adStats[0].total_reward)
+          },
+          referrals: refRows[0].count
+        });
+      }
+
+      case 'adminBroadcast': {
+        const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
+        if (!INTERNAL_SECRET || providedSecret !== INTERNAL_SECRET) {
+          return res.status(403).json({ ok: false, error: 'Forbidden' });
+        }
+
+        const text = (data.text || '').trim();
+        if (!text) return res.status(400).json({ ok: false, error: 'Message text required' });
+
+        // رسالة مباشرة لمستخدم واحد (DM من نافذة المستخدم)
+        if (data.telegram_id) {
+          const result = await sendTelegramMessage(Number(data.telegram_id), text);
+          if (!result.ok) return res.status(400).json({ ok: false, error: result.description || 'Failed to send' });
+          return res.json({ ok: true, sent: 1, failed: 0 });
+        }
+
+        // بث جماعي — على دفعات متوازية لتفادي timeout على Vercel
+        const allUsers  = await sql(`SELECT telegram_id FROM users WHERE banned = FALSE`);
+        const BATCH_SIZE = 25;
+        let sent = 0, failed = 0;
+        for (let i = 0; i < allUsers.length; i += BATCH_SIZE) {
+          const batch   = allUsers.slice(i, i + BATCH_SIZE);
+          const results = await Promise.all(
+            batch.map(u => sendTelegramMessage(Number(u.telegram_id), text).catch(() => ({ ok: false })))
+          );
+          results.forEach(r => { if (r.ok) sent++; else failed++; });
+        }
+        return res.json({ ok: true, sent, failed });
       }
 
       case 'logRefCopy': {
