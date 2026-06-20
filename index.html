@@ -435,6 +435,35 @@
   .modal-btn.msg    { background: var(--gold-bg);    color: var(--gold);    }
   .modal-btn.close  { background: var(--surface-2);  color: var(--text);   flex: 0 0 48px; }
 
+  /* ── Login Screen ─────────────────────────────────────────── */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px; background: var(--bg);
+    background-image: radial-gradient(circle at 50% -8%, rgba(245,200,64,.10), transparent 55%);
+  }
+  .login-card {
+    width: 100%; max-width: 360px; text-align: center;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 32px 24px;
+    box-shadow: var(--shadow);
+  }
+  .login-icon {
+    width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 16px;
+    background: var(--gold-bg); color: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-icon .icon { width: 26px; height: 26px; }
+  .login-brand { font-size: 22px; color: var(--gold); margin-bottom: 6px; }
+  .login-sub   { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .login-error {
+    margin-top: 12px; padding: 10px 12px; border-radius: 10px;
+    background: var(--rose-bg); color: var(--rose);
+    font-size: 12.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .login-error .icon { width: 14px; height: 14px; }
+
   /* ── Loading & Empty states ──────────────────────────────── */
   .skeleton {
     background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%);
@@ -528,13 +557,31 @@
 </svg>
 
 <!-- ════════════════════════════════════════════════════════════ -->
+<!--  LOGIN SCREEN — يظهر لحد ما الأدمن يدخل كلمة السر الصحيحة -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-icon"><svg class="icon"><use href="#i-shield"></use></svg></div>
+    <h1 class="brand-mark login-brand">BigLeague</h1>
+    <p class="login-sub">لوحة التحكم — أدخل كلمة السر للمتابعة</p>
+    <input id="login-input" class="form-input" type="password" placeholder="كلمة السر" autocomplete="off" style="text-align:center">
+    <div class="login-error" id="login-error" style="display:none">
+      <svg class="icon"><use href="#i-alert"></use></svg><span>السر غير صحيح</span>
+    </div>
+    <button class="submit-btn" id="login-btn" onclick="attemptLogin()">
+      <svg class="icon"><use href="#i-shield"></use></svg> دخول
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
 <!--  APP SHELL                                                  -->
 <!-- ════════════════════════════════════════════════════════════ -->
-<div id="app">
+<div id="app" style="display:none">
 
   <!-- Header -->
   <header class="top-header">
-    <button class="icon-btn" onclick="toggleMenu()"><svg class="icon"><use href="#i-menu"></use></svg></button>
+    <button class="icon-btn" onclick="toggleMenu()" title="تسجيل الخروج"><svg class="icon"><use href="#i-menu"></use></svg></button>
     <div class="title-area">
       <h1 id="page-title">لوحة التحكم</h1>
       <div class="sub">
@@ -755,6 +802,7 @@ function icon(name, cls) {
 // ═══════════════════════════════════════════════════════════════
 const API_URL = '/api';
 let SECRET    = '';
+const SECRET_STORAGE_KEY = 'bl_admin_secret'; // sessionStorage — يُمسح تلقائياً لما المتصفح يتقفل
 let dashData  = null;
 let chartInst = null;
 let onlinePollTimer = null;
@@ -778,13 +826,68 @@ async function api(type, data = {}) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Init — يفتح مباشرة بدون login
+//  Auth — كلمة سر تتحقق من السيرفر، تتخزن بـ sessionStorage فقط
+//  (تُمسح تلقائياً لما المتصفح/التاب يتقفل — مش هاردكود بالملف)
 // ═══════════════════════════════════════════════════════════════
-async function doLogin() {
+async function initAuth() {
+  const saved = sessionStorage.getItem(SECRET_STORAGE_KEY);
+  if (saved) {
+    SECRET = saved;
+    if (await tryEnterApp()) return;
+    // السر المحفوظ بقى غير صالح (اتغيّر من السيرفر مثلاً) — ارجع لشاشة الدخول
+    sessionStorage.removeItem(SECRET_STORAGE_KEY);
+    SECRET = '';
+  }
+  document.getElementById('login-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+  document.getElementById('login-input').focus();
+}
+
+async function tryEnterApp() {
   const res = await api('adminStats', { range: 7 });
-  if (res.ok) { dashData = res; renderDashboard(res); }
+  if (!res.ok) return false;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  dashData = res; renderDashboard(res);
   loadOnlineUsers();
   onlinePollTimer = setInterval(loadOnlineUsers, 20000);
+  return true;
+}
+
+async function attemptLogin() {
+  const input = document.getElementById('login-input');
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-error');
+  const val   = input.value.trim();
+  if (!val) return;
+
+  err.style.display = 'none';
+  btn.disabled = true; btn.innerHTML = icon('loader','spin')+' جاري التحقق...';
+
+  SECRET = val;
+  const ok = await tryEnterApp();
+  if (ok) {
+    sessionStorage.setItem(SECRET_STORAGE_KEY, val);
+  } else {
+    SECRET = '';
+    err.style.display = 'flex';
+    btn.disabled = false; btn.innerHTML = icon('shield')+' دخول';
+    input.focus(); input.select();
+  }
+}
+
+function logout() {
+  if (!confirm('تسجيل الخروج من لوحة التحكم؟')) return;
+  sessionStorage.removeItem(SECRET_STORAGE_KEY);
+  SECRET = '';
+  if (onlinePollTimer) clearInterval(onlinePollTimer);
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  const input = document.getElementById('login-input');
+  input.value = '';
+  document.getElementById('login-error').style.display = 'none';
+  input.focus();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1330,11 +1433,11 @@ function renderPagination(containerId, currentPage, totalPages, onPage) {
   html += `<button class="page-btn" ${currentPage>=totalPages?'disabled':''} onclick="(${onPage})(${currentPage+1})">${icon('chevron-left')}</button>`;
   el.innerHTML = html;
 }
-function toggleMenu() { showToast(icon('rocket')+' قريباً'); }
+function toggleMenu() { logout(); }
 function cycleChartType() { if (dashData) drawChart(dashData.activity); }
 
 // بدء تلقائي
-document.addEventListener("DOMContentLoaded", doLogin);
+document.addEventListener("DOMContentLoaded", initAuth);
 </script>
 
 <style>
