@@ -418,6 +418,59 @@ module.exports = async function handler(req, res) {
       }
 
       // ────────────────────────────────────────────────────────────────────
+      case 'adminUpdateRiskScore': {
+        const tgId = data.telegram_id;
+        const score = parseInt(data.risk_score, 10);
+        if (!tgId || isNaN(score) || score < 0 || score > 100) {
+          return res.status(400).json({ ok: false, error: 'telegram_id و risk_score (0-100) مطلوبان' });
+        }
+        await sql(`UPDATE users SET risk_score = $1 WHERE telegram_id = $2`, [score, tgId]);
+        return res.json({ ok: true });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
+      case 'adminToggleShadowBan': {
+        const tgId  = data.telegram_id;
+        const enable = !!data.enable;
+        if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
+        await sql(`UPDATE users SET shadow_banned = $1 WHERE telegram_id = $2`, [enable, tgId]);
+        return res.json({ ok: true });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
+      case 'adminUserSessions': {
+        const tgId = data.telegram_id;
+        if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
+        const uRows = await sql(`SELECT id FROM users WHERE telegram_id = $1`, [tgId]);
+        if (!uRows.length) return res.status(404).json({ ok: false, error: 'User not found' });
+        const rows = await sql(`
+          SELECT id, device_fingerprint, created_at, last_active_at, risk_flags
+          FROM sessions
+          WHERE user_id = $1
+          ORDER BY last_active_at DESC
+          LIMIT 10
+        `, [uRows[0].id]);
+        return res.json({ ok: true, sessions: rows });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
+      case 'adminDeleteUser': {
+        const tgId = data.telegram_id;
+        if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
+        const uRows = await sql(`SELECT id FROM users WHERE telegram_id = $1`, [tgId]);
+        if (!uRows.length) return res.status(404).json({ ok: false, error: 'User not found' });
+        const uid = uRows[0].id;
+        // cascade manual delete to avoid FK issues on DBs without cascade
+        await sql(`DELETE FROM sessions WHERE user_id = $1`, [uid]);
+        await sql(`DELETE FROM ad_watches WHERE user_id = $1`, [uid]);
+        await sql(`DELETE FROM withdrawals WHERE user_id = $1`, [uid]);
+        await sql(`DELETE FROM activity_logs WHERE user_id = $1`, [uid]);
+        await sql(`DELETE FROM danger WHERE user_id = $1`, [uid]).catch(()=>{});
+        await sql(`DELETE FROM users WHERE id = $1`, [uid]);
+        return res.json({ ok: true });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
       default:
         return res.status(400).json({ ok: false, error: `Unknown type: "${type}"` });
     }
