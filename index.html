@@ -1089,7 +1089,7 @@ function renderDashboard(res) {
   }
   const range = parseInt(document.getElementById('range-select').value);
   document.getElementById('stat-grid').innerHTML = `
-    <div class="stat-card" onclick="switchPage('users')" style="cursor:pointer">
+    <div class="stat-card">
       <div class="stat-icon blue">${icon('users')}</div>
       <div class="stat-info">
         <div class="stat-label">إجمالي المستخدمين</div>
@@ -1449,7 +1449,10 @@ function renderUserSheet(res) {
       </div>
       <div class="detail-row">
         <span class="detail-key">الإحالات</span>
-        <span class="detail-val num">${res.referrals} شخص</span>
+        <div class="detail-val">
+          <span class="num">${res.referrals} شخص</span>
+          ${res.referrals > 0 ? `<button class="risk-save-btn" onclick="openReferralsModal(${u.telegram_id})">${icon('users')} عرض</button>` : ''}
+        </div>
       </div>
     </div>
 
@@ -1570,6 +1573,48 @@ async function loadUserSessions(tgId) {
 function closeModal(e) {
   if (e.target === document.getElementById('user-modal'))
     document.getElementById('user-modal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════
+//  Referrals (إحالات مستخدم معيّن)
+// ═══════════════════════════════════════════════════════
+async function openReferralsModal(tgId) {
+  const name = currentUser ? (currentUser.first_name || '—') : '';
+  document.getElementById('modal-title').textContent = `إحالات ${name}`;
+  document.getElementById('modal-body').innerHTML =
+    [1,2,3].map(()=>`<div class="skeleton" style="height:64px;border-radius:12px;margin-bottom:8px"></div>`).join('');
+  document.getElementById('modal-actions').innerHTML = '';
+  await loadReferralsModal(tgId, 1);
+}
+
+async function loadReferralsModal(tgId, page) {
+  const res = await api('adminUserReferrals', { telegram_id: tgId, page, limit: 20 });
+  const body = document.getElementById('modal-body');
+  if (!res.ok) {
+    body.innerHTML = `<div class="empty-state">${icon('alert')}<p>${esc(res.error)}</p></div>`;
+  } else if (!res.referrals.length) {
+    body.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>لا يوجد إحالات بعد</p></div>`;
+  } else {
+    body.innerHTML = res.referrals.map(u => `
+      <div class="user-row" onclick="openUserModal(${u.telegram_id})">
+        <div class="user-avatar">
+          ${u.photo_url ? `<img src="${u.photo_url}" onerror="this.parentNode.innerHTML='${esc((u.first_name||'?')[0])}'">` : esc((u.first_name||'?')[0])}
+          <span class="tg-icon">${icon('send')}</span>
+        </div>
+        <div class="user-info">
+          <div class="user-name">${esc(u.first_name || '—')}</div>
+          <div class="user-handle">${u.username ? '@'+u.username : 'بدون username'}</div>
+        </div>
+        <div class="user-meta">
+          <div class="user-time">${timeAgo(u.created_at)}</div>
+          <div class="user-pts num">${fNum(u.pts)} نقطة</div>
+        </div>
+      </div>`).join('') + `<div class="pagination" id="referrals-pagination" style="margin-top:10px"></div>`;
+    renderPagination('referrals-pagination', page, Math.ceil(res.total / 20), p => loadReferralsModal(tgId, p));
+  }
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="modal-btn close" style="flex:1;width:auto" onclick="openUserModal(${tgId})">${icon('chevron-right')} رجوع لتفاصيل المستخدم</button>
+  `;
 }
 
 async function toggleBan(tgId, isBanned) {
