@@ -969,12 +969,21 @@ const state = {
 //  API
 // ═══════════════════════════════════════════════════════
 async function api(type, data = {}) {
-  const r = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Admin-Secret': SECRET },
-    body: JSON.stringify({ type, data }),
-  });
-  return r.json();
+  let r;
+  try {
+    r = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Secret': SECRET },
+      body: JSON.stringify({ type, data }),
+    });
+  } catch (err) {
+    return { ok: false, error: 'تعذّر الاتصال بالسيرفر — تحقق من الإنترنت وحاول تاني' };
+  }
+  try {
+    return await r.json();
+  } catch (err) {
+    return { ok: false, error: `استجابة غير متوقعة من السيرفر (${r.status}) — جرّب تاني` };
+  }
 }
 
 // ═══════════════════════════════════════════════════════
