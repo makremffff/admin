@@ -329,6 +329,76 @@ module.exports = async function handler(req, res) {
       }
 
       // ────────────────────────────────────────────────────────────────────
+      //  🏆 Competitions — السيرفر الرئيسي (api/index.js) هو المسؤول الوحيد عن
+      //  منطق توزيع الجوائز (distributeSeasonPrizes) — هنا بس بنتحكم في
+      //  الـ rows (إنشاء/تفعيل/تحريك تاريخ الانتهاء)، من غير تكرار منطق التوزيع
+      //  حتى لا يحصل تعارض في قيم الجوائز بين الملفين.
+      // ────────────────────────────────────────────────────────────────────
+      case 'adminCompetitions': {
+        const rows = await sql(`
+          SELECT id, name, start_at, end_at, active, prize_distributed, created_at
+          FROM competition
+          ORDER BY created_at DESC
+          LIMIT 30
+        `);
+        return res.json({ ok: true, competitions: rows });
+      }
+
+      case 'adminCompetitionCreate': {
+        const name         = (data.name || '').trim();
+        const days         = Math.max(1, Math.min(365, parseInt(data.duration_days, 10) || 20));
+        const activateNow  = !!data.activate_now;
+        if (!name) return res.status(400).json({ ok: false, error: 'اسم الموسم مطلوب' });
+
+        if (activateNow) {
+          await sql(`UPDATE competition SET active = FALSE WHERE active = TRUE`);
+        }
+
+        const rows = await sql(`
+          INSERT INTO competition (name, start_at, end_at, active, prize_distributed)
+          VALUES ($1, NOW(), NOW() + ($2 || ' days')::INTERVAL, $3, FALSE)
+          RETURNING id, name, start_at, end_at, active
+        `, [name, String(days), activateNow]);
+
+        return res.json({ ok: true, competition: rows[0] });
+      }
+
+      case 'adminCompetitionActivate': {
+        const id = parseInt(data.id, 10);
+        if (!id) return res.status(400).json({ ok: false, error: 'competition id required' });
+
+        const rows = await sql(`SELECT id, prize_distributed FROM competition WHERE id = $1`, [id]);
+        if (!rows.length) return res.status(404).json({ ok: false, error: 'Competition not found' });
+        if (rows[0].prize_distributed) {
+          return res.status(400).json({ ok: false, error: 'هذا الموسم انتهى وتم توزيع جوائزه بالفعل، لا يمكن إعادة تفعيله' });
+        }
+
+        await sql(`UPDATE competition SET active = FALSE WHERE active = TRUE`);
+        await sql(`UPDATE competition SET active = TRUE WHERE id = $1`, [id]);
+
+        return res.json({ ok: true });
+      }
+
+      case 'adminCompetitionEnd': {
+        // 🛡️ مبنديش الجوائز هنا — بس بنقرّب end_at لـ NOW() عشان distributeSeasonPrizes()
+        // في api/index.js (اللي بيشتغل مع أول طلب حقيقي من أي يوزر) يتكفّل بالتوزيع
+        // بنفس المنطق المُختبَر، من غير ما نكرره هنا ونخاطر بتعارض في قيم الجوائز.
+        const rows = await sql(`
+          UPDATE competition
+          SET end_at = NOW()
+          WHERE active = TRUE AND prize_distributed = FALSE
+          RETURNING id, name
+        `);
+        if (!rows.length) return res.status(400).json({ ok: false, error: 'لا يوجد موسم نشط حالياً' });
+
+        return res.json({
+          ok: true,
+          name: rows[0].name,
+          note: 'هينتهي تلقائياً وتتوزع الجوائز مع أول طلب حقيقي من أي يوزر (عادة خلال ثواني)'
+        });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
       case 'adminBroadcast': {
         const text = (data.text || '').trim();
         if (!text) return res.status(400).json({ ok: false, error: 'Message text required' });
