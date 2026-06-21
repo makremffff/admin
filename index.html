@@ -567,6 +567,35 @@
   }
   .risk-save-btn:active { opacity: .7; }
 
+  /* ── Editable value (pts / balance) ── */
+  .value-input {
+    width: 96px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--surface-2); color: var(--text); font-size: 12.5px; text-align: center;
+    outline: none; font-family: inherit;
+  }
+  .value-input:focus { border-color: rgba(245,200,64,.4); box-shadow: 0 0 0 3px var(--gold-bg); }
+
+  /* ── Photo attach (broadcast / DM) ── */
+  .photo-attach { margin-top: 9px; }
+  .photo-attach-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 13px; border-radius: 10px; border: 1px dashed var(--line);
+    background: var(--surface); color: var(--text2); font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: border-color .2s, color .2s;
+  }
+  .photo-attach-btn:active { border-color: var(--gold); color: var(--gold); }
+  .photo-attach-btn .icon { width: 14px; height: 14px; color: var(--gold); }
+  .photo-preview { margin-top: 9px; position: relative; display: inline-flex; }
+  .photo-preview img {
+    width: 96px; height: 96px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line);
+  }
+  .photo-remove-btn {
+    position: absolute; top: -6px; left: -6px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--rose); border: 2px solid var(--bg); color: #fff;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  }
+  .photo-remove-btn .icon { width: 11px; height: 11px; stroke-width: 3; }
+
   /* ── Sessions ── */
   .sessions-wrap { margin-top: 4px; }
   .session-item {
@@ -640,6 +669,7 @@
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></symbol>
   <symbol id="i-gamepad" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 10v4M5 12h4"/><circle class="icon-fill" cx="16" cy="11" r="1"/><circle class="icon-fill" cx="18.5" cy="13.5" r="1"/></symbol>
   <symbol id="i-device" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle class="icon-fill" cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></symbol>
 </svg>
 
 <!-- LOGIN -->
@@ -778,7 +808,15 @@
     <div class="section-card broadcast-wrap">
       <label class="form-label"><svg class="icon"><use href="#i-send"></use></svg> إرسال للجميع</label>
       <textarea id="bc-text" class="form-textarea" placeholder="اكتب رسالة Telegram... *Bold* _Italic_ `code`"></textarea>
-      <p class="form-hint"><svg class="icon"><use href="#i-alert"></use></svg> ستُرسل لجميع المستخدمين غير المحظورين</p>
+      <div class="photo-attach">
+        <label class="photo-attach-btn" for="bc-photo-input"><svg class="icon"><use href="#i-image"></use></svg> إرفاق صورة من الهاتف</label>
+        <input type="file" id="bc-photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(event,'bc')">
+        <div class="photo-preview" id="bc-photo-preview" style="display:none">
+          <img id="bc-photo-img" src="">
+          <button class="photo-remove-btn" onclick="removePhoto('bc')"><svg class="icon"><use href="#i-x"></use></svg></button>
+        </div>
+      </div>
+      <p class="form-hint"><svg class="icon"><use href="#i-alert"></use></svg> ستُرسل لجميع المستخدمين غير المحظورين — مع صورة، النص بيتحول لكابشن (حد أقصى 1024 حرف)</p>
       <button class="submit-btn" id="bc-btn" onclick="sendBroadcast()"><svg class="icon"><use href="#i-send"></use></svg> إرسال للجميع</button>
       <div id="bc-result" class="broadcast-result"></div>
     </div>
@@ -786,6 +824,14 @@
       <label class="form-label"><svg class="icon"><use href="#i-mail"></use></svg> رسالة لمستخدم محدد</label>
       <input id="dm-id" class="form-input" type="number" placeholder="Telegram ID">
       <textarea id="dm-text" class="form-textarea" style="margin-top:7px" placeholder="نص الرسالة..."></textarea>
+      <div class="photo-attach">
+        <label class="photo-attach-btn" for="dm-photo-input"><svg class="icon"><use href="#i-image"></use></svg> إرفاق صورة من الهاتف</label>
+        <input type="file" id="dm-photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(event,'dm')">
+        <div class="photo-preview" id="dm-photo-preview" style="display:none">
+          <img id="dm-photo-img" src="">
+          <button class="photo-remove-btn" onclick="removePhoto('dm')"><svg class="icon"><use href="#i-x"></use></svg></button>
+        </div>
+      </div>
       <button class="submit-btn" id="dm-btn" onclick="sendDM()"><svg class="icon"><use href="#i-mail"></use></svg> إرسال</button>
       <div id="dm-result" class="broadcast-result"></div>
     </div>
@@ -1043,7 +1089,7 @@ function renderDashboard(res) {
   }
   const range = parseInt(document.getElementById('range-select').value);
   document.getElementById('stat-grid').innerHTML = `
-    <div class="stat-card">
+    <div class="stat-card" onclick="switchPage('users')" style="cursor:pointer">
       <div class="stat-icon blue">${icon('users')}</div>
       <div class="stat-info">
         <div class="stat-label">إجمالي المستخدمين</div>
@@ -1373,11 +1419,21 @@ function renderUserSheet(res) {
       <div class="detail-section-title">الإحصائيات</div>
       <div class="detail-row">
         <span class="detail-key">النقاط (pts)</span>
-        <span class="detail-val num" style="color:var(--gold);font-size:15px">${fNum(u.pts)}</span>
+        <div class="detail-val">
+          <div class="risk-editor">
+            <input type="number" class="value-input num" id="pts-input" value="${Math.trunc(u.pts)}" min="0" step="1">
+            <button class="risk-save-btn" onclick="saveUserField(${u.telegram_id}, 'pts')">${icon('check')} حفظ</button>
+          </div>
+        </div>
       </div>
       <div class="detail-row">
         <span class="detail-key">الرصيد USDT</span>
-        <span class="detail-val num" style="color:var(--emerald)">$${parseFloat(u.balance_usd).toFixed(4)}</span>
+        <div class="detail-val">
+          <div class="risk-editor">
+            <input type="number" class="value-input num" id="balance-input" value="${parseFloat(u.balance_usd).toFixed(4)}" min="0" step="0.0001">
+            <button class="risk-save-btn" onclick="saveUserField(${u.telegram_id}, 'balance_usd')">${icon('check')} حفظ</button>
+          </div>
+        </div>
       </div>
       <div class="detail-row">
         <span class="detail-key">إعلانات اليوم</span>
@@ -1470,6 +1526,27 @@ async function saveRiskScore(tgId) {
   else showToast(icon('x')+' ' + res.error);
 }
 
+async function saveUserField(tgId, field) {
+  const inputId = field === 'pts' ? 'pts-input' : 'balance-input';
+  const input   = document.getElementById(inputId);
+  const raw     = input.value;
+  if (raw === '' || isNaN(Number(raw)) || Number(raw) < 0) {
+    showToast(icon('x')+' قيمة غير صحيحة'); return;
+  }
+  const payload = { telegram_id: tgId };
+  if (field === 'pts') payload.pts = Math.trunc(Number(raw));
+  else payload.balance_usd = Number(raw);
+
+  const res = await api('adminAdjustUser', payload);
+  if (res.ok) {
+    showToast(icon('check')+' تم التحديث');
+    document.getElementById('pts-input').value = res.pts;
+    document.getElementById('balance-input').value = parseFloat(res.balance_usd).toFixed(4);
+    if (currentUser) { currentUser.pts = res.pts; currentUser.balance_usd = res.balance_usd; }
+    if (document.getElementById('page-users').classList.contains('active')) loadUsers();
+  } else showToast(icon('x')+' ' + res.error);
+}
+
 async function loadUserSessions(tgId) {
   const wrap = document.getElementById('sessions-wrap');
   wrap.innerHTML = `<div class="skeleton" style="height:52px;border-radius:10px;margin-bottom:6px"></div><div class="skeleton" style="height:52px;border-radius:10px"></div>`;
@@ -1534,17 +1611,70 @@ function quickDM(tgId) {
 // ═══════════════════════════════════════════════════════
 //  Broadcast
 // ═══════════════════════════════════════════════════════
+const photoState = { bc: null, dm: null }; // { dataUrl, mimetype }
+
+function fileToCompressedImage(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('تعذّر قراءة الصورة'));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('تعذّر قراءة الملف'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handlePhotoSelect(e, prefix) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast(icon('x')+' الملف لازم يكون صورة'); return; }
+  try {
+    const dataUrl = await fileToCompressedImage(file, 1280, 0.82);
+    photoState[prefix] = { dataUrl, mimetype: 'image/jpeg' };
+    document.getElementById(prefix+'-photo-img').src = dataUrl;
+    document.getElementById(prefix+'-photo-preview').style.display = 'flex';
+  } catch (err) {
+    showToast(icon('x')+' تعذّر تحميل الصورة');
+  }
+}
+
+function removePhoto(prefix) {
+  photoState[prefix] = null;
+  document.getElementById(prefix+'-photo-preview').style.display = 'none';
+  document.getElementById(prefix+'-photo-img').src = '';
+}
+
 async function sendBroadcast() {
-  const text = document.getElementById('bc-text').value.trim();
-  if (!text) return;
+  const text  = document.getElementById('bc-text').value.trim();
+  const photo = photoState.bc;
+  if (!text && !photo) { showToast(icon('x')+' اكتب رسالة أو أرفق صورة'); return; }
+  if (photo && text.length > 1024) { showToast(icon('x')+' النص مع الصورة لازم يكون أقل من 1024 حرف'); return; }
   if (!confirm('إرسال الرسالة لجميع المستخدمين؟')) return;
   const btn = document.getElementById('bc-btn');
   btn.disabled = true; btn.innerHTML = icon('loader','spin')+' جاري الإرسال...';
-  const res = await api('adminBroadcast', { text });
+  const payload = { text };
+  if (photo) { payload.photo_base64 = photo.dataUrl.split(',')[1]; payload.photo_mimetype = photo.mimetype; }
+  const res = await api('adminBroadcast', payload);
   const el  = document.getElementById('bc-result');
   if (res.ok) {
     el.className = 'broadcast-result success';
     el.innerHTML = `${icon('check')} أُرسلت لـ <span class="num">${fNum(res.sent)}</span> · فشل <span class="num">${fNum(res.failed)}</span>`;
+    document.getElementById('bc-text').value = '';
+    removePhoto('bc');
   } else {
     el.className = 'broadcast-result error';
     el.innerHTML = `${icon('x')} ${esc(res.error || 'خطأ')}`;
@@ -1554,13 +1684,18 @@ async function sendBroadcast() {
 async function sendDM() {
   const chatId = document.getElementById('dm-id').value.trim();
   const text   = document.getElementById('dm-text').value.trim();
-  if (!chatId || !text) return;
+  const photo  = photoState.dm;
+  if (!chatId || (!text && !photo)) return;
+  if (photo && text.length > 1024) { showToast(icon('x')+' النص مع الصورة لازم يكون أقل من 1024 حرف'); return; }
   const btn = document.getElementById('dm-btn');
   btn.disabled = true; btn.innerHTML = icon('loader','spin');
-  const res = await api('adminBroadcast', { text, telegram_id: chatId });
+  const payload = { text, telegram_id: chatId };
+  if (photo) { payload.photo_base64 = photo.dataUrl.split(',')[1]; payload.photo_mimetype = photo.mimetype; }
+  const res = await api('adminBroadcast', payload);
   const el  = document.getElementById('dm-result');
   el.className = 'broadcast-result ' + (res.ok ? 'success' : 'error');
   el.innerHTML = res.ok ? `${icon('check')} أُرسلت` : `${icon('x')} ${esc(res.error || 'خطأ')}`;
+  if (res.ok) { removePhoto('dm'); document.getElementById('dm-text').value = ''; }
   btn.disabled = false; btn.innerHTML = icon('mail')+' إرسال';
 }
 
