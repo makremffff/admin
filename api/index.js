@@ -349,6 +349,36 @@ module.exports = async function handler(req, res) {
       }
 
       // ────────────────────────────────────────────────────────────────────
+      case 'adminUserReferrals': {
+        const tgId   = data.telegram_id;
+        if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
+        const page   = Math.max(1, parseInt(data.page, 10) || 1);
+        const limit  = Math.min(50, Math.max(1, parseInt(data.limit, 10) || 20));
+        const offset = (page - 1) * limit;
+
+        const [countRows, rows] = await Promise.all([
+          sql(`SELECT COUNT(*)::INT AS count FROM users WHERE referred_by = $1`, [tgId]),
+          sql(`SELECT telegram_id, first_name, username, photo_url, pts, balance_usd, created_at
+               FROM users WHERE referred_by = $1
+               ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`, [tgId])
+        ]);
+
+        return res.json({
+          ok: true,
+          referrals: rows.map(u => ({
+            telegram_id: Number(u.telegram_id),
+            first_name:  u.first_name,
+            username:    u.username,
+            photo_url:   u.photo_url,
+            pts:         Number(u.pts),
+            balance_usd: parseFloat(u.balance_usd),
+            created_at:  u.created_at
+          })),
+          total: countRows[0].count
+        });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
       case 'adminAdjustUser': {
         const tgId = data.telegram_id;
         if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
