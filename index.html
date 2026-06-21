@@ -778,7 +778,7 @@
   <div id="page-users" class="page-content">
     <div class="search-bar">
       <svg class="icon"><use href="#i-search"></use></svg>
-      <input id="user-search" type="text" placeholder="ابحث بالاسم أو @username..." oninput="debounceSearch()">
+      <input id="user-search" type="text" placeholder="ابحث بالاسم أو @username أو ID..." oninput="debounceSearch()">
     </div>
     <div class="filter-chips">
       <div class="chip active" data-filter="all"    onclick="setUserFilter(this,'all')">الكل</div>
@@ -1230,6 +1230,7 @@ function drawChart(activity) {
 // ═══════════════════════════════════════════════════════
 //  Users Page
 // ═══════════════════════════════════════════════════════
+const USERS_PAGE_SIZE = 100; // ✅ كل صفحة فيها 100 مستخدم على الأقل
 let searchTimer;
 function debounceSearch() {
   clearTimeout(searchTimer);
@@ -1248,7 +1249,7 @@ async function loadUsers() {
   const { page, filter, search } = state.users;
   document.getElementById('users-list').innerHTML =
     [1,2,3,4,5].map(()=>`<div class="skeleton" style="height:80px;border-radius:12px;margin-bottom:8px"></div>`).join('');
-  const res = await api('adminUsers', { page, filter, search, limit: 20 });
+  const res = await api('adminUsers', { page, filter, search, limit: USERS_PAGE_SIZE });
   if (!res.ok) return;
   state.users.total = res.total;
   const ul = document.getElementById('users-list');
@@ -1275,7 +1276,7 @@ async function loadUsers() {
         ${u.banned?'محظور':u.shadow_banned?'شادو':'نشط'}
       </span>
     </div>`).join('');
-  renderPagination('users-pagination', page, Math.ceil(res.total / 20), p => { state.users.page = p; loadUsers(); });
+  renderPagination('users-pagination', page, Math.ceil(res.total / USERS_PAGE_SIZE), p => { state.users.page = p; loadUsers(); });
 }
 
 // ═══════════════════════════════════════════════════════
