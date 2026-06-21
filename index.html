@@ -856,7 +856,7 @@ const state = {
 async function api(type, data = {}) {
   const r = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type':'application/json', 'X-Internal-Secret': SECRET },
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Secret': ADMIN_SECRET },
     body: JSON.stringify({ type, data }),
   });
   return r.json();
