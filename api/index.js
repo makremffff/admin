@@ -169,7 +169,7 @@ module.exports = async function handler(req, res) {
       // ────────────────────────────────────────────────────────────────────
       case 'adminUsers': {
         const page   = Math.max(1, parseInt(data.page, 10) || 1);
-        const limit  = Math.min(50, Math.max(1, parseInt(data.limit, 10) || 20));
+        const limit  = Math.min(200, Math.max(1, parseInt(data.limit, 10) || 20));
         const offset = (page - 1) * limit;
         const filter = data.filter || 'all';
         const search = (data.search || '').trim();
@@ -182,8 +182,8 @@ module.exports = async function handler(req, res) {
           params.push(`%${search}%`);
           const likeIdx = params.length;
           if (/^\d+$/.test(search)) {
-            params.push(search);
-            conditions.push(`(first_name ILIKE $${likeIdx} OR username ILIKE $${likeIdx} OR telegram_id::TEXT = $${params.length})`);
+            // 🔍 بحث جزئي بالـ ID (مش لازم الرقم كامل) + الاسم/اليوزرنيم لو فيهم أرقام
+            conditions.push(`(first_name ILIKE $${likeIdx} OR username ILIKE $${likeIdx} OR telegram_id::TEXT ILIKE $${likeIdx})`);
           } else {
             conditions.push(`(first_name ILIKE $${likeIdx} OR username ILIKE $${likeIdx})`);
           }
@@ -213,6 +213,7 @@ module.exports = async function handler(req, res) {
           total: countRows[0].count
         });
       }
+
 
       // ────────────────────────────────────────────────────────────────────
       case 'adminWithdrawals': {
