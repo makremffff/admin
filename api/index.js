@@ -6,12 +6,12 @@
 
 const { neon } = require('@neondatabase/serverless');
 
-const DATABASE_URL    = process.env.DATABASE_URL;
-const BOT_TOKEN       = process.env.BOT_TOKEN;
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET; // نفس المتغيّر المستخدم في api/index.js
+const DATABASE_URL = process.env.DATABASE_URL;
+const BOT_TOKEN    = process.env.BOT_TOKEN;
+const ADMIN_SECRET = process.env.ADMIN_SECRET; // ✅ Fixed: was INTERNAL_SECRET
 
-if (!INTERNAL_SECRET) {
-  throw new Error('[FATAL] INTERNAL_SECRET env var is not set — refusing to run with an insecure fallback key');
+if (!ADMIN_SECRET) {
+  throw new Error('[FATAL] ADMIN_SECRET env var is not set — refusing to run with an insecure fallback key');
 }
 
 const _db = neon(DATABASE_URL);
@@ -47,7 +47,7 @@ module.exports = async function handler(req, res) {
   // ── CORS مفتوح — اللوحة صفحة مستقلة (مش Telegram WebApp)، الحماية على السر مش الـ Origin
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Internal-Secret');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Secret'); // ✅ Fixed
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   if (req.method !== 'POST') {
@@ -57,9 +57,9 @@ module.exports = async function handler(req, res) {
   const body = req.body || {};
   const { type, data = {} } = body;
 
-  // 🛡️ فحص واحد لكل الراوتر — كل الـ types هنا أدمن فقط، محمية بـ INTERNAL_SECRET
-  const providedSecret = req.headers['x-internal-secret'] || data.secret || '';
-  if (providedSecret !== INTERNAL_SECRET) {
+  // 🛡️ فحص واحد لكل الراوتر — كل الـ types هنا أدمن فقط
+  const providedSecret = req.headers['x-admin-secret'] || data.secret || ''; // ✅ Fixed
+  if (providedSecret !== ADMIN_SECRET) { // ✅ Fixed
     return res.status(403).json({ ok: false, error: 'Forbidden' });
   }
 
@@ -115,7 +115,6 @@ module.exports = async function handler(req, res) {
 
       // ────────────────────────────────────────────────────────────────────
       case 'adminOnlineUsers': {
-        // "متصل الآن" = آخر ظهور خلال 5 دقائق (last_seen_at يُحدَّث في api/index.js مع كل طلب موثّق)
         const rows = await sql(`
           SELECT telegram_id, first_name, username, photo_url
           FROM users
@@ -259,8 +258,8 @@ module.exports = async function handler(req, res) {
       // ────────────────────────────────────────────────────────────────────
       case 'adminActivityLogs': {
         const page        = Math.max(1, parseInt(data.page, 10) || 1);
-        const limit        = Math.min(100, Math.max(1, parseInt(data.limit, 10) || 30));
-        const offset       = (page - 1) * limit;
+        const limit       = Math.min(100, Math.max(1, parseInt(data.limit, 10) || 30));
+        const offset      = (page - 1) * limit;
         const actionFilter = (data.action || '').trim();
 
         const where  = actionFilter ? `WHERE al.action = $1` : '';
@@ -320,8 +319,8 @@ module.exports = async function handler(req, res) {
 
       // ────────────────────────────────────────────────────────────────────
       case 'banUser': {
-        const tgId   = data.telegram_id;
-        const unban  = !!data.unban;
+        const tgId  = data.telegram_id;
+        const unban = !!data.unban;
         if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
 
         await sql(`UPDATE users SET banned = $1 WHERE telegram_id = $2`, [!unban, tgId]);
@@ -329,10 +328,7 @@ module.exports = async function handler(req, res) {
       }
 
       // ────────────────────────────────────────────────────────────────────
-      //  🏆 Competitions — السيرفر الرئيسي (api/index.js) هو المسؤول الوحيد عن
-      //  منطق توزيع الجوائز (distributeSeasonPrizes) — هنا بس بنتحكم في
-      //  الـ rows (إنشاء/تفعيل/تحريك تاريخ الانتهاء)، من غير تكرار منطق التوزيع
-      //  حتى لا يحصل تعارض في قيم الجوائز بين الملفين.
+      //  🏆 Competitions
       // ────────────────────────────────────────────────────────────────────
       case 'adminCompetitions': {
         const rows = await sql(`
@@ -345,9 +341,9 @@ module.exports = async function handler(req, res) {
       }
 
       case 'adminCompetitionCreate': {
-        const name         = (data.name || '').trim();
-        const days         = Math.max(1, Math.min(365, parseInt(data.duration_days, 10) || 20));
-        const activateNow  = !!data.activate_now;
+        const name        = (data.name || '').trim();
+        const days        = Math.max(1, Math.min(365, parseInt(data.duration_days, 10) || 20));
+        const activateNow = !!data.activate_now;
         if (!name) return res.status(400).json({ ok: false, error: 'اسم الموسم مطلوب' });
 
         if (activateNow) {
@@ -380,9 +376,6 @@ module.exports = async function handler(req, res) {
       }
 
       case 'adminCompetitionEnd': {
-        // 🛡️ مبنديش الجوائز هنا — بس بنقرّب end_at لـ NOW() عشان distributeSeasonPrizes()
-        // في api/index.js (اللي بيشتغل مع أول طلب حقيقي من أي يوزر) يتكفّل بالتوزيع
-        // بنفس المنطق المُختبَر، من غير ما نكرره هنا ونخاطر بتعارض في قيم الجوائز.
         const rows = await sql(`
           UPDATE competition
           SET end_at = NOW()
@@ -403,7 +396,7 @@ module.exports = async function handler(req, res) {
         const text = (data.text || '').trim();
         if (!text) return res.status(400).json({ ok: false, error: 'Message text required' });
 
-        // رسالة مباشرة لمستخدم واحد (DM من نافذة المستخدم)
+        // رسالة مباشرة لمستخدم واحد
         if (data.telegram_id) {
           const result = await sendTelegramMessage(Number(data.telegram_id), text);
           if (!result.ok) return res.status(400).json({ ok: false, error: result.description || 'Failed to send' });
