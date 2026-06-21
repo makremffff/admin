@@ -9,19 +9,16 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=DynaPuff:wght@500;600;700&family=Permanent+Marker&display=swap');
 
-  /* ── Reset & Base ───────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg:        #07090f;
     --surface:   rgba(255,255,255,.035);
     --surface-2: rgba(255,255,255,.07);
     --line:      rgba(255,255,255,.07);
-
     --gold:      #f5c840;
     --gold-dim:  #d4a72c;
     --gold-bg:   rgba(245,200,64,.14);
     --gold-ink:  #1a1406;
-
     --emerald:    #34d399;
     --emerald-bg: rgba(52,211,153,.14);
     --rose:       #fb7185;
@@ -30,520 +27,580 @@
     --amber-bg:   rgba(251,191,36,.14);
     --violet:     #a78bfa;
     --violet-bg:  rgba(167,139,250,.14);
-
     --text:  rgba(255,255,255,.94);
     --text2: rgba(255,255,255,.52);
     --text3: rgba(255,255,255,.32);
-
-    --nav-h:    72px;
-    --header-h: 64px;
-    --radius:    20px;
-    --radius-sm: 14px;
+    --nav-h:    64px;
+    --header-h: 56px;
+    --radius:    18px;
+    --radius-sm: 12px;
     --shadow:    0 14px 32px -14px rgba(0,0,0,.65);
     --shadow-sm: 0 6px 18px -8px rgba(0,0,0,.55);
   }
-  html, body { height: 100%; font-family:'Cairo', system-ui, -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif; }
+  html, body { height: 100%; font-family:'Cairo', system-ui, sans-serif; overflow-x: hidden; }
   body {
     background: var(--bg); color: var(--text); font-size: 14px;
-    background-image: radial-gradient(circle at 50% -8%, rgba(245,200,64,.08), transparent 55%);
+    background-image: radial-gradient(circle at 50% -8%, rgba(245,200,64,.07), transparent 55%);
   }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-thumb { background: rgba(245,200,64,.22); border-radius: 3px; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-thumb { background: rgba(245,200,64,.2); border-radius: 2px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  * { scrollbar-color: rgba(245,200,64,.22) transparent; scrollbar-width: thin; }
-
+  * { scrollbar-color: rgba(245,200,64,.2) transparent; scrollbar-width: thin; }
   .num { font-family:'DynaPuff','Cairo',sans-serif; }
   .brand-mark { font-family:'Permanent Marker', cursive; letter-spacing:.5px; }
 
-  /* ── Icon system (inline sprite only — no emoji, no external icons) ── */
   .icon { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8;
           stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; vertical-align: -3px; }
   .icon-fill { fill: currentColor; stroke: none; }
 
-  /* ── App shell ───────────────────────────────────────────── */
-  #app { display: flex; flex-direction: column; min-height: 100vh; }
+  /* ── App shell ── */
+  #app { display: flex; flex-direction: column; min-height: 100vh; width: 100%; }
 
-  /* ── Top header ──────────────────────────────────────────── */
+  /* ── Top header ── */
   .top-header {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(7,9,15,.82); backdrop-filter: blur(10px);
+    background: rgba(7,9,15,.88); backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--line);
     height: var(--header-h);
-    display: flex; align-items: center; padding: 0 20px;
-    gap: 12px;
+    display: flex; align-items: center; padding: 0 14px;
+    gap: 10px; width: 100%;
   }
   .icon-btn {
-    width: 40px; height: 40px; border-radius: 12px; border: none;
+    width: 38px; height: 38px; border-radius: 11px; border: none;
     background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; color: var(--text2); transition: background .2s, color .2s;
   }
   .icon-btn:active { background: var(--surface-2); color: var(--gold); }
-  .icon-btn .icon { width: 19px; height: 19px; }
+  .icon-btn .icon { width: 18px; height: 18px; }
   .top-header .title-area { flex: 1; text-align: center; }
-  .top-header .title-area h1 { font-size: 17px; font-weight: 800; }
+  .top-header .title-area h1 { font-size: 16px; font-weight: 800; }
   .top-header .title-area .sub {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    font-size: 12px; color: var(--text2); margin-top: 2px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    font-size: 11px; color: var(--text2); margin-top: 1px;
   }
   .tg-badge {
-    width: 16px; height: 16px; border-radius: 50%;
+    width: 14px; height: 14px; border-radius: 50%;
     background: rgba(41,182,246,.16); display: inline-flex; align-items: center; justify-content: center;
     color: #4fc3f7; flex-shrink: 0;
   }
-  .tg-badge .icon { width: 9px; height: 9px; stroke-width: 2.4; }
+  .tg-badge .icon { width: 8px; height: 8px; stroke-width: 2.4; }
   .notif-btn { position: relative; }
   .notif-dot {
-    position: absolute; top: 7px; right: 7px;
-    width: 8px; height: 8px; border-radius: 50%; background: var(--gold);
+    position: absolute; top: 6px; right: 6px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
     border: 1.5px solid var(--bg);
   }
 
-  /* ── Scrollable content ──────────────────────────────────── */
+  /* ── Scrollable content ── */
   .page-content {
     flex: 1; overflow-y: auto;
-    padding: 16px 16px calc(var(--nav-h) + 16px);
-    display: none;
+    padding: 12px 12px calc(var(--nav-h) + 12px);
+    display: none; width: 100%;
   }
   .page-content.active { display: block; }
 
-  /* ── Greeting row ────────────────────────────────────────── */
+  /* ── Greeting row ── */
   .greeting-row {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
-  .greeting-text h2 { font-size: 16px; font-weight: 800; }
-  .greeting-text p  { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .greeting-text h2 { font-size: 15px; font-weight: 800; }
+  .greeting-text p  { font-size: 11px; color: var(--text2); margin-top: 2px; }
   .admin-avatar {
-    width: 48px; height: 48px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--gold-bg), rgba(245,200,64,.04));
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--gold-bg);
     display: flex; align-items: center; justify-content: center; color: var(--gold);
-    position: relative; overflow: hidden; flex-shrink: 0;
+    position: relative; flex-shrink: 0;
   }
-  .admin-avatar .icon { width: 22px; height: 22px; }
-  .admin-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .admin-avatar .icon { width: 20px; height: 20px; }
   .online-dot {
     position: absolute; bottom: 1px; right: 1px;
-    width: 11px; height: 11px; border-radius: 50%; background: var(--emerald);
+    width: 10px; height: 10px; border-radius: 50%; background: var(--emerald);
     border: 2px solid var(--bg);
   }
 
-  /* ── Date filter ─────────────────────────────────────────── */
-  .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+  /* ── Date filter ── */
+  .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
   .date-select {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 7px;
     background: var(--surface); border: 1px solid var(--line);
-    border-radius: 12px; padding: 9px 14px; cursor: pointer;
-    font-size: 13px; font-weight: 600; color: var(--text2);
+    border-radius: 11px; padding: 8px 12px; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: var(--text2);
   }
-  .date-select .icon { width: 16px; height: 16px; }
+  .date-select .icon { width: 14px; height: 14px; }
   .date-select select {
-    border: none; background: transparent; font-size: 13px; font-weight: 600;
+    border: none; background: transparent; font-size: 12px; font-weight: 600;
     cursor: pointer; outline: none; font-family: inherit; color: var(--text);
   }
   .date-select select option { background: #14171f; color: var(--text); }
 
-  /* ── Stat Cards ──────────────────────────────────────────── */
+  /* ── Stat Cards ── */
   .stat-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-    margin-bottom: 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 14px;
   }
   .stat-card {
-    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px;
-    box-shadow: var(--shadow-sm); display: flex; align-items: flex-start; gap: 12px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 12px;
+    box-shadow: var(--shadow-sm); display: flex; align-items: flex-start; gap: 10px;
   }
   .stat-icon {
-    width: 44px; height: 44px; border-radius: 13px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-  .stat-icon .icon { width: 21px; height: 21px; }
+  .stat-icon .icon { width: 19px; height: 19px; }
   .stat-icon.blue   { background: var(--gold-bg);    color: var(--gold);    }
   .stat-icon.green  { background: var(--emerald-bg); color: var(--emerald); }
   .stat-icon.purple { background: var(--violet-bg);  color: var(--violet);  }
   .stat-icon.amber  { background: var(--amber-bg);   color: var(--amber);   }
   .stat-icon.red    { background: var(--rose-bg);    color: var(--rose);    }
   .stat-info { flex: 1; min-width: 0; }
-  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .stat-value { font-size: 21px; font-weight: 700; letter-spacing: -.3px; }
-  .stat-change { font-size: 11px; margin-top: 4px; font-weight: 700; display: flex; align-items: center; gap: 3px; }
-  .stat-change .icon { width: 12px; height: 12px; stroke-width: 2.4; }
+  .stat-label { font-size: 10px; color: var(--text2); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat-value { font-size: 19px; font-weight: 700; letter-spacing: -.3px; }
+  .stat-change { font-size: 10px; margin-top: 3px; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+  .stat-change .icon { width: 11px; height: 11px; stroke-width: 2.4; }
   .stat-change.up   { color: var(--emerald); }
   .stat-change.down { color: var(--rose); }
-  .stat-change.down .icon { transform: rotate(90deg); }
   .stat-change.neutral { color: var(--amber); }
 
-  /* ── Section card ────────────────────────────────────────── */
+  /* ── Section card ── */
   .section-card {
-    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px;
-    box-shadow: var(--shadow-sm); margin-bottom: 14px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 12px;
+    box-shadow: var(--shadow-sm); margin-bottom: 12px;
   }
   .section-header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
-  .section-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; }
-  .section-action { font-size: 13px; font-weight: 700; color: var(--gold); cursor: pointer; }
+  .section-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+  .section-action { font-size: 12px; font-weight: 700; color: var(--gold); cursor: pointer; padding: 4px 0; }
 
-  /* ── Live / Online now ───────────────────────────────────── */
-  .live-title { gap: 8px; }
-  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); position: relative; flex-shrink: 0; }
+  /* ── Live / Online ── */
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--emerald); position: relative; flex-shrink: 0; }
   .live-dot::after {
     content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--emerald);
     animation: livePulse 1.8s ease-out infinite;
   }
-  @keyframes livePulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.6); opacity: 0; } }
+  @keyframes livePulse { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(2.6);opacity:0} }
   .live-count {
-    font-size: 11px; font-weight: 700; color: var(--emerald); background: var(--emerald-bg);
-    border-radius: 20px; padding: 2px 9px; margin-right: 2px;
+    font-size: 10px; font-weight: 700; color: var(--emerald); background: var(--emerald-bg);
+    border-radius: 20px; padding: 2px 8px;
   }
-  .online-strip {
-    display: flex; gap: 16px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none;
-  }
+  .online-strip { display: flex; gap: 14px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; }
   .online-strip::-webkit-scrollbar { display: none; }
-  .online-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; width: 58px; }
+  .online-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; flex-shrink: 0; width: 52px; }
   .online-avatar {
-    width: 46px; height: 46px; border-radius: 50%; overflow: hidden;
+    width: 42px; height: 42px; border-radius: 50%; overflow: hidden;
     background: var(--surface-2); border: 2px solid var(--emerald);
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 700; color: var(--text2);
+    font-size: 15px; font-weight: 700; color: var(--text2);
   }
   .online-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .online-name { font-size: 10.5px; color: var(--text2); max-width: 58px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .online-empty { display: flex; align-items: center; gap: 8px; color: var(--text3); font-size: 12.5px; padding: 10px 2px; }
-  .online-empty .icon { width: 16px; height: 16px; }
+  .online-name { font-size: 10px; color: var(--text2); max-width: 52px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+  .online-empty { display: flex; align-items: center; gap: 7px; color: var(--text3); font-size: 12px; padding: 8px 2px; }
+  .online-empty .icon { width: 15px; height: 15px; }
 
-  /* ── Mini Chart ──────────────────────────────────────────── */
+  /* ── Chart ── */
   .chart-filter {
     background: var(--surface-2); border: 1px solid var(--line);
-    border-radius: 10px; padding: 7px 12px; font-size: 12px; font-weight: 600;
-    cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--text2);
+    border-radius: 9px; padding: 6px 10px; font-size: 11px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 4px; color: var(--text2);
   }
-  .chart-filter .icon { width: 13px; height: 13px; }
-  canvas#activityChart { width: 100% !important; height: 180px !important; margin-top: 10px; }
-  .chart-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-top: 6px; padding: 0 4px; }
+  canvas#activityChart { width: 100% !important; height: 160px !important; margin-top: 10px; }
+  .chart-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--text3); margin-top: 5px; }
 
-  /* ── Users list (home) ──────────────────────────────────────── */
+  /* ── Users list (home) ── */
   .user-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 0; border-bottom: 1px solid var(--line);
-    cursor: pointer; transition: background .15s;
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--line);
+    cursor: pointer;
   }
   .user-row:last-child { border-bottom: none; }
-  .user-row:active { background: var(--surface-2); border-radius: 10px; padding: 10px 8px; margin: 0 -8px; }
   .user-avatar {
-    width: 42px; height: 42px; border-radius: 50%;
+    width: 40px; height: 40px; border-radius: 50%;
     background: var(--gold-bg); display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 700; color: var(--gold); flex-shrink: 0; overflow: hidden;
+    font-size: 15px; font-weight: 700; color: var(--gold); flex-shrink: 0; overflow: hidden;
     position: relative;
   }
   .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .tg-icon {
     position: absolute; bottom: -1px; right: -1px;
-    width: 16px; height: 16px; border-radius: 50%; background: #1a2a33;
+    width: 14px; height: 14px; border-radius: 50%; background: #1a2a33;
     border: 1.5px solid var(--bg); display: flex; align-items: center; justify-content: center;
     color: #4fc3f7;
   }
-  .tg-icon .icon { width: 8px; height: 8px; stroke-width: 2.6; }
+  .tg-icon .icon { width: 7px; height: 7px; stroke-width: 2.6; }
   .user-info { flex: 1; min-width: 0; }
-  .user-name  { font-size: 14px; font-weight: 700; }
-  .user-handle{ font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .user-name  { font-size: 13px; font-weight: 700; }
+  .user-handle{ font-size: 11px; color: var(--text2); margin-top: 1px; }
   .user-meta  { text-align: left; flex-shrink: 0; }
-  .user-time  { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
-  .user-pts   { font-size: 12px; font-weight: 700; color: var(--gold); }
+  .user-time  { font-size: 10px; color: var(--text3); margin-bottom: 2px; }
+  .user-pts   { font-size: 11px; font-weight: 700; color: var(--gold); }
 
-  /* ── Bottom Nav ──────────────────────────────────────────── */
+  /* ── Bottom Nav ── */
   .bottom-nav {
     position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-h);
-    background: rgba(7,9,15,.88); backdrop-filter: blur(10px);
+    background: rgba(7,9,15,.92); backdrop-filter: blur(12px);
     border-top: 1px solid var(--line);
     display: flex; align-items: center; z-index: 100;
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
   .nav-item {
     flex: 1; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 4px; cursor: pointer;
-    padding: 6px 0; position: relative; color: var(--text2);
+    justify-content: center; gap: 3px; cursor: pointer;
+    padding: 5px 0; position: relative; color: var(--text2);
   }
-  .nav-icon { display: flex; transition: transform .2s, color .2s; }
-  .nav-icon .icon { width: 22px; height: 22px; }
-  .nav-label { font-size: 10px; font-weight: 600; color: var(--text2); }
+  .nav-icon .icon { width: 20px; height: 20px; }
+  .nav-label { font-size: 9.5px; font-weight: 600; color: var(--text2); }
   .nav-item.active { color: var(--gold); }
   .nav-item.active .nav-label { color: var(--gold); }
-  .nav-item.active .nav-icon { transform: scale(1.08); }
   .nav-center-btn {
-    width: 52px; height: 52px; border-radius: 50%;
+    width: 48px; height: 48px; border-radius: 50%;
     background: linear-gradient(135deg, var(--gold), var(--gold-dim));
     display: flex; align-items: center; justify-content: center;
-    color: var(--gold-ink); margin-bottom: 8px; box-shadow: 0 6px 18px -4px rgba(245,200,64,.55);
+    color: var(--gold-ink); margin-bottom: 6px; box-shadow: 0 6px 18px -4px rgba(245,200,64,.5);
     cursor: pointer; flex-shrink: 0;
   }
-  .nav-center-btn .icon { width: 22px; height: 22px; stroke-width: 2; }
+  .nav-center-btn .icon { width: 20px; height: 20px; stroke-width: 2; }
   .nav-badge {
-    position: absolute; top: 4px; right: calc(50% - 18px);
-    background: var(--rose); color: #1a0507; border-radius: 10px; font-size: 9px;
-    font-weight: 700; padding: 1px 5px; min-width: 16px; text-align: center;
+    position: absolute; top: 3px; right: calc(50% - 17px);
+    background: var(--rose); color: #1a0507; border-radius: 10px; font-size: 8.5px;
+    font-weight: 700; padding: 1px 4px; min-width: 14px; text-align: center;
     border: 1.5px solid var(--bg);
   }
 
-  /* ── Page: Users ─────────────────────────────────────────── */
+  /* ── Users page ── */
   .search-bar {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--surface); border-radius: 14px; padding: 11px 14px;
-    border: 1px solid var(--line); margin-bottom: 12px; color: var(--text2);
+    display: flex; align-items: center; gap: 9px;
+    background: var(--surface); border-radius: 12px; padding: 10px 12px;
+    border: 1px solid var(--line); margin-bottom: 10px; color: var(--text2);
   }
-  .search-bar .icon { width: 17px; height: 17px; }
+  .search-bar .icon { width: 16px; height: 16px; flex-shrink: 0; }
   .search-bar input {
     flex: 1; border: none; background: transparent; font-size: 14px;
     outline: none; font-family: inherit; color: var(--text); text-align: right;
   }
   .search-bar input::placeholder { color: var(--text3); }
-  .filter-chips {
-    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px;
-    scrollbar-width: none;
-  }
+  .filter-chips { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 3px; margin-bottom: 10px; scrollbar-width: none; }
   .filter-chips::-webkit-scrollbar { display: none; }
   .chip {
-    flex-shrink: 0; padding: 7px 14px; border-radius: 20px;
-    border: 1px solid var(--line); font-size: 12px; font-weight: 700;
+    flex-shrink: 0; padding: 6px 12px; border-radius: 20px;
+    border: 1px solid var(--line); font-size: 11.5px; font-weight: 700;
     cursor: pointer; background: var(--surface); color: var(--text2); white-space: nowrap;
-    transition: background .2s, color .2s, border-color .2s;
+    transition: background .15s, color .15s, border-color .15s;
   }
   .chip.active { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
 
+  /* ── User card (users page) ── */
   .user-card {
-    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px;
-    box-shadow: var(--shadow-sm); margin-bottom: 10px;
-    display: flex; align-items: center; gap: 12px; cursor: pointer;
-    transition: box-shadow .2s;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px;
+    box-shadow: var(--shadow-sm); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 11px; cursor: pointer;
   }
-  .user-card:active { box-shadow: var(--shadow); }
+  .user-card:active { background: var(--surface-2); }
   .user-card-info { flex: 1; min-width: 0; }
-  .user-card-name { font-size: 15px; font-weight: 700; }
-  .user-card-sub  { font-size: 12px; color: var(--text2); margin-top: 2px; }
-  .user-card-stats { display: flex; gap: 12px; margin-top: 6px; }
-  .user-stat-pill {
-    display: flex; align-items: center; gap: 4px;
-    font-size: 11px; font-weight: 600; color: var(--text2);
-  }
-  .user-stat-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
-  .badge {
-    padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;
-    flex-shrink: 0;
-  }
+  .user-card-name { font-size: 14px; font-weight: 700; }
+  .user-card-sub  { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .user-card-stats { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; }
+  .user-stat-pill { display: flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; color: var(--text2); }
+  .user-stat-pill .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .badge { padding: 3px 7px; border-radius: 20px; font-size: 9.5px; font-weight: 700; flex-shrink: 0; }
   .badge.banned  { background: var(--rose-bg);    color: var(--rose);    }
   .badge.shadow  { background: var(--amber-bg);   color: var(--amber);   }
   .badge.normal  { background: var(--emerald-bg); color: var(--emerald); }
 
-  /* ── Page: Withdrawals ───────────────────────────────────── */
+  /* ── Withdrawals ── */
   .withdraw-card {
-    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px;
-    box-shadow: var(--shadow-sm); margin-bottom: 10px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px;
+    box-shadow: var(--shadow-sm); margin-bottom: 8px;
   }
-  .withdraw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .withdraw-user { font-size: 14px; font-weight: 700; }
-  .withdraw-status { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
-  .withdraw-status .icon { width: 12px; height: 12px; }
+  .withdraw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+  .withdraw-user { font-size: 13px; font-weight: 700; }
+  .withdraw-status { padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+  .withdraw-status .icon { width: 11px; height: 11px; }
   .withdraw-status.pending  { background: var(--amber-bg);   color: var(--amber);   }
   .withdraw-status.approved { background: var(--emerald-bg); color: var(--emerald); }
   .withdraw-status.rejected { background: var(--rose-bg);    color: var(--rose);    }
   .withdraw-status.paid     { background: var(--gold-bg);    color: var(--gold);    }
-
-  /* ── Competitions ─────────────────────────────────────────── */
-  .comp-card {
-    background: var(--surface-2); border: 1px solid var(--gold-dim);
-    border-radius: var(--radius-sm); padding: 14px 16px;
-  }
-  .comp-card-top { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-  .comp-status {
-    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
-    display: inline-flex; align-items: center; gap: 5px;
-  }
-  .comp-status .icon { width: 12px; height: 12px; }
-  .comp-status.live      { background: var(--emerald-bg); color: var(--emerald); }
-  .comp-status.scheduled { background: var(--violet-bg);  color: var(--violet);  }
-  .comp-status.ended     { background: var(--surface);    color: var(--text3);   }
-  .comp-name  { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
-  .comp-dates { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--text2); }
-  .comp-dates span { display: flex; align-items: center; gap: 6px; }
-  .comp-dates .icon { width: 13px; height: 13px; flex-shrink: 0; }
-  .comp-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 11px 0; border-bottom: 1px solid var(--line);
-  }
-  .comp-row:last-child { border-bottom: none; }
-  .comp-row-name { font-size: 14px; font-weight: 700; }
-  .comp-row-meta { font-size: 11.5px; margin-top: 2px; }
-  .withdraw-amount { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-  .withdraw-addr  { font-size: 11px; color: var(--text2); word-break: break-all; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 6px; }
-  .withdraw-addr .icon { width: 13px; height: 13px; margin-top: 1px; }
-  .withdraw-date  { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 5px; }
-  .withdraw-date .icon { width: 12px; height: 12px; }
-  .withdraw-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .withdraw-amount { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+  .withdraw-addr  { font-size: 10.5px; color: var(--text2); word-break: break-all; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 5px; }
+  .withdraw-addr .icon { width: 12px; height: 12px; margin-top: 1px; flex-shrink: 0; }
+  .withdraw-date  { font-size: 10px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
+  .withdraw-date .icon { width: 11px; height: 11px; }
+  .withdraw-actions { display: flex; gap: 7px; margin-top: 10px; }
   .action-btn {
-    flex: 1; padding: 10px; border-radius: 11px; border: none;
-    font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .2s;
-    display: flex; align-items: center; justify-content: center; gap: 5px;
+    flex: 1; padding: 9px; border-radius: 10px; border: none;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
   }
-  .action-btn .icon { width: 14px; height: 14px; }
+  .action-btn .icon { width: 13px; height: 13px; }
   .action-btn:active { opacity: .75; }
   .action-btn.approve { background: var(--emerald-bg); color: var(--emerald); }
   .action-btn.reject  { background: var(--rose-bg);    color: var(--rose);    }
   .action-btn.paid    { background: var(--gold-bg);    color: var(--gold);    }
 
-  /* ── Page: Broadcast ─────────────────────────────────────── */
-  .broadcast-wrap { padding: 4px 0; }
-  .form-label { font-size: 13px; font-weight: 700; color: var(--text2); margin-bottom: 8px; display: flex; align-items: center; gap: 7px; }
-  .form-label .icon { width: 16px; height: 16px; color: var(--gold); }
+  /* ── Competitions ── */
+  .comp-card {
+    background: var(--surface-2); border: 1px solid var(--gold-dim);
+    border-radius: var(--radius-sm); padding: 13px;
+  }
+  .comp-card-top { display: flex; justify-content: flex-end; margin-bottom: 7px; }
+  .comp-status { padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+  .comp-status .icon { width: 11px; height: 11px; }
+  .comp-status.live      { background: var(--emerald-bg); color: var(--emerald); }
+  .comp-status.scheduled { background: var(--violet-bg);  color: var(--violet);  }
+  .comp-name  { font-size: 15px; font-weight: 800; margin-bottom: 7px; }
+  .comp-dates { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text2); }
+  .comp-dates span { display: flex; align-items: center; gap: 5px; }
+  .comp-dates .icon { width: 12px; height: 12px; flex-shrink: 0; }
+  .comp-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .comp-row:last-child { border-bottom: none; }
+  .comp-row-name { font-size: 13px; font-weight: 700; }
+  .comp-row-meta { font-size: 11px; margin-top: 2px; }
+
+  /* ── Broadcast ── */
+  .broadcast-wrap { padding: 2px 0; }
+  .form-label { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .form-label .icon { width: 14px; height: 14px; color: var(--gold); }
   .form-textarea {
-    width: 100%; min-height: 130px; padding: 12px 14px;
-    border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
-    font-size: 14px; font-family: inherit; color: var(--text);
-    resize: none; outline: none; transition: box-shadow .2s, border-color .2s;
-    text-align: right; direction: rtl;
+    width: 100%; min-height: 120px; padding: 11px 12px;
+    border: 1px solid var(--line); border-radius: 11px; background: var(--surface);
+    font-size: 13px; font-family: inherit; color: var(--text);
+    resize: none; outline: none; text-align: right; direction: rtl;
   }
   .form-textarea:focus { border-color: rgba(245,200,64,.4); box-shadow: 0 0 0 3px var(--gold-bg); }
   .form-input {
-    width: 100%; padding: 12px 14px;
-    border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
-    font-size: 14px; font-family: inherit; color: var(--text);
-    outline: none; transition: box-shadow .2s, border-color .2s; text-align: right;
+    width: 100%; padding: 11px 12px;
+    border: 1px solid var(--line); border-radius: 11px; background: var(--surface);
+    font-size: 13px; font-family: inherit; color: var(--text);
+    outline: none; text-align: right;
   }
   .form-input:focus { border-color: rgba(245,200,64,.4); box-shadow: 0 0 0 3px var(--gold-bg); }
-  .form-hint { font-size: 11.5px; color: var(--text2); margin-top: 8px; display: flex; align-items: flex-start; gap: 6px; }
-  .form-hint .icon { width: 14px; height: 14px; color: var(--amber); margin-top: 1px; }
+  .form-hint { font-size: 11px; color: var(--text2); margin-top: 7px; display: flex; align-items: flex-start; gap: 5px; }
+  .form-hint .icon { width: 13px; height: 13px; color: var(--amber); margin-top: 1px; flex-shrink: 0; }
   .submit-btn {
-    width: 100%; padding: 14px; border: none; border-radius: 12px;
+    width: 100%; padding: 13px; border: none; border-radius: 11px;
     background: linear-gradient(135deg, var(--gold), var(--gold-dim)); color: var(--gold-ink);
-    font-size: 15px; font-weight: 800;
-    cursor: pointer; margin-top: 14px; transition: filter .2s, opacity .2s;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 14px; font-weight: 800;
+    cursor: pointer; margin-top: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
     box-shadow: 0 8px 20px -8px rgba(245,200,64,.5);
   }
-  .submit-btn .icon { width: 17px; height: 17px; stroke-width: 2; }
-  .submit-btn:active { filter: brightness(.95); }
+  .submit-btn .icon { width: 16px; height: 16px; stroke-width: 2; }
   .submit-btn:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
   .broadcast-result {
-    margin-top: 14px; padding: 12px 14px; border-radius: 12px;
-    font-size: 13px; font-weight: 700; display: none; align-items: center; gap: 8px;
+    margin-top: 12px; padding: 11px 12px; border-radius: 11px;
+    font-size: 12px; font-weight: 700; display: none; align-items: center; gap: 7px;
   }
-  .broadcast-result .icon { width: 16px; height: 16px; }
-  .broadcast-result.success { background: var(--emerald-bg); color: var(--emerald); }
-  .broadcast-result.error   { background: var(--rose-bg);    color: var(--rose);    }
+  .broadcast-result.success { background: var(--emerald-bg); color: var(--emerald); display: flex; }
+  .broadcast-result.error   { background: var(--rose-bg);    color: var(--rose);    display: flex; }
 
-  /* ── Modal ────────────────────────────────────────────────── */
-  .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
-    z-index: 200; display: none; align-items: flex-end; justify-content: center;
+  /* ── Logs ── */
+  .log-item { display: flex; gap: 9px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .log-item:last-child { border-bottom: none; }
+  .log-icon {
+    width: 30px; height: 30px; border-radius: 9px; background: var(--surface-2); color: var(--gold);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
   }
-  .modal-backdrop.open { display: flex; }
-  .modal {
-    background: #0c0f17; border: 1px solid var(--line); border-bottom: none;
-    border-radius: 24px 24px 0 0;
-    width: 100%; max-width: 600px; padding: 24px 20px 32px;
-    max-height: 85vh; overflow-y: auto;
-  }
-  .modal-handle { width: 36px; height: 4px; border-radius: 2px; background: rgba(245,200,64,.25); margin: 0 auto 20px; }
-  .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; }
-  .detail-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--line); }
-  .detail-row:last-child { border-bottom: none; }
-  .detail-key { font-size: 13px; color: var(--text2); }
-  .detail-val { font-size: 13px; font-weight: 700; text-align: left; max-width: 55%; word-break: break-all; display: flex; align-items: center; gap: 6px; }
-  .detail-val .icon { width: 13px; height: 13px; }
-  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-  .modal-btn {
-    flex: 1; padding: 12px; border-radius: 12px; border: none;
-    font-size: 14px; font-weight: 700; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-  }
-  .modal-btn .icon { width: 16px; height: 16px; }
-  .modal-btn.ban    { background: var(--rose-bg);    color: var(--rose);    }
-  .modal-btn.unban  { background: var(--emerald-bg); color: var(--emerald); }
-  .modal-btn.msg    { background: var(--gold-bg);    color: var(--gold);    }
-  .modal-btn.close  { background: var(--surface-2);  color: var(--text);   flex: 0 0 48px; }
+  .log-icon .icon { width: 14px; height: 14px; }
+  .log-action { font-size: 12px; font-weight: 700; }
+  .log-user   { font-size: 10.5px; color: var(--text2); margin-top: 2px; }
+  .log-time   { font-size: 9.5px; color: var(--text3); margin-top: 2px; }
+  .log-meta   { font-size: 9.5px; color: var(--text3); margin-top: 2px; font-family: monospace; word-break: break-all; }
 
-  /* ── Login Screen ─────────────────────────────────────────── */
+  /* ── Login Screen ── */
   #login-screen {
     position: fixed; inset: 0; z-index: 300;
     display: flex; align-items: center; justify-content: center;
-    padding: 24px; background: var(--bg);
+    padding: 20px; background: var(--bg);
     background-image: radial-gradient(circle at 50% -8%, rgba(245,200,64,.10), transparent 55%);
   }
   .login-card {
-    width: 100%; max-width: 360px; text-align: center;
+    width: 100%; max-width: 340px; text-align: center;
     background: var(--surface); border: 1px solid var(--line);
-    border-radius: var(--radius); padding: 32px 24px;
+    border-radius: var(--radius); padding: 28px 20px;
     box-shadow: var(--shadow);
   }
-  .login-icon {
-    width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 16px;
-    background: var(--gold-bg); color: var(--gold);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .login-icon .icon { width: 26px; height: 26px; }
-  .login-brand { font-size: 22px; color: var(--gold); margin-bottom: 6px; }
-  .login-sub   { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .login-icon { width: 52px; height: 52px; border-radius: 15px; margin: 0 auto 14px; background: var(--gold-bg); color: var(--gold); display: flex; align-items: center; justify-content: center; }
+  .login-icon .icon { width: 24px; height: 24px; }
+  .login-brand { font-size: 20px; color: var(--gold); margin-bottom: 5px; }
+  .login-sub   { font-size: 12px; color: var(--text2); margin-bottom: 18px; }
   .login-error {
-    margin-top: 12px; padding: 10px 12px; border-radius: 10px;
+    margin-top: 10px; padding: 9px 11px; border-radius: 9px;
     background: var(--rose-bg); color: var(--rose);
-    font-size: 12.5px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
   }
-  .login-error .icon { width: 14px; height: 14px; }
+  .login-error .icon { width: 13px; height: 13px; }
 
-  /* ── Loading & Empty states ──────────────────────────────── */
+  /* ── Skeleton & Empty ── */
   .skeleton {
     background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%);
-    background-size: 200% 100%; animation: shimmer 1.5s infinite;
-    border-radius: 8px;
+    background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px;
   }
   @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-  .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); }
+  .empty-state { text-align: center; padding: 36px 16px; color: var(--text3); }
   .empty-state .icon-wrap {
-    width: 52px; height: 52px; border-radius: 50%; background: var(--surface-2);
-    display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: var(--text2);
+    width: 48px; height: 48px; border-radius: 50%; background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; color: var(--text2);
   }
-  .empty-state .icon-wrap .icon { width: 24px; height: 24px; }
-  .empty-state p { font-size: 14px; }
+  .empty-state .icon-wrap .icon { width: 22px; height: 22px; }
+  .empty-state p { font-size: 13px; }
   .toast {
-    position: fixed; bottom: calc(var(--nav-h) + 16px); left: 50%; transform: translateX(-50%);
-    background: #15181f; border: 1px solid var(--line); color: #fff; padding: 10px 18px; border-radius: 20px;
-    font-size: 13px; font-weight: 600; z-index: 500;
-    opacity: 0; pointer-events: none; transition: opacity .3s; white-space: nowrap;
-    display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow);
+    position: fixed; bottom: calc(var(--nav-h) + 12px); left: 50%; transform: translateX(-50%);
+    background: #15181f; border: 1px solid var(--line); color: #fff; padding: 9px 16px; border-radius: 18px;
+    font-size: 12.5px; font-weight: 600; z-index: 500;
+    opacity: 0; pointer-events: none; transition: opacity .25s; white-space: nowrap;
+    display: flex; align-items: center; gap: 7px; box-shadow: var(--shadow);
   }
-  .toast .icon { width: 15px; height: 15px; }
+  .toast .icon { width: 14px; height: 14px; }
   .toast.show { opacity: 1; }
 
-  /* ── Pagination ──────────────────────────────────────────── */
-  .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; }
+  /* ── Pagination ── */
+  .pagination { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 0; }
   .page-btn {
-    width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line);
-    background: var(--surface); font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text2);
+    width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line);
+    background: var(--surface); font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text2);
     display: flex; align-items: center; justify-content: center;
   }
-  .page-btn .icon { width: 15px; height: 15px; }
+  .page-btn .icon { width: 14px; height: 14px; }
   .page-btn.active { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
   .page-btn:disabled { opacity: .35; cursor: not-allowed; }
 
-  /* ── Logs ────────────────────────────────────────────────── */
-  .log-item { display: flex; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
-  .log-item:last-child { border-bottom: none; }
-  .log-icon {
-    width: 32px; height: 32px; border-radius: 10px; background: var(--surface-2); color: var(--gold);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+  /* ══════════════════════════════════════════════════════
+     FULL-SCREEN BOTTOM SHEET (user detail)
+  ══════════════════════════════════════════════════════ */
+  .sheet-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(6px);
+    z-index: 200; display: none; align-items: flex-end; justify-content: center;
   }
-  .log-icon .icon { width: 16px; height: 16px; }
-  .log-action { font-size: 13px; font-weight: 700; }
-  .log-user   { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .log-time   { font-size: 10px; color: var(--text3); margin-top: 3px; }
-  .log-meta   { font-size: 10px; color: var(--text3); margin-top: 3px; font-family: monospace; word-break: break-all; }
+  .sheet-backdrop.open { display: flex; }
+  .sheet {
+    background: #0c0f17; border: 1px solid var(--line); border-bottom: none;
+    border-radius: 22px 22px 0 0;
+    width: 100%; max-height: 92vh; overflow-y: auto;
+    display: flex; flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .sheet-handle { width: 34px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.15); margin: 12px auto 0; flex-shrink: 0; }
+  .sheet-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px 0; flex-shrink: 0;
+  }
+  .sheet-title { font-size: 16px; font-weight: 800; }
+  .sheet-close {
+    width: 32px; height: 32px; border-radius: 50%; border: none;
+    background: var(--surface-2); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: var(--text2); flex-shrink: 0;
+  }
+  .sheet-close .icon { width: 15px; height: 15px; }
+  .sheet-body { flex: 1; padding: 14px 16px 0; overflow-y: visible; }
+  .sheet-actions { display: flex; gap: 9px; padding: 14px 16px 20px; flex-shrink: 0; flex-wrap: wrap; }
+
+  /* ── User profile hero (inside sheet) ── */
+  .user-hero {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 16px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .user-hero-avatar {
+    width: 68px; height: 68px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+    background: var(--gold-bg); display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700; color: var(--gold);
+    border: 2.5px solid rgba(245,200,64,.3); position: relative;
+  }
+  .user-hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .user-hero-avatar .status-ring {
+    position: absolute; inset: -3px; border-radius: 50%; border: 2px solid transparent;
+  }
+  .user-hero-avatar.is-banned .status-ring   { border-color: var(--rose); }
+  .user-hero-avatar.is-shadow .status-ring   { border-color: var(--amber); }
+  .user-hero-avatar.is-normal .status-ring   { border-color: var(--emerald); }
+  .user-hero-info { flex: 1; min-width: 0; }
+  .user-hero-name { font-size: 17px; font-weight: 800; margin-bottom: 3px; }
+  .user-hero-handle { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .user-hero-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .hero-badge {
+    padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .hero-badge .icon { width: 10px; height: 10px; }
+  .hero-badge.banned  { background: var(--rose-bg);    color: var(--rose);    }
+  .hero-badge.shadow  { background: var(--amber-bg);   color: var(--amber);   }
+  .hero-badge.normal  { background: var(--emerald-bg); color: var(--emerald); }
+
+  /* ── Detail rows ── */
+  .detail-section { margin-bottom: 14px; }
+  .detail-section-title {
+    font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase;
+    letter-spacing: .8px; margin-bottom: 6px; padding-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .detail-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+    gap: 10px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { font-size: 12px; color: var(--text2); flex-shrink: 0; }
+  .detail-val { font-size: 12.5px; font-weight: 700; text-align: left; max-width: 60%; word-break: break-all; display: flex; align-items: center; gap: 5px; justify-content: flex-end; }
+
+  /* ── Risk score editor ── */
+  .risk-editor {
+    display: flex; align-items: center; gap: 8px; justify-content: flex-end;
+  }
+  .risk-num {
+    font-size: 14px; font-weight: 800; min-width: 28px; text-align: center;
+  }
+  .risk-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 110px; height: 4px; border-radius: 2px;
+    background: var(--surface-2); outline: none; cursor: pointer;
+  }
+  .risk-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--gold); cursor: pointer; border: 2px solid var(--bg);
+  }
+  .risk-save-btn {
+    padding: 4px 10px; border-radius: 8px; border: none;
+    background: var(--gold-bg); color: var(--gold); font-size: 11px; font-weight: 700;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
+  .risk-save-btn:active { opacity: .7; }
+
+  /* ── Sessions ── */
+  .sessions-wrap { margin-top: 4px; }
+  .session-item {
+    background: var(--surface); border-radius: 10px; padding: 9px 11px;
+    margin-bottom: 6px; font-size: 11px; color: var(--text2);
+  }
+  .session-fp { font-family: monospace; font-size: 10px; color: var(--text3); word-break: break-all; margin-top: 3px; }
+  .session-time { font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .session-flags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .session-flag { padding: 2px 6px; border-radius: 6px; font-size: 9px; font-weight: 700; background: var(--rose-bg); color: var(--rose); }
+
+  /* ── Modal buttons (sheet actions) ── */
+  .modal-btn {
+    flex: 1; min-width: 0; padding: 11px 10px; border-radius: 11px; border: none;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    font-family: inherit;
+  }
+  .modal-btn .icon { width: 15px; height: 15px; }
+  .modal-btn.ban    { background: var(--rose-bg);    color: var(--rose);    }
+  .modal-btn.unban  { background: var(--emerald-bg); color: var(--emerald); }
+  .modal-btn.shadow-on  { background: var(--amber-bg);  color: var(--amber);   }
+  .modal-btn.shadow-off { background: var(--violet-bg); color: var(--violet);  }
+  .modal-btn.msg    { background: var(--gold-bg);    color: var(--gold);    }
+  .modal-btn.del    { background: var(--rose-bg);    color: var(--rose);    opacity: .7; }
+  .modal-btn.close  { background: var(--surface-2);  color: var(--text);    flex: 0 0 44px; }
+
+  /* ── Spinner ── */
+  .spin { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!--  ICON SPRITE — inline, hand-authored, no emoji / no external requests -->
-<!-- ════════════════════════════════════════════════════════════ -->
 <svg style="display:none" aria-hidden="true">
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
@@ -570,9 +627,9 @@
   <symbol id="i-message" viewBox="0 0 24 24"><path d="M4 4h16v12H9l-5 4V4z"/></symbol>
   <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.8 5.8l12.4 12.4"/></symbol>
   <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17h.01"/></symbol>
-  <symbol id="i-gamepad" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 10v4M5 12h4"/><circle class="icon-fill" cx="16" cy="11" r="1"/><circle class="icon-fill" cx="18.5" cy="13.5" r="1"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6-6"/><path d="M13 5l1.5-1.5a3.5 3.5 0 1 1 5 5L18 10"/><path d="M11 19l-1.5 1.5a3.5 3.5 0 1 1-5-5L6 14"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"/><path d="M14 6l3 3"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 3h8l10 10-8 8L3 11V3z"/><circle class="icon-fill" cx="7.5" cy="7.5" r="1.4"/></symbol>
@@ -580,17 +637,18 @@
   <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M5 5h14l2 7v7H3v-7l2-7z"/></symbol>
   <symbol id="i-loader" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/></symbol>
   <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 2c3 1 5 4 5 8 0 3-2 6-5 9-3-3-5-6-5-9 0-4 2-7 5-8z"/><circle class="icon-fill" cx="12" cy="9" r="1.6"/><path d="M9 16l-3 5 5-2M15 16l3 5-5-2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-gamepad" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 10v4M5 12h4"/><circle class="icon-fill" cx="16" cy="11" r="1"/><circle class="icon-fill" cx="18.5" cy="13.5" r="1"/></symbol>
+  <symbol id="i-device" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></symbol>
 </svg>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!--  LOGIN SCREEN — يظهر لحد ما الأدمن يدخل كلمة السر الصحيحة -->
-<!-- ════════════════════════════════════════════════════════════ -->
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
     <div class="login-icon"><svg class="icon"><use href="#i-shield"></use></svg></div>
     <h1 class="brand-mark login-brand">BigLeague</h1>
     <p class="login-sub">لوحة التحكم — أدخل كلمة السر للمتابعة</p>
-    <input id="login-input" class="form-input" type="password" placeholder="كلمة السر" autocomplete="off" style="text-align:center">
+    <input id="login-input" class="form-input" type="password" placeholder="كلمة السر" autocomplete="off" style="text-align:center;margin-bottom:0">
     <div class="login-error" id="login-error" style="display:none">
       <svg class="icon"><use href="#i-alert"></use></svg><span>السر غير صحيح</span>
     </div>
@@ -600,19 +658,16 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!--  APP SHELL                                                  -->
-<!-- ════════════════════════════════════════════════════════════ -->
+<!-- APP -->
 <div id="app" style="display:none">
 
-  <!-- Header -->
   <header class="top-header">
     <button class="icon-btn" onclick="toggleMenu()" title="تسجيل الخروج"><svg class="icon"><use href="#i-menu"></use></svg></button>
     <div class="title-area">
       <h1 id="page-title">لوحة التحكم</h1>
       <div class="sub">
         <span class="tg-badge"><svg class="icon"><use href="#i-send"></use></svg></span>
-        <span class="brand-mark">BigLeague Bot</span>
+        <span class="brand-mark" style="font-size:11px">BigLeague</span>
       </div>
     </div>
     <button class="icon-btn notif-btn" onclick="refreshCurrent()">
@@ -621,10 +676,8 @@
     </button>
   </header>
 
-  <!-- ══════════════════════════════════════ PAGE: الرئيسية -->
+  <!-- PAGE: الرئيسية -->
   <div id="page-home" class="page-content active">
-
-    <!-- Greeting -->
     <div class="greeting-row">
       <div class="greeting-text">
         <h2>مرحباً، المدير</h2>
@@ -635,8 +688,6 @@
         <span class="online-dot"></span>
       </div>
     </div>
-
-    <!-- Date Filter -->
     <div class="filter-row">
       <div class="date-select">
         <svg class="icon"><use href="#i-calendar"></use></svg>
@@ -647,144 +698,115 @@
         </select>
       </div>
     </div>
-
-    <!-- Stat Cards -->
     <div class="stat-grid" id="stat-grid">
-      <!-- Skeleton -->
-      <div class="stat-card"><div class="skeleton" style="width:44px;height:44px;border-radius:13px"></div><div style="flex:1"><div class="skeleton" style="height:12px;margin-bottom:8px;width:70%"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>
-      <div class="stat-card"><div class="skeleton" style="width:44px;height:44px;border-radius:13px"></div><div style="flex:1"><div class="skeleton" style="height:12px;margin-bottom:8px;width:70%"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>
-      <div class="stat-card"><div class="skeleton" style="width:44px;height:44px;border-radius:13px"></div><div style="flex:1"><div class="skeleton" style="height:12px;margin-bottom:8px;width:70%"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>
-      <div class="stat-card"><div class="skeleton" style="width:44px;height:44px;border-radius:13px"></div><div style="flex:1"><div class="skeleton" style="height:12px;margin-bottom:8px;width:70%"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>
+      <div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
+      <div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
+      <div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
+      <div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
     </div>
-
-    <!-- Current Competition -->
     <div class="section-card">
       <div class="section-header">
         <span class="section-title">الموسم الحالي</span>
         <span class="section-action" onclick="openCompetitionsModal()">إدارة</span>
       </div>
-      <div id="comp-widget">
-        <div class="skeleton" style="height:78px;border-radius:12px"></div>
-      </div>
+      <div id="comp-widget"><div class="skeleton" style="height:72px;border-radius:11px"></div></div>
     </div>
-
-    <!-- Online Now (live presence) -->
     <div class="section-card">
       <div class="section-header">
-        <span class="section-title live-title">
+        <span class="section-title" style="gap:7px">
           <span class="live-dot"></span>
           متصل الآن
           <span class="live-count num" id="online-count">0</span>
         </span>
       </div>
       <div class="online-strip" id="online-strip">
-        <div class="online-empty" id="online-empty">
-          <svg class="icon"><use href="#i-inbox"></use></svg>
-          لا يوجد مستخدمون متصلون الآن
-        </div>
+        <div class="online-empty"><svg class="icon"><use href="#i-inbox"></use></svg> لا يوجد متصلون الآن</div>
       </div>
     </div>
-
-    <!-- Chart -->
     <div class="section-card">
       <div class="section-header">
-        <span class="section-title">النشاط خلال آخر <span id="range-label" class="num">7</span> أيام</span>
-        <div class="chart-filter" onclick="cycleChartType()">
-          <span id="chart-type-label">الرسائل</span>
-          <svg class="icon"><use href="#i-chevron-down"></use></svg>
-        </div>
+        <span class="section-title">النشاط — آخر <span id="range-label" class="num">7</span> أيام</span>
+        <div class="chart-filter"><svg class="icon"><use href="#i-chevron-down"></use></svg></div>
       </div>
       <canvas id="activityChart"></canvas>
       <div class="chart-labels" id="chart-labels"></div>
     </div>
-
-    <!-- Recent Users -->
     <div class="section-card">
       <div class="section-header">
-        <span class="section-title">آخر المستخدمين الجدد</span>
+        <span class="section-title">آخر المستخدمين</span>
         <span class="section-action" onclick="switchPage('users')">عرض الكل</span>
       </div>
       <div id="recent-users-list">
-        <div class="skeleton" style="height:52px;margin-bottom:10px;border-radius:12px"></div>
-        <div class="skeleton" style="height:52px;margin-bottom:10px;border-radius:12px"></div>
-        <div class="skeleton" style="height:52px;border-radius:12px"></div>
+        <div class="skeleton" style="height:50px;margin-bottom:9px;border-radius:11px"></div>
+        <div class="skeleton" style="height:50px;margin-bottom:9px;border-radius:11px"></div>
+        <div class="skeleton" style="height:50px;border-radius:11px"></div>
       </div>
     </div>
+  </div>
 
-  </div><!-- /page-home -->
-
-
-  <!-- ══════════════════════════════════════ PAGE: المستخدمين -->
+  <!-- PAGE: المستخدمين -->
   <div id="page-users" class="page-content">
     <div class="search-bar">
       <svg class="icon"><use href="#i-search"></use></svg>
-      <input id="user-search" type="text" placeholder="ابحث بالاسم أو @username..."
-             oninput="debounceSearch()">
+      <input id="user-search" type="text" placeholder="ابحث بالاسم أو @username..." oninput="debounceSearch()">
     </div>
     <div class="filter-chips">
-      <div class="chip active" data-filter="all"     onclick="setUserFilter(this,'all')">الكل</div>
-      <div class="chip"       data-filter="top"     onclick="setUserFilter(this,'top')">الأعلى نقاطاً</div>
-      <div class="chip"       data-filter="banned"  onclick="setUserFilter(this,'banned')">محظور</div>
-      <div class="chip"       data-filter="shadow"  onclick="setUserFilter(this,'shadow')">شادو بان</div>
+      <div class="chip active" data-filter="all"    onclick="setUserFilter(this,'all')">الكل</div>
+      <div class="chip"       data-filter="top"    onclick="setUserFilter(this,'top')">الأعلى</div>
+      <div class="chip"       data-filter="banned" onclick="setUserFilter(this,'banned')">محظور</div>
+      <div class="chip"       data-filter="shadow" onclick="setUserFilter(this,'shadow')">شادو</div>
     </div>
     <div id="users-list"></div>
     <div class="pagination" id="users-pagination"></div>
   </div>
 
-
-  <!-- ══════════════════════════════════════ PAGE: السحوبات -->
+  <!-- PAGE: السحوبات -->
   <div id="page-withdrawals" class="page-content">
     <div class="filter-chips">
-      <div class="chip active" data-wfilter="all"      onclick="setWFilter(this,'all')">الكل</div>
-      <div class="chip"       data-wfilter="pending"   onclick="setWFilter(this,'pending')">انتظار</div>
-      <div class="chip"       data-wfilter="approved"  onclick="setWFilter(this,'approved')">موافق</div>
-      <div class="chip"       data-wfilter="paid"      onclick="setWFilter(this,'paid')">مدفوع</div>
-      <div class="chip"       data-wfilter="rejected"  onclick="setWFilter(this,'rejected')">مرفوض</div>
+      <div class="chip active" data-wfilter="all"     onclick="setWFilter(this,'all')">الكل</div>
+      <div class="chip"       data-wfilter="pending"  onclick="setWFilter(this,'pending')">انتظار</div>
+      <div class="chip"       data-wfilter="approved" onclick="setWFilter(this,'approved')">موافق</div>
+      <div class="chip"       data-wfilter="paid"     onclick="setWFilter(this,'paid')">مدفوع</div>
+      <div class="chip"       data-wfilter="rejected" onclick="setWFilter(this,'rejected')">مرفوض</div>
     </div>
     <div id="withdrawals-list"></div>
     <div class="pagination" id="w-pagination"></div>
   </div>
 
-
-  <!-- ══════════════════════════════════════ PAGE: الرسائل -->
+  <!-- PAGE: الرسائل -->
   <div id="page-broadcast" class="page-content">
     <div class="section-card broadcast-wrap">
-      <label class="form-label"><svg class="icon"><use href="#i-send"></use></svg> إرسال رسالة للجميع</label>
-      <textarea id="bc-text" class="form-textarea"
-                placeholder="اكتب رسالة Telegram هنا... يدعم *Bold* و_Italic_ و`code`"></textarea>
-      <p class="form-hint"><svg class="icon"><use href="#i-alert"></use></svg> ستُرسل لجميع المستخدمين غير المحظورين — تأكد من المحتوى</p>
+      <label class="form-label"><svg class="icon"><use href="#i-send"></use></svg> إرسال للجميع</label>
+      <textarea id="bc-text" class="form-textarea" placeholder="اكتب رسالة Telegram... *Bold* _Italic_ `code`"></textarea>
+      <p class="form-hint"><svg class="icon"><use href="#i-alert"></use></svg> ستُرسل لجميع المستخدمين غير المحظورين</p>
       <button class="submit-btn" id="bc-btn" onclick="sendBroadcast()"><svg class="icon"><use href="#i-send"></use></svg> إرسال للجميع</button>
       <div id="bc-result" class="broadcast-result"></div>
     </div>
-
-    <div class="section-card broadcast-wrap" style="margin-top:14px">
+    <div class="section-card broadcast-wrap" style="margin-top:11px">
       <label class="form-label"><svg class="icon"><use href="#i-mail"></use></svg> رسالة لمستخدم محدد</label>
       <input id="dm-id" class="form-input" type="number" placeholder="Telegram ID">
-      <textarea id="dm-text" class="form-textarea" style="margin-top:8px"
-                placeholder="نص الرسالة..."></textarea>
+      <textarea id="dm-text" class="form-textarea" style="margin-top:7px" placeholder="نص الرسالة..."></textarea>
       <button class="submit-btn" id="dm-btn" onclick="sendDM()"><svg class="icon"><use href="#i-mail"></use></svg> إرسال</button>
       <div id="dm-result" class="broadcast-result"></div>
     </div>
   </div>
 
-
-  <!-- ══════════════════════════════════════ PAGE: السجل -->
+  <!-- PAGE: السجل -->
   <div id="page-logs" class="page-content">
     <div class="filter-chips">
-      <div class="chip active" data-log=""              onclick="setLogFilter(this,'')">الكل</div>
-      <div class="chip"       data-log="game_round"    onclick="setLogFilter(this,'game_round')">لعبة</div>
-      <div class="chip"       data-log="ref_copy"      onclick="setLogFilter(this,'ref_copy')">إحالة</div>
-      <div class="chip"       data-log="sec_event"     onclick="setLogFilter(this,'sec_event')">أمان</div>
+      <div class="chip active" data-log=""           onclick="setLogFilter(this,'')">الكل</div>
+      <div class="chip"       data-log="game_round" onclick="setLogFilter(this,'game_round')">لعبة</div>
+      <div class="chip"       data-log="ref_copy"   onclick="setLogFilter(this,'ref_copy')">إحالة</div>
+      <div class="chip"       data-log="sec_event"  onclick="setLogFilter(this,'sec_event')">أمان</div>
       <div class="chip"       data-log="admin_adjust_pts" onclick="setLogFilter(this,'admin_adjust_pts')">ضبط نقاط</div>
     </div>
-    <div class="section-card" style="padding:8px 16px">
+    <div class="section-card" style="padding:6px 12px">
       <div id="logs-list"></div>
     </div>
     <div class="pagination" id="logs-pagination"></div>
   </div>
 
-
-  <!-- ── Bottom Nav ── -->
+  <!-- Bottom Nav -->
   <nav class="bottom-nav">
     <div class="nav-item active" id="nav-home" onclick="switchPage('home')">
       <span class="nav-icon"><svg class="icon"><use href="#i-home"></use></svg></span>
@@ -808,16 +830,20 @@
       <span class="nav-label">السجل</span>
     </div>
   </nav>
+</div>
 
-</div><!-- /app -->
-
-<!-- ── User Detail Modal ── -->
-<div class="modal-backdrop" id="user-modal" onclick="closeModal(event)">
-  <div class="modal" id="modal-content">
-    <div class="modal-handle"></div>
-    <h3 class="modal-title" id="modal-title">تفاصيل المستخدم</h3>
-    <div id="modal-body"></div>
-    <div class="modal-actions" id="modal-actions"></div>
+<!-- USER DETAIL SHEET -->
+<div class="sheet-backdrop" id="user-modal" onclick="closeModal(event)">
+  <div class="sheet" id="modal-content">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <h3 class="sheet-title" id="modal-title">تفاصيل المستخدم</h3>
+      <button class="sheet-close" onclick="document.getElementById('user-modal').classList.remove('open')">
+        <svg class="icon"><use href="#i-x"></use></svg>
+      </button>
+    </div>
+    <div id="modal-body" class="sheet-body"></div>
+    <div class="sheet-actions" id="modal-actions"></div>
   </div>
 </div>
 
@@ -825,34 +851,77 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-//  Icon helper — every icon below is rendered from the inline
-//  sprite defined at the top of <body>. No emoji, no external
-//  icon requests anywhere in this file.
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  Helpers
+// ═══════════════════════════════════════════════════════
 function icon(name, cls) {
   return `<svg class="icon ${cls||''}"><use href="#i-${name}"></use></svg>`;
 }
+function fNum(n) { return Number(n).toLocaleString('en-US'); }
+function fCompact(n) {
+  n = Number(n);
+  if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return String(n);
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const diff = (Date.now() - new Date(ts)) / 1000;
+  if (diff < 60)    return 'الآن';
+  if (diff < 3600)  return `منذ ${Math.floor(diff/60)} دقيقة`;
+  if (diff < 86400) return `منذ ${Math.floor(diff/3600)} ساعة`;
+  return `منذ ${Math.floor(diff/86400)} يوم`;
+}
+function fDateTime(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('ar-u-nu-latn', { dateStyle:'short', timeStyle:'short' });
+}
+function fDay(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('ar-u-nu-latn', { month:'short', day:'numeric' });
+}
+function wStatusLabel(s) {
+  const map = { pending: icon('clock')+' انتظار', approved: icon('check')+' موافق', rejected: icon('x')+' مرفوض', paid: icon('card')+' مدفوع' };
+  return map[s] || s;
+}
+function showToast(html, dur=2500) {
+  const t = document.getElementById('toast');
+  t.innerHTML = html; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function renderPagination(containerId, currentPage, totalPages, onPage) {
+  const el = document.getElementById(containerId);
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  let html = `<button class="page-btn" ${currentPage<=1?'disabled':''} onclick="(${onPage})(${currentPage-1})">${icon('chevron-right')}</button>`;
+  for (let p = Math.max(1,currentPage-2); p <= Math.min(totalPages,currentPage+2); p++) {
+    html += `<button class="page-btn ${p===currentPage?'active':''} num" onclick="(${onPage})(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" ${currentPage>=totalPages?'disabled':''} onclick="(${onPage})(${currentPage+1})">${icon('chevron-left')}</button>`;
+  el.innerHTML = html;
+}
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  Config & State
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 const API_URL = '/api/admin';
 let SECRET    = '';
-const SECRET_STORAGE_KEY = 'bl_admin_secret'; // sessionStorage — يُمسح تلقائياً لما المتصفح يتقفل
+const SECRET_STORAGE_KEY = 'bl_admin_secret';
 let dashData  = null;
 let chartInst = null;
 let onlinePollTimer = null;
-
 const state = {
-  users:      { page: 1, filter: 'all', search: '', total: 0 },
-  withdrawals:{ page: 1, filter: 'all', total: 0 },
-  logs:       { page: 1, filter: '',    total: 0 },
+  users:       { page: 1, filter: 'all', search: '', total: 0 },
+  withdrawals: { page: 1, filter: 'all', total: 0 },
+  logs:        { page: 1, filter: '',    total: 0 },
 };
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  API
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 async function api(type, data = {}) {
   const r = await fetch(API_URL, {
     method: 'POST',
@@ -862,22 +931,18 @@ async function api(type, data = {}) {
   return r.json();
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Auth — كلمة سر تتحقق من السيرفر، تتخزن بـ sessionStorage فقط
-//  (تُمسح تلقائياً لما المتصفح/التاب يتقفل — مش هاردكود بالملف)
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  Auth
+// ═══════════════════════════════════════════════════════
 async function initAuth() {
   const saved = sessionStorage.getItem(SECRET_STORAGE_KEY);
   if (saved) {
     SECRET = saved;
     if (await tryEnterApp()) return;
-    // السر المحفوظ بقى غير صالح (اتغيّر من السيرفر مثلاً) — ارجع لشاشة الدخول
     sessionStorage.removeItem(SECRET_STORAGE_KEY);
     SECRET = '';
   }
-  document.getElementById('login-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') attemptLogin();
-  });
+  document.getElementById('login-input').addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
   document.getElementById('login-input').focus();
 }
 
@@ -899,10 +964,8 @@ async function attemptLogin() {
   const err   = document.getElementById('login-error');
   const val   = input.value.trim();
   if (!val) return;
-
   err.style.display = 'none';
   btn.disabled = true; btn.innerHTML = icon('loader','spin')+' جاري التحقق...';
-
   SECRET = val;
   const ok = await tryEnterApp();
   if (ok) {
@@ -916,25 +979,22 @@ async function attemptLogin() {
 }
 
 function logout() {
-  if (!confirm('تسجيل الخروج من لوحة التحكم؟')) return;
+  if (!confirm('تسجيل الخروج؟')) return;
   sessionStorage.removeItem(SECRET_STORAGE_KEY);
   SECRET = '';
   if (onlinePollTimer) clearInterval(onlinePollTimer);
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
-  const input = document.getElementById('login-input');
-  input.value = '';
+  document.getElementById('login-input').value = '';
   document.getElementById('login-error').style.display = 'none';
-  input.focus();
+  document.getElementById('login-input').focus();
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  Navigation
-// ═══════════════════════════════════════════════════════════════
-const pages = { home:'page-home', users:'page-users', withdrawals:'page-withdrawals',
-                broadcast:'page-broadcast', logs:'page-logs' };
-const titles = { home:'لوحة التحكم', users:'المستخدمين', withdrawals:'السحوبات',
-                 broadcast:'إرسال رسائل', logs:'سجل النشاط' };
+// ═══════════════════════════════════════════════════════
+const pages  = { home:'page-home', users:'page-users', withdrawals:'page-withdrawals', broadcast:'page-broadcast', logs:'page-logs' };
+const titles = { home:'لوحة التحكم', users:'المستخدمين', withdrawals:'السحوبات', broadcast:'إرسال رسائل', logs:'سجل النشاط' };
 
 function switchPage(name) {
   Object.values(pages).forEach(id => document.getElementById(id).classList.remove('active'));
@@ -943,7 +1003,6 @@ function switchPage(name) {
   const nav = document.getElementById('nav-'+name);
   if (nav) nav.classList.add('active');
   document.getElementById('page-title').textContent = titles[name] || 'لوحة التحكم';
-
   if (name === 'users'       && !document.getElementById('users-list').children.length) loadUsers();
   if (name === 'withdrawals' && !document.getElementById('withdrawals-list').children.length) loadWithdrawals();
   if (name === 'logs'        && !document.getElementById('logs-list').children.length) loadLogs();
@@ -957,9 +1016,12 @@ function refreshCurrent() {
   else if (active?.id === 'page-logs') loadLogs();
 }
 
-// ═══════════════════════════════════════════════════════════════
+function toggleMenu() { logout(); }
+function cycleChartType() { if (dashData) drawChart(dashData.activity); }
+
+// ═══════════════════════════════════════════════════════
 //  Dashboard
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 async function loadDashboard() {
   const range = parseInt(document.getElementById('range-select').value);
   document.getElementById('range-label').textContent = fNum(range);
@@ -972,18 +1034,13 @@ async function loadDashboard() {
 
 function renderDashboard(res) {
   const { stats, activity, recent_users, competition } = res;
-  document.getElementById('greeting-sub').textContent =
-    `المسابقة: ${competition?.name || 'Season 1'}`;
-
-  // Update pending badge
+  document.getElementById('greeting-sub').textContent = `المسابقة: ${competition?.name || 'Season 1'}`;
   if (stats.pending_withdrawals > 0) {
     const b = document.getElementById('w-badge');
     b.textContent = fNum(stats.pending_withdrawals);
     b.style.display = 'block';
     document.getElementById('notif-dot').style.display = 'block';
   }
-
-  // Stat cards
   const range = parseInt(document.getElementById('range-select').value);
   document.getElementById('stat-grid').innerHTML = `
     <div class="stat-card">
@@ -991,7 +1048,7 @@ function renderDashboard(res) {
       <div class="stat-info">
         <div class="stat-label">إجمالي المستخدمين</div>
         <div class="stat-value num">${fNum(stats.total_users)}</div>
-        <div class="stat-change up">${icon('trending-up')} ${fNum(stats.new_users)} جديد (${fNum(range)}ي)</div>
+        <div class="stat-change up">${icon('trending-up')} ${fNum(stats.new_users)} جديد</div>
       </div>
     </div>
     <div class="stat-card">
@@ -1008,7 +1065,7 @@ function renderDashboard(res) {
         <div class="stat-label">إجمالي الأرصدة</div>
         <div class="stat-value num">$${stats.total_balance.toFixed(2)}</div>
         <div class="stat-change ${stats.pending_withdrawals>0?'down':'up'}">
-          <span class="num">${fNum(stats.pending_withdrawals)}</span> سحب معلّق
+          <span class="num">${fNum(stats.pending_withdrawals)}</span> معلّق
         </div>
       </div>
     </div>
@@ -1020,11 +1077,7 @@ function renderDashboard(res) {
         <div class="stat-change up">${icon('trending-up')} ${fNum(stats.today_ads)} اليوم</div>
       </div>
     </div>`;
-
-  // Chart
   drawChart(activity);
-
-  // Recent users
   const ul = document.getElementById('recent-users-list');
   if (!recent_users?.length) {
     ul.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>لا يوجد مستخدمون بعد</p></div>`;
@@ -1033,7 +1086,7 @@ function renderDashboard(res) {
   ul.innerHTML = recent_users.map(u => `
     <div class="user-row" onclick="openUserModal(${u.telegram_id})">
       <div class="user-avatar">
-        ${u.photo_url ? `<img src="${u.photo_url}" onerror="this.parentNode.textContent='${(u.first_name||'?')[0]}'">` : (u.first_name||'?')[0]}
+        ${u.photo_url ? `<img src="${u.photo_url}" onerror="this.parentNode.textContent='${esc((u.first_name||'?')[0])}'">` : esc((u.first_name||'?')[0])}
         <span class="tg-icon">${icon('send')}</span>
       </div>
       <div class="user-info">
@@ -1047,115 +1100,90 @@ function renderDashboard(res) {
     </div>`).join('');
 }
 
-// ── Online Now (live presence strip) ────────────────────────────
 async function loadOnlineUsers() {
-  // Expects backend type 'adminOnlineUsers' returning { ok, count, users:[{telegram_id,first_name,username,photo_url}] }
-  // Fails silently if the endpoint isn't implemented yet so it never blocks the rest of the dashboard.
   try {
     const res = await api('adminOnlineUsers', {});
     if (!res.ok) return;
     renderOnlineUsers(res.users || [], res.count ?? (res.users ? res.users.length : 0));
-  } catch (e) { /* offline / endpoint missing — ignore */ }
+  } catch (e) {}
 }
 
 function renderOnlineUsers(users, count) {
   document.getElementById('online-count').textContent = fNum(count);
   const strip = document.getElementById('online-strip');
   if (!users.length) {
-    strip.innerHTML = `<div class="online-empty">${icon('inbox')} لا يوجد مستخدمون متصلون الآن</div>`;
+    strip.innerHTML = `<div class="online-empty">${icon('inbox')} لا يوجد متصلون الآن</div>`;
     return;
   }
   strip.innerHTML = users.map(u => `
     <div class="online-item" onclick="openUserModal(${u.telegram_id})">
       <div class="online-avatar">
-        ${u.photo_url ? `<img src="${u.photo_url}" onerror="this.parentNode.textContent='${(u.first_name||'?')[0]}'">` : (u.first_name||'?')[0]}
+        ${u.photo_url ? `<img src="${u.photo_url}" onerror="this.parentNode.textContent='${esc((u.first_name||'?')[0])}'">` : esc((u.first_name||'?')[0])}
       </div>
       <div class="online-name">${esc((u.first_name||'—').split(' ')[0])}</div>
     </div>`).join('');
 }
 
-// ── Chart ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  Chart
+// ═══════════════════════════════════════════════════════
 function drawChart(activity) {
   const canvas = document.getElementById('activityChart');
   const ctx    = canvas.getContext('2d');
-  if (chartInst) { chartInst = null; }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   const data   = activity || [];
   const labels = data.map(d => fDay(d.day));
   const values = data.map(d => Number(d.count));
-
-  document.getElementById('chart-labels').innerHTML =
-    labels.map(l=>`<span class="num">${l}</span>`).join('');
-
-  // Simple canvas line chart
+  document.getElementById('chart-labels').innerHTML = labels.map(l=>`<span class="num">${l}</span>`).join('');
   const W = canvas.offsetWidth || 320;
-  const H = 160;
+  const H = 150;
   canvas.width  = W * window.devicePixelRatio;
   canvas.height = H * window.devicePixelRatio;
   canvas.style.height = H + 'px';
   ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
   if (!values.length) return;
   const max  = Math.max(...values, 1);
-  const padL = 36, padR = 10, padT = 10, padB = 30;
+  const padL = 32, padR = 8, padT = 8, padB = 26;
   const cw   = W - padL - padR;
   const ch   = H - padT - padB;
   const step = values.length > 1 ? cw / (values.length - 1) : cw;
-
   const px = i => padL + i * step;
   const py = v => padT + ch - (v / max) * ch;
-
-  // Grid
-  ctx.strokeStyle = 'rgba(255,255,255,.08)';
-  ctx.lineWidth   = 1;
+  ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1;
   for (let g = 0; g <= 4; g++) {
     const y = padT + (ch / 4) * g;
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + cw, y); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.font = '10px Cairo, sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(fCompact(max - (max/4)*g), padL - 4, y + 4);
+    ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.font = '9px Cairo, sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(fCompact(max - (max/4)*g), padL - 3, y + 4);
   }
-
-  // Area gradient
   const grad = ctx.createLinearGradient(0, padT, 0, padT + ch);
-  grad.addColorStop(0, 'rgba(245,200,64,.28)');
+  grad.addColorStop(0, 'rgba(245,200,64,.24)');
   grad.addColorStop(1, 'rgba(245,200,64,.02)');
   ctx.beginPath();
   ctx.moveTo(px(0), py(values[0]));
   for (let i = 1; i < values.length; i++) {
-    const cx1 = px(i-1) + step * .4;
-    const cx2 = px(i)   - step * .4;
+    const cx1 = px(i-1) + step * .4, cx2 = px(i) - step * .4;
     ctx.bezierCurveTo(cx1, py(values[i-1]), cx2, py(values[i]), px(i), py(values[i]));
   }
-  ctx.lineTo(px(values.length-1), padT+ch);
-  ctx.lineTo(px(0), padT+ch);
-  ctx.closePath();
+  ctx.lineTo(px(values.length-1), padT+ch); ctx.lineTo(px(0), padT+ch); ctx.closePath();
   ctx.fillStyle = grad; ctx.fill();
-
-  // Line
   ctx.beginPath();
   ctx.moveTo(px(0), py(values[0]));
   for (let i = 1; i < values.length; i++) {
-    const cx1 = px(i-1) + step * .4;
-    const cx2 = px(i)   - step * .4;
+    const cx1 = px(i-1) + step * .4, cx2 = px(i) - step * .4;
     ctx.bezierCurveTo(cx1, py(values[i-1]), cx2, py(values[i]), px(i), py(values[i]));
   }
-  ctx.strokeStyle = '#f5c840'; ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  ctx.stroke();
-
-  // Dots
+  ctx.strokeStyle = '#f5c840'; ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
   values.forEach((v, i) => {
-    ctx.beginPath();
-    ctx.arc(px(i), py(v), 4, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(px(i), py(v), 3.5, 0, Math.PI*2);
     ctx.fillStyle = '#0c0f17'; ctx.fill();
-    ctx.strokeStyle = '#f5c840'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.strokeStyle = '#f5c840'; ctx.lineWidth = 2; ctx.stroke();
   });
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  Users Page
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 let searchTimer;
 function debounceSearch() {
   clearTimeout(searchTimer);
@@ -1165,36 +1193,27 @@ function debounceSearch() {
     loadUsers();
   }, 400);
 }
-
 function setUserFilter(el, filter) {
   document.querySelectorAll('[data-filter]').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  state.users.filter = filter;
-  state.users.page   = 1;
-  loadUsers();
+  state.users.filter = filter; state.users.page = 1; loadUsers();
 }
-
 async function loadUsers() {
   const { page, filter, search } = state.users;
   document.getElementById('users-list').innerHTML =
-    [1,2,3,4,5].map(()=>`<div class="skeleton" style="height:86px;border-radius:14px;margin-bottom:10px"></div>`).join('');
+    [1,2,3,4,5].map(()=>`<div class="skeleton" style="height:80px;border-radius:12px;margin-bottom:8px"></div>`).join('');
   const res = await api('adminUsers', { page, filter, search, limit: 20 });
   if (!res.ok) return;
   state.users.total = res.total;
-
   const ul = document.getElementById('users-list');
   if (!res.users.length) {
     ul.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('search')}</div><p>لا توجد نتائج</p></div>`;
-    document.getElementById('users-pagination').innerHTML = '';
-    return;
+    document.getElementById('users-pagination').innerHTML = ''; return;
   }
-
   ul.innerHTML = res.users.map(u => `
     <div class="user-card" onclick="openUserModal(${u.telegram_id})">
       <div class="user-avatar">
-        ${u.photo_url
-          ? `<img src="${u.photo_url}" onerror="this.parentNode.innerHTML='${(u.first_name||'?')[0]}'">`
-          : (u.first_name||'?')[0]}
+        ${u.photo_url ? `<img src="${u.photo_url}" onerror="this.parentNode.innerHTML='${esc((u.first_name||'?')[0])}'">` : esc((u.first_name||'?')[0])}
         <span class="tg-icon">${icon('send')}</span>
       </div>
       <div class="user-card-info">
@@ -1210,37 +1229,28 @@ async function loadUsers() {
         ${u.banned?'محظور':u.shadow_banned?'شادو':'نشط'}
       </span>
     </div>`).join('');
-
-  renderPagination('users-pagination', page, Math.ceil(res.total / 20), p => {
-    state.users.page = p; loadUsers();
-  });
+  renderPagination('users-pagination', page, Math.ceil(res.total / 20), p => { state.users.page = p; loadUsers(); });
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Withdrawals Page
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  Withdrawals
+// ═══════════════════════════════════════════════════════
 function setWFilter(el, filter) {
   document.querySelectorAll('[data-wfilter]').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  state.withdrawals.filter = filter;
-  state.withdrawals.page   = 1;
-  loadWithdrawals();
+  state.withdrawals.filter = filter; state.withdrawals.page = 1; loadWithdrawals();
 }
-
 async function loadWithdrawals() {
   const { page, filter } = state.withdrawals;
   document.getElementById('withdrawals-list').innerHTML =
-    [1,2,3].map(()=>`<div class="skeleton" style="height:130px;border-radius:14px;margin-bottom:10px"></div>`).join('');
+    [1,2,3].map(()=>`<div class="skeleton" style="height:120px;border-radius:12px;margin-bottom:8px"></div>`).join('');
   const res = await api('adminWithdrawals', { page, status: filter, limit: 20 });
   if (!res.ok) return;
-
   const wl = document.getElementById('withdrawals-list');
   if (!res.withdrawals.length) {
     wl.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('wallet')}</div><p>لا توجد سحوبات</p></div>`;
-    document.getElementById('w-pagination').innerHTML = '';
-    return;
+    document.getElementById('w-pagination').innerHTML = ''; return;
   }
-
   wl.innerHTML = res.withdrawals.map(w => `
     <div class="withdraw-card">
       <div class="withdraw-header">
@@ -1250,23 +1260,19 @@ async function loadWithdrawals() {
       <div class="withdraw-amount num">$${parseFloat(w.amount).toFixed(2)} USDT</div>
       <div class="withdraw-addr">${icon('pin')} <span>${esc(w.address)}${w.memo?' · '+esc(w.memo):''}</span></div>
       <div class="withdraw-date">${icon('clock')} <span class="num">${fDateTime(w.created_at)}</span> · <span class="num">#${w.telegram_id}</span></div>
-      ${w.status==='pending' ? `
+      ${w.status==='pending'?`
       <div class="withdraw-actions">
         <button class="action-btn approve" onclick="updateWithdrawal(${w.id},'approved',this)">${icon('check')} موافقة</button>
         <button class="action-btn reject"  onclick="updateWithdrawal(${w.id},'rejected',this)">${icon('x')} رفض</button>
         <button class="action-btn paid"    onclick="updateWithdrawal(${w.id},'paid',this)">${icon('card')} مدفوع</button>
-      </div>` : ''}
-      ${w.status==='approved' ? `
+      </div>`:''}
+      ${w.status==='approved'?`
       <div class="withdraw-actions">
         <button class="action-btn paid" onclick="updateWithdrawal(${w.id},'paid',this)">${icon('card')} تأكيد الدفع</button>
-      </div>` : ''}
+      </div>`:''}
     </div>`).join('');
-
-  renderPagination('w-pagination', page, Math.ceil(res.total / 20), p => {
-    state.withdrawals.page = p; loadWithdrawals();
-  });
+  renderPagination('w-pagination', page, Math.ceil(res.total / 20), p => { state.withdrawals.page = p; loadWithdrawals(); });
 }
-
 async function updateWithdrawal(id, status, btn) {
   btn.disabled = true; btn.innerHTML = icon('loader','spin');
   const res = await api('adminUpdateWithdrawal', { id, status });
@@ -1274,33 +1280,24 @@ async function updateWithdrawal(id, status, btn) {
   else { showToast(icon('x')+' ' + res.error); btn.disabled = false; }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Activity Logs
-// ═══════════════════════════════════════════════════════════════
-const logIcons = {
-  game_round: 'gamepad', ref_copy: 'link', share: 'send', sec_event: 'shield',
-  admin_adjust_pts: 'edit', admin_adjust_balance: 'coin', default: 'tag'
-};
-
+// ═══════════════════════════════════════════════════════
+//  Logs
+// ═══════════════════════════════════════════════════════
+const logIcons = { game_round:'gamepad', ref_copy:'link', share:'send', sec_event:'shield', admin_adjust_pts:'edit', admin_adjust_balance:'coin', default:'tag' };
 function setLogFilter(el, action) {
   document.querySelectorAll('[data-log]').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  state.logs.filter = action;
-  state.logs.page   = 1;
-  loadLogs();
+  state.logs.filter = action; state.logs.page = 1; loadLogs();
 }
-
 async function loadLogs() {
   const { page, filter } = state.logs;
   document.getElementById('logs-list').innerHTML =
-    [1,2,3,4,5].map(()=>`<div class="skeleton" style="height:60px;margin-bottom:8px;border-radius:8px"></div>`).join('');
+    [1,2,3,4,5].map(()=>`<div class="skeleton" style="height:56px;margin-bottom:7px;border-radius:8px"></div>`).join('');
   const res = await api('adminActivityLogs', { page, action: filter, limit: 30 });
   if (!res.ok) return;
-
   const ll = document.getElementById('logs-list');
   if (!res.logs.length) {
-    ll.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>لا توجد سجلات</p></div>`;
-    return;
+    ll.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>لا توجد سجلات</p></div>`; return;
   }
   ll.innerHTML = res.logs.map(l => {
     const meta = l.meta && typeof l.meta === 'object' ? JSON.stringify(l.meta).slice(0,80) : '';
@@ -1316,46 +1313,181 @@ async function loadLogs() {
   }).join('');
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  User Detail Modal
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  User Detail Sheet  ★ محسّن كاملاً
+// ═══════════════════════════════════════════════════════
+let currentUser = null;
+
 async function openUserModal(tgId) {
+  currentUser = null;
+  document.getElementById('modal-title').textContent = 'جاري التحميل...';
   document.getElementById('modal-body').innerHTML =
-    `<div class="skeleton" style="height:240px;border-radius:12px"></div>`;
+    `<div class="skeleton" style="height:80px;border-radius:50%;width:80px;margin:12px auto 0"></div>
+     <div class="skeleton" style="height:16px;width:55%;margin:14px auto 7px"></div>
+     <div class="skeleton" style="height:12px;width:40%;margin:0 auto 20px"></div>
+     ${[1,2,3,4].map(()=>`<div class="skeleton" style="height:38px;border-radius:9px;margin-bottom:7px"></div>`).join('')}`;
   document.getElementById('modal-actions').innerHTML = '';
   document.getElementById('user-modal').classList.add('open');
 
   const res = await api('adminUserDetail', { telegram_id: tgId });
-  if (!res.ok) { document.getElementById('modal-body').textContent = res.error; return; }
+  if (!res.ok) {
+    document.getElementById('modal-body').innerHTML = `<div class="empty-state">${icon('alert')}<p>${res.error}</p></div>`;
+    return;
+  }
+  currentUser = res.user;
+  renderUserSheet(res);
+}
+
+function renderUserSheet(res) {
   const u = res.user;
   document.getElementById('modal-title').textContent = esc(u.first_name || '—');
 
+  const statusClass = u.banned ? 'is-banned' : u.shadow_banned ? 'is-shadow' : 'is-normal';
+  const riskColor   = u.risk_score > 70 ? 'var(--rose)' : u.risk_score > 40 ? 'var(--amber)' : 'var(--emerald)';
+
   document.getElementById('modal-body').innerHTML = `
-    <div class="detail-row"><span class="detail-key">Telegram ID</span><span class="detail-val num" style="font-family:monospace">${u.telegram_id}</span></div>
-    <div class="detail-row"><span class="detail-key">Username</span><span class="detail-val">${u.username?'@'+u.username:'—'}</span></div>
-    <div class="detail-row"><span class="detail-key">النقاط (pts)</span><span class="detail-val num" style="color:var(--gold);font-weight:800">${fNum(u.pts)}</span></div>
-    <div class="detail-row"><span class="detail-key">الرصيد USDT</span><span class="detail-val num" style="color:var(--emerald);font-weight:800">$${parseFloat(u.balance_usd).toFixed(4)}</span></div>
-    <div class="detail-row"><span class="detail-key">الإعلانات اليوم</span><span class="detail-val num">${u.daily_ads||0} / 30</span></div>
-    <div class="detail-row"><span class="detail-key">إجمالي الإعلانات</span><span class="detail-val num">${res.ad_stats.total} إعلان</span></div>
-    <div class="detail-row"><span class="detail-key">مكافآت الإعلانات</span><span class="detail-val num">${fNum(res.ad_stats.total_reward)} نقطة</span></div>
-    <div class="detail-row"><span class="detail-key">الإحالات</span><span class="detail-val num">${res.referrals} شخص</span></div>
-    <div class="detail-row"><span class="detail-key">Risk Score</span><span class="detail-val num" style="${u.risk_score>50?'color:var(--rose)':''}">${u.risk_score}</span></div>
-    <div class="detail-row"><span class="detail-key">الحالة</span><span class="detail-val">
-      ${u.banned?`<span style="color:var(--rose);display:flex;align-items:center;gap:5px">${icon('ban')}محظور</span>`:u.shadow_banned?`<span style="color:var(--amber);display:flex;align-items:center;gap:5px">${icon('eye-off')}شادو بان</span>`:`<span style="color:var(--emerald);display:flex;align-items:center;gap:5px">${icon('check')}نشط</span>`}
-    </span></div>
-    <div class="detail-row"><span class="detail-key">تاريخ التسجيل</span><span class="detail-val num">${fDateTime(u.created_at)}</span></div>
-    <div class="detail-row"><span class="detail-key">آخر إعلان</span><span class="detail-val num">${u.last_ad_watch?fDateTime(u.last_ad_watch):'—'}</span></div>
-    <div class="detail-row"><span class="detail-key">كود الإحالة</span><span class="detail-val" style="font-family:monospace">${u.referral_code||'—'}</span></div>
+
+    <!-- Hero -->
+    <div class="user-hero">
+      <div class="user-hero-avatar ${statusClass}">
+        <div class="status-ring"></div>
+        ${u.photo_url
+          ? `<img src="${u.photo_url}" onerror="this.style.display='none';this.parentNode.insertAdjacentHTML('beforeend','${esc((u.first_name||'?')[0])}')">`
+          : esc((u.first_name||'?')[0])}
+      </div>
+      <div class="user-hero-info">
+        <div class="user-hero-name">${esc(u.first_name || '—')}</div>
+        <div class="user-hero-handle">${u.username ? '@'+u.username : 'بدون username'} · <span class="num">#${u.telegram_id}</span></div>
+        <div class="user-hero-badges">
+          ${u.banned
+            ? `<span class="hero-badge banned">${icon('ban')} محظور</span>`
+            : u.shadow_banned
+              ? `<span class="hero-badge shadow">${icon('eye-off')} شادو بان</span>`
+              : `<span class="hero-badge normal">${icon('check')} نشط</span>`}
+        </div>
+      </div>
+    </div>
+
+    <!-- الإحصائيات -->
+    <div class="detail-section">
+      <div class="detail-section-title">الإحصائيات</div>
+      <div class="detail-row">
+        <span class="detail-key">النقاط (pts)</span>
+        <span class="detail-val num" style="color:var(--gold);font-size:15px">${fNum(u.pts)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">الرصيد USDT</span>
+        <span class="detail-val num" style="color:var(--emerald)">$${parseFloat(u.balance_usd).toFixed(4)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">إعلانات اليوم</span>
+        <span class="detail-val num">${u.daily_ads||0} / 30</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">إجمالي الإعلانات</span>
+        <span class="detail-val num">${res.ad_stats.total}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">مكافآت الإعلانات</span>
+        <span class="detail-val num">${fNum(res.ad_stats.total_reward)} نقطة</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">الإحالات</span>
+        <span class="detail-val num">${res.referrals} شخص</span>
+      </div>
+    </div>
+
+    <!-- الأمان -->
+    <div class="detail-section">
+      <div class="detail-section-title">الأمان</div>
+      <div class="detail-row">
+        <span class="detail-key">Risk Score</span>
+        <div class="detail-val">
+          <div class="risk-editor">
+            <span class="risk-num num" id="risk-display" style="color:${riskColor}">${u.risk_score}</span>
+            <input type="range" class="risk-slider" id="risk-slider" min="0" max="100" value="${u.risk_score}"
+              oninput="document.getElementById('risk-display').textContent=this.value;updateRiskColor(this.value)">
+            <button class="risk-save-btn" onclick="saveRiskScore(${u.telegram_id})">${icon('check')} حفظ</button>
+          </div>
+        </div>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">كود الإحالة</span>
+        <span class="detail-val" style="font-family:monospace;font-size:11px">${u.referral_code||'—'}</span>
+      </div>
+    </div>
+
+    <!-- التواريخ -->
+    <div class="detail-section">
+      <div class="detail-section-title">معلومات الحساب</div>
+      <div class="detail-row">
+        <span class="detail-key">تاريخ التسجيل</span>
+        <span class="detail-val num" style="font-size:11.5px">${fDateTime(u.created_at)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">آخر إعلان</span>
+        <span class="detail-val num" style="font-size:11.5px">${u.last_ad_watch ? fDateTime(u.last_ad_watch) : '—'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Telegram ID</span>
+        <span class="detail-val num" style="font-family:monospace;font-size:11px">${u.telegram_id}</span>
+      </div>
+    </div>
+
+    <!-- الجلسات -->
+    <div class="detail-section">
+      <div class="detail-section-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>الجلسات الأخيرة</span>
+        <span style="font-size:10px;color:var(--violet);cursor:pointer;text-transform:none;letter-spacing:0" onclick="loadUserSessions(${u.telegram_id})">تحديث</span>
+      </div>
+      <div id="sessions-wrap" class="sessions-wrap">
+        <div style="color:var(--text3);font-size:11px;padding:8px 0">اضغط تحديث لعرض الجلسات</div>
+      </div>
+    </div>
   `;
 
   document.getElementById('modal-actions').innerHTML = `
-    <button class="modal-btn ${u.banned?'unban':'ban'}"
-            onclick="toggleBan(${u.telegram_id}, ${u.banned})">
-      ${u.banned?icon('check')+' رفع الحظر':icon('ban')+' حظر'}
+    <button class="modal-btn ${u.banned ? 'unban' : 'ban'}" onclick="toggleBan(${u.telegram_id}, ${u.banned})">
+      ${u.banned ? icon('check')+' رفع الحظر' : icon('ban')+' حظر'}
     </button>
-    <button class="modal-btn msg" onclick="quickDM(${u.telegram_id})">${icon('message')} رسالة</button>
-    <button class="modal-btn close" onclick="document.getElementById('user-modal').classList.remove('open')">${icon('x')}</button>
+    <button class="modal-btn ${u.shadow_banned ? 'shadow-off' : 'shadow-on'}" onclick="toggleShadowBan(${u.telegram_id}, ${u.shadow_banned})">
+      ${u.shadow_banned ? icon('eye')+' رفع شادو' : icon('eye-off')+' شادو بان'}
+    </button>
+    <button class="modal-btn msg" onclick="quickDM(${u.telegram_id})">${icon('message')}</button>
+    <button class="modal-btn del" onclick="deleteUser(${u.telegram_id})">${icon('trash')}</button>
   `;
+}
+
+function updateRiskColor(val) {
+  const el = document.getElementById('risk-display');
+  el.style.color = val > 70 ? 'var(--rose)' : val > 40 ? 'var(--amber)' : 'var(--emerald)';
+}
+
+async function saveRiskScore(tgId) {
+  const score = parseInt(document.getElementById('risk-slider').value, 10);
+  const res = await api('adminUpdateRiskScore', { telegram_id: tgId, risk_score: score });
+  if (res.ok) showToast(icon('check')+' تم تحديث Risk Score');
+  else showToast(icon('x')+' ' + res.error);
+}
+
+async function loadUserSessions(tgId) {
+  const wrap = document.getElementById('sessions-wrap');
+  wrap.innerHTML = `<div class="skeleton" style="height:52px;border-radius:10px;margin-bottom:6px"></div><div class="skeleton" style="height:52px;border-radius:10px"></div>`;
+  const res = await api('adminUserSessions', { telegram_id: tgId });
+  if (!res.ok) { wrap.innerHTML = `<div style="color:var(--rose);font-size:11px;padding:6px 0">${res.error}</div>`; return; }
+  if (!res.sessions.length) { wrap.innerHTML = `<div style="color:var(--text3);font-size:11px;padding:8px 0">لا توجد جلسات</div>`; return; }
+  wrap.innerHTML = res.sessions.map(s => {
+    const flags = Array.isArray(s.risk_flags) ? s.risk_flags : [];
+    return `<div class="session-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <span style="font-weight:700;font-size:11px">${icon('device')} جلسة</span>
+        <span style="font-size:9.5px;color:var(--text3)">${fDateTime(s.last_active_at)}</span>
+      </div>
+      <div class="session-fp">${esc(s.device_fingerprint||'—')}</div>
+      <div class="session-time">بدأت: ${fDateTime(s.created_at)}</div>
+      ${flags.length ? `<div class="session-flags">${flags.map(f=>`<span class="session-flag">${esc(f)}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 function closeModal(e) {
@@ -1372,6 +1504,26 @@ async function toggleBan(tgId, isBanned) {
   } else showToast(icon('x')+' ' + res.error);
 }
 
+async function toggleShadowBan(tgId, isShadowed) {
+  const res = await api('adminToggleShadowBan', { telegram_id: tgId, enable: !isShadowed });
+  if (res.ok) {
+    showToast(isShadowed ? icon('eye')+' تم رفع الشادو بان' : icon('eye-off')+' تم تفعيل الشادو بان');
+    // reload modal
+    await openUserModal(tgId);
+    if (document.getElementById('page-users').classList.contains('active')) loadUsers();
+  } else showToast(icon('x')+' ' + res.error);
+}
+
+async function deleteUser(tgId) {
+  if (!confirm(`حذف المستخدم #${tgId} نهائياً؟ لا يمكن التراجع.`)) return;
+  const res = await api('adminDeleteUser', { telegram_id: tgId });
+  if (res.ok) {
+    showToast(icon('trash')+' تم الحذف');
+    document.getElementById('user-modal').classList.remove('open');
+    if (document.getElementById('page-users').classList.contains('active')) loadUsers();
+  } else showToast(icon('x')+' ' + res.error);
+}
+
 function quickDM(tgId) {
   document.getElementById('user-modal').classList.remove('open');
   switchPage('broadcast');
@@ -1379,28 +1531,26 @@ function quickDM(tgId) {
   document.getElementById('dm-text').focus();
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  Broadcast
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 async function sendBroadcast() {
   const text = document.getElementById('bc-text').value.trim();
   if (!text) return;
-  if (!confirm('هل أنت متأكد من إرسال الرسالة لجميع المستخدمين؟')) return;
+  if (!confirm('إرسال الرسالة لجميع المستخدمين؟')) return;
   const btn = document.getElementById('bc-btn');
   btn.disabled = true; btn.innerHTML = icon('loader','spin')+' جاري الإرسال...';
   const res = await api('adminBroadcast', { text });
   const el  = document.getElementById('bc-result');
-  el.style.display = 'flex';
   if (res.ok) {
     el.className = 'broadcast-result success';
-    el.innerHTML = `${icon('check')} أُرسلت لـ <span class="num">${fNum(res.sent)}</span> مستخدم · فشل <span class="num">${fNum(res.failed)}</span>`;
+    el.innerHTML = `${icon('check')} أُرسلت لـ <span class="num">${fNum(res.sent)}</span> · فشل <span class="num">${fNum(res.failed)}</span>`;
   } else {
     el.className = 'broadcast-result error';
     el.innerHTML = `${icon('x')} ${esc(res.error || 'خطأ')}`;
   }
   btn.disabled = false; btn.innerHTML = icon('send')+' إرسال للجميع';
 }
-
 async function sendDM() {
   const chatId = document.getElementById('dm-id').value.trim();
   const text   = document.getElementById('dm-text').value.trim();
@@ -1409,61 +1559,17 @@ async function sendDM() {
   btn.disabled = true; btn.innerHTML = icon('loader','spin');
   const res = await api('adminBroadcast', { text, telegram_id: chatId });
   const el  = document.getElementById('dm-result');
-  el.style.display = 'flex';
   el.className = 'broadcast-result ' + (res.ok ? 'success' : 'error');
-  el.innerHTML = res.ok ? `${icon('check')} أُرسلت بنجاح` : `${icon('x')} ${esc(res.error || 'خطأ')}`;
+  el.innerHTML = res.ok ? `${icon('check')} أُرسلت` : `${icon('x')} ${esc(res.error || 'خطأ')}`;
   btn.disabled = false; btn.innerHTML = icon('mail')+' إرسال';
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Helpers
-// ═══════════════════════════════════════════════════════════════
-function fNum(n) {
-  return Number(n).toLocaleString('en-US');
-}
-function fCompact(n) {
-  n = Number(n);
-  if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
-  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
-  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
-  return String(n);
-}
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function timeAgo(ts) {
-  if (!ts) return '—';
-  const diff = (Date.now() - new Date(ts)) / 1000;
-  if (diff < 60)  return 'الآن';
-  if (diff < 3600) return `منذ ${Math.floor(diff/60)} دقيقة`;
-  if (diff < 86400) return `منذ ${Math.floor(diff/3600)} ساعة`;
-  return `منذ ${Math.floor(diff/86400)} يوم`;
-}
-function fDateTime(ts) {
-  if (!ts) return '—';
-  return new Date(ts).toLocaleString('ar-u-nu-latn', { dateStyle:'short', timeStyle:'short' });
-}
-function fDay(d) {
-  if (!d) return '';
-  const dt = new Date(d);
-  return dt.toLocaleDateString('ar-u-nu-latn', { month:'short', day:'numeric' });
-}
-function wStatusLabel(s) {
-  const map = {
-    pending:  icon('clock')+' انتظار',
-    approved: icon('check')+' موافق',
-    rejected: icon('x')+' مرفوض',
-    paid:     icon('card')+' مدفوع',
-  };
-  return map[s] || s;
-}
-
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  Competitions
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 function fCountdown(endAt) {
   const diff = new Date(endAt).getTime() - Date.now();
-  if (diff <= 0) return 'قريباً جداً';
+  if (diff <= 0) return 'قريباً';
   const days  = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
   if (days > 0)  return `${days} يوم${hours > 0 ? ' و'+hours+' ساعة' : ''}`;
@@ -1471,17 +1577,13 @@ function fCountdown(endAt) {
   if (hours > 0) return `${hours} ساعة و${mins} دقيقة`;
   return `${mins} دقيقة`;
 }
-
-// البطاقة المختصرة في الصفحة الرئيسية
 async function loadCompetitionWidget() {
   const box = document.getElementById('comp-widget');
   const res = await api('adminCompetitions', {});
   if (!res.ok) { box.innerHTML = `<div class="online-empty">${icon('alert')} تعذّر التحميل</div>`; return; }
-
   const active = res.competitions.find(c => c.active);
   if (!active) {
-    box.innerHTML = `<div class="online-empty">${icon('inbox')} لا يوجد موسم نشط حالياً</div>`;
-    return;
+    box.innerHTML = `<div class="online-empty">${icon('inbox')} لا يوجد موسم نشط</div>`; return;
   }
   box.innerHTML = `
     <div class="comp-card">
@@ -1493,130 +1595,85 @@ async function loadCompetitionWidget() {
       </div>
     </div>`;
 }
-
-// مودال إدارة المسابقات — بيعيد استخدام نفس مودال تفاصيل المستخدم
 async function openCompetitionsModal() {
   document.getElementById('modal-title').textContent = 'إدارة المسابقات';
-  document.getElementById('modal-body').innerHTML = `<div class="skeleton" style="height:200px;border-radius:12px"></div>`;
+  document.getElementById('modal-body').innerHTML = `<div class="skeleton" style="height:180px;border-radius:11px"></div>`;
   document.getElementById('modal-actions').innerHTML = '';
   document.getElementById('user-modal').classList.add('open');
   await loadCompetitionsModal();
 }
-
 async function loadCompetitionsModal() {
   const res = await api('adminCompetitions', {});
   if (!res.ok) { document.getElementById('modal-body').textContent = res.error; return; }
-
   const active = res.competitions.find(c => c.active);
   const others = res.competitions.filter(c => !c.active);
-
   let html = '';
   if (active) {
-    html += `
-      <div class="comp-card">
-        <div class="comp-card-top"><span class="comp-status live">${icon('pulse')} نشطة الآن</span></div>
-        <div class="comp-name">${esc(active.name)}</div>
-        <div class="comp-dates">
-          <span>${icon('calendar')} بدأت ${fDateTime(active.start_at)}</span>
-          <span>${icon('clock')} تنتهي خلال ${fCountdown(active.end_at)}</span>
-        </div>
-      </div>`;
+    html += `<div class="comp-card">
+      <div class="comp-card-top"><span class="comp-status live">${icon('pulse')} نشطة الآن</span></div>
+      <div class="comp-name">${esc(active.name)}</div>
+      <div class="comp-dates">
+        <span>${icon('calendar')} بدأت ${fDateTime(active.start_at)}</span>
+        <span>${icon('clock')} تنتهي خلال ${fCountdown(active.end_at)}</span>
+      </div>
+    </div>`;
   } else {
-    html += `<div class="online-empty" style="margin-bottom:4px">${icon('inbox')} لا يوجد موسم نشط حالياً</div>`;
+    html += `<div class="online-empty" style="margin-bottom:4px">${icon('inbox')} لا يوجد موسم نشط</div>`;
   }
-
   if (others.length) {
-    html += `<div class="form-label" style="margin-top:18px">مواسم أخرى</div>`;
+    html += `<div class="detail-section-title" style="margin-top:16px;display:block">مواسم أخرى</div>`;
     others.forEach(c => {
       const ended = c.prize_distributed;
-      html += `
-        <div class="comp-row">
-          <div>
-            <div class="comp-row-name">${esc(c.name)}</div>
-            <div class="comp-row-meta" style="color:${ended?'var(--text3)':'var(--violet)'}">${ended?'منتهية':'مجدولة'} · ${fDateTime(c.start_at)}</div>
-          </div>
-          ${!ended ? `<button class="modal-btn msg" style="flex:none;padding:8px 14px;font-size:12.5px" onclick="activateCompetition(${c.id})">${icon('check')} تفعيل</button>` : ''}
-        </div>`;
+      html += `<div class="comp-row">
+        <div>
+          <div class="comp-row-name">${esc(c.name)}</div>
+          <div class="comp-row-meta" style="color:${ended?'var(--text3)':'var(--violet)'}">${ended?'منتهية':'مجدولة'} · ${fDateTime(c.start_at)}</div>
+        </div>
+        ${!ended ? `<button class="modal-btn msg" style="flex:none;padding:7px 12px;font-size:12px" onclick="activateCompetition(${c.id})">${icon('check')} تفعيل</button>` : ''}
+      </div>`;
     });
   }
-
   html += `
-    <div class="form-label" style="margin-top:18px">إنشاء موسم جديد</div>
+    <div class="detail-section-title" style="margin-top:16px;display:block">إنشاء موسم جديد</div>
     <input id="comp-name" class="form-input" type="text" placeholder="اسم الموسم، مثلاً Season 3">
-    <input id="comp-days" class="form-input" type="number" placeholder="المدة بالأيام" value="20" style="margin-top:8px">
-    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--text2)">
+    <input id="comp-days" class="form-input" type="number" placeholder="المدة بالأيام" value="20" style="margin-top:7px">
+    <label style="display:flex;align-items:center;gap:7px;margin-top:9px;font-size:12px;color:var(--text2)">
       <input id="comp-activate" type="checkbox" ${active ? '' : 'checked'}>
-      تفعيله فوراً${active ? ' (هيلغي تفعيل الموسم الحالي، من غير توزيع جوائز)' : ''}
+      تفعيله فوراً${active ? ' (هيلغي الموسم الحالي بدون توزيع جوائز)' : ''}
     </label>`;
-
   document.getElementById('modal-body').innerHTML = html;
   document.getElementById('modal-actions').innerHTML = `
-    ${active ? `<button class="modal-btn ban" onclick="endCompetition()">${icon('clock')} إنهاء الآن</button>` : ''}
+    ${active ? `<button class="modal-btn ban" onclick="endCompetition()">${icon('clock')} إنهاء</button>` : ''}
     <button class="modal-btn unban" onclick="createCompetition()">${icon('rocket')} إنشاء</button>
     <button class="modal-btn close" onclick="document.getElementById('user-modal').classList.remove('open')">${icon('x')}</button>
   `;
 }
-
 async function createCompetition() {
   const name        = document.getElementById('comp-name').value.trim();
   const days        = parseInt(document.getElementById('comp-days').value, 10) || 20;
   const activateNow = document.getElementById('comp-activate').checked;
   if (!name) { showToast(icon('x')+' اكتب اسم الموسم'); return; }
-
   const res = await api('adminCompetitionCreate', { name, duration_days: days, activate_now: activateNow });
-  if (res.ok) {
-    showToast(icon('check')+' تم إنشاء الموسم');
-    loadCompetitionsModal();
-    loadCompetitionWidget();
-  } else showToast(icon('x')+' '+res.error);
+  if (res.ok) { showToast(icon('check')+' تم إنشاء الموسم'); loadCompetitionsModal(); loadCompetitionWidget(); }
+  else showToast(icon('x')+' '+res.error);
 }
-
 async function activateCompetition(id) {
-  if (!confirm('تفعيل هذا الموسم بدل الموسم النشط حالياً؟')) return;
+  if (!confirm('تفعيل هذا الموسم بدل الحالي؟')) return;
   const res = await api('adminCompetitionActivate', { id });
-  if (res.ok) {
-    showToast(icon('check')+' تم التفعيل');
-    loadCompetitionsModal();
-    loadCompetitionWidget();
-  } else showToast(icon('x')+' '+res.error);
+  if (res.ok) { showToast(icon('check')+' تم التفعيل'); loadCompetitionsModal(); loadCompetitionWidget(); }
+  else showToast(icon('x')+' '+res.error);
 }
-
 async function endCompetition() {
-  if (!confirm('إنهاء الموسم الحالي وتوزيع الجوائز؟ نقاط كل المستخدمين هترجع صفر.')) return;
+  if (!confirm('إنهاء الموسم الحالي وتوزيع الجوائز؟')) return;
   const res = await api('adminCompetitionEnd', {});
-  if (res.ok) {
-    showToast(icon('check')+' '+(res.note || 'جاري إنهاء الموسم'));
-    loadCompetitionsModal();
-    loadCompetitionWidget();
-  } else showToast(icon('x')+' '+res.error);
+  if (res.ok) { showToast(icon('check')+' '+(res.note||'جاري إنهاء الموسم')); loadCompetitionsModal(); loadCompetitionWidget(); }
+  else showToast(icon('x')+' '+res.error);
 }
-function showToast(html, dur=2500) {
-  const t = document.getElementById('toast');
-  t.innerHTML = html; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), dur);
-}
-function renderPagination(containerId, currentPage, totalPages, onPage) {
-  const el = document.getElementById(containerId);
-  if (totalPages <= 1) { el.innerHTML = ''; return; }
-  let html = `<button class="page-btn" ${currentPage<=1?'disabled':''} onclick="(${onPage})(${currentPage-1})">${icon('chevron-right')}</button>`;
-  for (let p = Math.max(1,currentPage-2); p <= Math.min(totalPages,currentPage+2); p++) {
-    html += `<button class="page-btn ${p===currentPage?'active':''} num" onclick="(${onPage})(${p})">${p}</button>`;
-  }
-  html += `<button class="page-btn" ${currentPage>=totalPages?'disabled':''} onclick="(${onPage})(${currentPage+1})">${icon('chevron-left')}</button>`;
-  el.innerHTML = html;
-}
-function toggleMenu() { logout(); }
-function cycleChartType() { if (dashData) drawChart(dashData.activity); }
 
-// بدء تلقائي
-document.addEventListener("DOMContentLoaded", initAuth);
+// ═══════════════════════════════════════════════════════
+//  Boot
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', initAuth);
 </script>
-
-<style>
-  /* spinner state for inline loading icons swapped into buttons */
-  .spin { animation: spin .8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-</style>
-
 </body>
 </html>
