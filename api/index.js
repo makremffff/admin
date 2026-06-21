@@ -595,11 +595,13 @@ module.exports = async function handler(req, res) {
         const uRows = await sql(`SELECT id FROM users WHERE telegram_id = $1`, [tgId]);
         if (!uRows.length) return res.status(404).json({ ok: false, error: 'User not found' });
         const uid = uRows[0].id;
-        // cascade manual delete to avoid FK issues on DBs without cascade
-        await sql(`DELETE FROM sessions WHERE user_id = $1`, [uid]);
-        await sql(`DELETE FROM ad_watches WHERE user_id = $1`, [uid]);
-        await sql(`DELETE FROM withdrawals WHERE user_id = $1`, [uid]);
-        await sql(`DELETE FROM activity_logs WHERE user_id = $1`, [uid]);
+        // 🛡️ فك أي إحالات بتشاور على اليوزر ده — لو فيه FK كان ده سبب فشل الحذف
+        await sql(`UPDATE users SET referred_by = NULL WHERE referred_by = $1`, [tgId]).catch(e => console.error('[deleteUser referred_by]', e.message));
+        // cascade manual delete — كل خطوة معزولة عشان لو جدول فرعي فيه مشكلة ما يوقفش باقي الحذف
+        await sql(`DELETE FROM sessions WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser sessions]', e.message));
+        await sql(`DELETE FROM ad_watches WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser ad_watches]', e.message));
+        await sql(`DELETE FROM withdrawals WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser withdrawals]', e.message));
+        await sql(`DELETE FROM activity_logs WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser activity_logs]', e.message));
         await sql(`DELETE FROM danger WHERE user_id = $1`, [uid]).catch(()=>{});
         await sql(`DELETE FROM users WHERE id = $1`, [uid]);
         return res.json({ ok: true });
