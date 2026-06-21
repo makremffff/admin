@@ -347,6 +347,32 @@
   .withdraw-status.approved { background: var(--emerald-bg); color: var(--emerald); }
   .withdraw-status.rejected { background: var(--rose-bg);    color: var(--rose);    }
   .withdraw-status.paid     { background: var(--gold-bg);    color: var(--gold);    }
+
+  /* ── Competitions ─────────────────────────────────────────── */
+  .comp-card {
+    background: var(--surface-2); border: 1px solid var(--gold-dim);
+    border-radius: var(--radius-sm); padding: 14px 16px;
+  }
+  .comp-card-top { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .comp-status {
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .comp-status .icon { width: 12px; height: 12px; }
+  .comp-status.live      { background: var(--emerald-bg); color: var(--emerald); }
+  .comp-status.scheduled { background: var(--violet-bg);  color: var(--violet);  }
+  .comp-status.ended     { background: var(--surface);    color: var(--text3);   }
+  .comp-name  { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+  .comp-dates { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--text2); }
+  .comp-dates span { display: flex; align-items: center; gap: 6px; }
+  .comp-dates .icon { width: 13px; height: 13px; flex-shrink: 0; }
+  .comp-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 0; border-bottom: 1px solid var(--line);
+  }
+  .comp-row:last-child { border-bottom: none; }
+  .comp-row-name { font-size: 14px; font-weight: 700; }
+  .comp-row-meta { font-size: 11.5px; margin-top: 2px; }
   .withdraw-amount { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
   .withdraw-addr  { font-size: 11px; color: var(--text2); word-break: break-all; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 6px; }
   .withdraw-addr .icon { width: 13px; height: 13px; margin-top: 1px; }
@@ -631,6 +657,17 @@
       <div class="stat-card"><div class="skeleton" style="width:44px;height:44px;border-radius:13px"></div><div style="flex:1"><div class="skeleton" style="height:12px;margin-bottom:8px;width:70%"></div><div class="skeleton" style="height:24px;width:50%"></div></div></div>
     </div>
 
+    <!-- Current Competition -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">الموسم الحالي</span>
+        <span class="section-action" onclick="openCompetitionsModal()">إدارة</span>
+      </div>
+      <div id="comp-widget">
+        <div class="skeleton" style="height:78px;border-radius:12px"></div>
+      </div>
+    </div>
+
     <!-- Online Now (live presence) -->
     <div class="section-card">
       <div class="section-header">
@@ -850,6 +887,7 @@ async function tryEnterApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   dashData = res; renderDashboard(res);
+  loadCompetitionWidget();
   loadOnlineUsers();
   onlinePollTimer = setInterval(loadOnlineUsers, 20000);
   return true;
@@ -929,6 +967,7 @@ async function loadDashboard() {
   if (!res.ok) return;
   dashData = res;
   renderDashboard(res);
+  loadCompetitionWidget();
 }
 
 function renderDashboard(res) {
@@ -1417,6 +1456,139 @@ function wStatusLabel(s) {
     paid:     icon('card')+' مدفوع',
   };
   return map[s] || s;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Competitions
+// ═══════════════════════════════════════════════════════════════
+function fCountdown(endAt) {
+  const diff = new Date(endAt).getTime() - Date.now();
+  if (diff <= 0) return 'قريباً جداً';
+  const days  = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  if (days > 0)  return `${days} يوم${hours > 0 ? ' و'+hours+' ساعة' : ''}`;
+  const mins = Math.floor((diff % 3600000) / 60000);
+  if (hours > 0) return `${hours} ساعة و${mins} دقيقة`;
+  return `${mins} دقيقة`;
+}
+
+// البطاقة المختصرة في الصفحة الرئيسية
+async function loadCompetitionWidget() {
+  const box = document.getElementById('comp-widget');
+  const res = await api('adminCompetitions', {});
+  if (!res.ok) { box.innerHTML = `<div class="online-empty">${icon('alert')} تعذّر التحميل</div>`; return; }
+
+  const active = res.competitions.find(c => c.active);
+  if (!active) {
+    box.innerHTML = `<div class="online-empty">${icon('inbox')} لا يوجد موسم نشط حالياً</div>`;
+    return;
+  }
+  box.innerHTML = `
+    <div class="comp-card">
+      <div class="comp-card-top"><span class="comp-status live">${icon('pulse')} نشطة الآن</span></div>
+      <div class="comp-name">${esc(active.name)}</div>
+      <div class="comp-dates">
+        <span>${icon('calendar')} بدأت ${fDateTime(active.start_at)}</span>
+        <span>${icon('clock')} تنتهي خلال ${fCountdown(active.end_at)}</span>
+      </div>
+    </div>`;
+}
+
+// مودال إدارة المسابقات — بيعيد استخدام نفس مودال تفاصيل المستخدم
+async function openCompetitionsModal() {
+  document.getElementById('modal-title').textContent = 'إدارة المسابقات';
+  document.getElementById('modal-body').innerHTML = `<div class="skeleton" style="height:200px;border-radius:12px"></div>`;
+  document.getElementById('modal-actions').innerHTML = '';
+  document.getElementById('user-modal').classList.add('open');
+  await loadCompetitionsModal();
+}
+
+async function loadCompetitionsModal() {
+  const res = await api('adminCompetitions', {});
+  if (!res.ok) { document.getElementById('modal-body').textContent = res.error; return; }
+
+  const active = res.competitions.find(c => c.active);
+  const others = res.competitions.filter(c => !c.active);
+
+  let html = '';
+  if (active) {
+    html += `
+      <div class="comp-card">
+        <div class="comp-card-top"><span class="comp-status live">${icon('pulse')} نشطة الآن</span></div>
+        <div class="comp-name">${esc(active.name)}</div>
+        <div class="comp-dates">
+          <span>${icon('calendar')} بدأت ${fDateTime(active.start_at)}</span>
+          <span>${icon('clock')} تنتهي خلال ${fCountdown(active.end_at)}</span>
+        </div>
+      </div>`;
+  } else {
+    html += `<div class="online-empty" style="margin-bottom:4px">${icon('inbox')} لا يوجد موسم نشط حالياً</div>`;
+  }
+
+  if (others.length) {
+    html += `<div class="form-label" style="margin-top:18px">مواسم أخرى</div>`;
+    others.forEach(c => {
+      const ended = c.prize_distributed;
+      html += `
+        <div class="comp-row">
+          <div>
+            <div class="comp-row-name">${esc(c.name)}</div>
+            <div class="comp-row-meta" style="color:${ended?'var(--text3)':'var(--violet)'}">${ended?'منتهية':'مجدولة'} · ${fDateTime(c.start_at)}</div>
+          </div>
+          ${!ended ? `<button class="modal-btn msg" style="flex:none;padding:8px 14px;font-size:12.5px" onclick="activateCompetition(${c.id})">${icon('check')} تفعيل</button>` : ''}
+        </div>`;
+    });
+  }
+
+  html += `
+    <div class="form-label" style="margin-top:18px">إنشاء موسم جديد</div>
+    <input id="comp-name" class="form-input" type="text" placeholder="اسم الموسم، مثلاً Season 3">
+    <input id="comp-days" class="form-input" type="number" placeholder="المدة بالأيام" value="20" style="margin-top:8px">
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--text2)">
+      <input id="comp-activate" type="checkbox" ${active ? '' : 'checked'}>
+      تفعيله فوراً${active ? ' (هيلغي تفعيل الموسم الحالي، من غير توزيع جوائز)' : ''}
+    </label>`;
+
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-actions').innerHTML = `
+    ${active ? `<button class="modal-btn ban" onclick="endCompetition()">${icon('clock')} إنهاء الآن</button>` : ''}
+    <button class="modal-btn unban" onclick="createCompetition()">${icon('rocket')} إنشاء</button>
+    <button class="modal-btn close" onclick="document.getElementById('user-modal').classList.remove('open')">${icon('x')}</button>
+  `;
+}
+
+async function createCompetition() {
+  const name        = document.getElementById('comp-name').value.trim();
+  const days        = parseInt(document.getElementById('comp-days').value, 10) || 20;
+  const activateNow = document.getElementById('comp-activate').checked;
+  if (!name) { showToast(icon('x')+' اكتب اسم الموسم'); return; }
+
+  const res = await api('adminCompetitionCreate', { name, duration_days: days, activate_now: activateNow });
+  if (res.ok) {
+    showToast(icon('check')+' تم إنشاء الموسم');
+    loadCompetitionsModal();
+    loadCompetitionWidget();
+  } else showToast(icon('x')+' '+res.error);
+}
+
+async function activateCompetition(id) {
+  if (!confirm('تفعيل هذا الموسم بدل الموسم النشط حالياً؟')) return;
+  const res = await api('adminCompetitionActivate', { id });
+  if (res.ok) {
+    showToast(icon('check')+' تم التفعيل');
+    loadCompetitionsModal();
+    loadCompetitionWidget();
+  } else showToast(icon('x')+' '+res.error);
+}
+
+async function endCompetition() {
+  if (!confirm('إنهاء الموسم الحالي وتوزيع الجوائز؟ نقاط كل المستخدمين هترجع صفر.')) return;
+  const res = await api('adminCompetitionEnd', {});
+  if (res.ok) {
+    showToast(icon('check')+' '+(res.note || 'جاري إنهاء الموسم'));
+    loadCompetitionsModal();
+    loadCompetitionWidget();
+  } else showToast(icon('x')+' '+res.error);
 }
 function showToast(html, dur=2500) {
   const t = document.getElementById('toast');
