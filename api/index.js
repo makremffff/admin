@@ -26,7 +26,38 @@ async function sendTelegramMessage(chatId, text) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: String(chatId), text, parse_mode: 'Markdown' })
   });
-  return await res.json();
+  const json = await res.json();
+  // 🛡️ لو فشل بسبب Markdown parse error، إعادة المحاولة كـ نص عادي
+  if (!json.ok && /can't parse entities/i.test(json.description || '')) {
+    const retry = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: String(chatId), text })
+    });
+    return await retry.json();
+  }
+  return json;
+}
+
+async function sendTelegramPhoto(chatId, photoBuffer, mimetype, caption) {
+  if (!BOT_TOKEN) return { ok: false };
+  const doSend = async (withMarkdown) => {
+    const form = new FormData();
+    form.append('chat_id', String(chatId));
+    if (caption) {
+      form.append('caption', caption);
+      if (withMarkdown) form.append('parse_mode', 'Markdown');
+    }
+    form.append('photo', new Blob([photoBuffer], { type: mimetype || 'image/jpeg' }), 'photo.jpg');
+    const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: form });
+    return await r.json();
+  };
+  const json = await doSend(true);
+  // 🛡️ نفس مشكلة الـ Markdown parse error — إعادة محاولة بدون تنسيق
+  if (!json.ok && /can't parse entities/i.test(json.description || '')) {
+    return await doSend(false);
+  }
+  return json;
 }
 
 async function getActiveCompetition() {
@@ -318,6 +349,57 @@ module.exports = async function handler(req, res) {
       }
 
       // ────────────────────────────────────────────────────────────────────
+      case 'adminAdjustUser': {
+        const tgId = data.telegram_id;
+        if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
+
+        const hasPts     = data.pts !== undefined && data.pts !== null && data.pts !== '';
+        const hasBalance = data.balance_usd !== undefined && data.balance_usd !== null && data.balance_usd !== '';
+        if (!hasPts && !hasBalance) {
+          return res.status(400).json({ ok: false, error: 'لازم تبعت نقاط أو رصيد على الأقل' });
+        }
+
+        const newPts     = hasPts ? Math.trunc(Number(data.pts)) : null;
+        const newBalance = hasBalance ? Number(data.balance_usd) : null;
+        if (hasPts && (!Number.isFinite(newPts) || newPts < 0)) {
+          return res.status(400).json({ ok: false, error: 'قيمة النقاط غير صحيحة' });
+        }
+        if (hasBalance && (!Number.isFinite(newBalance) || newBalance < 0)) {
+          return res.status(400).json({ ok: false, error: 'قيمة الرصيد غير صحيحة' });
+        }
+
+        const uRows = await sql(`SELECT id, pts, balance_usd FROM users WHERE telegram_id = $1`, [tgId]);
+        if (!uRows.length) return res.status(404).json({ ok: false, error: 'User not found' });
+        const before = uRows[0];
+
+        // ✅ UPDATE...RETURNING ذرّية — متوافقة مع Neon HTTP (بدون transactions)
+        const rows = await sql(`
+          UPDATE users
+          SET pts = COALESCE($1, pts),
+              balance_usd = COALESCE($2, balance_usd)
+          WHERE telegram_id = $3
+          RETURNING pts, balance_usd
+        `, [newPts, newBalance, tgId]);
+        const after = rows[0];
+
+        await sql(`
+          INSERT INTO activity_logs (user_id, action, meta, created_at)
+          VALUES ($1, 'admin_adjust_pts', $2, NOW())
+        `, [before.id, JSON.stringify({
+              pts_before:     Number(before.pts),
+              pts_after:      Number(after.pts),
+              balance_before: parseFloat(before.balance_usd),
+              balance_after:  parseFloat(after.balance_usd)
+            })]).catch(e => console.error('[adminAdjustUser log]', e.message));
+
+        return res.json({
+          ok: true,
+          pts: Number(after.pts),
+          balance_usd: parseFloat(after.balance_usd)
+        });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
       case 'banUser': {
         const tgId  = data.telegram_id;
         const unban = !!data.unban;
@@ -393,24 +475,46 @@ module.exports = async function handler(req, res) {
 
       // ────────────────────────────────────────────────────────────────────
       case 'adminBroadcast': {
-        const text = (data.text || '').trim();
-        if (!text) return res.status(400).json({ ok: false, error: 'Message text required' });
+        const text      = (data.text || '').trim();
+        const photoB64  = (data.photo_base64 || '').trim();
+        const photoMime = data.photo_mimetype || 'image/jpeg';
+
+        if (!text && !photoB64) {
+          return res.status(400).json({ ok: false, error: 'لازم نص أو صورة على الأقل' });
+        }
+
+        // 🛡️ كابشن الصورة في تليجرام محدود بـ 1024 حرف
+        const caption = photoB64 ? text.slice(0, 1024) : text;
+
+        let photoBuffer = null;
+        if (photoB64) {
+          // ~7M base64 ≈ 5MB صورة فعلية — حد أمان لتفادي تخطي حجم الطلب على Vercel
+          if (photoB64.length > 7_000_000) {
+            return res.status(400).json({ ok: false, error: 'حجم الصورة كبير جداً' });
+          }
+          try { photoBuffer = Buffer.from(photoB64, 'base64'); }
+          catch { return res.status(400).json({ ok: false, error: 'صورة غير صالحة' }); }
+        }
+
+        const sendOne = (chatId) => photoBuffer
+          ? sendTelegramPhoto(chatId, photoBuffer, photoMime, caption)
+          : sendTelegramMessage(chatId, text);
 
         // رسالة مباشرة لمستخدم واحد
         if (data.telegram_id) {
-          const result = await sendTelegramMessage(Number(data.telegram_id), text);
+          const result = await sendOne(Number(data.telegram_id));
           if (!result.ok) return res.status(400).json({ ok: false, error: result.description || 'Failed to send' });
           return res.json({ ok: true, sent: 1, failed: 0 });
         }
 
         // بث جماعي — على دفعات متوازية لتفادي timeout على Vercel
         const allUsers   = await sql(`SELECT telegram_id FROM users WHERE banned = FALSE`);
-        const BATCH_SIZE = 25;
+        const BATCH_SIZE = photoBuffer ? 10 : 25; // دفعات أصغر للصور لأنها أبطأ في الرفع
         let sent = 0, failed = 0;
         for (let i = 0; i < allUsers.length; i += BATCH_SIZE) {
           const batch   = allUsers.slice(i, i + BATCH_SIZE);
           const results = await Promise.all(
-            batch.map(u => sendTelegramMessage(Number(u.telegram_id), text).catch(() => ({ ok: false })))
+            batch.map(u => sendOne(Number(u.telegram_id)).catch(() => ({ ok: false })))
           );
           results.forEach(r => { if (r.ok) sent++; else failed++; });
         }
