@@ -149,8 +149,8 @@ module.exports = async function handler(req, res) {
         const rows = await sql(`
           SELECT telegram_id, first_name, username, photo_url
           FROM users
-          WHERE last_seen_at >= NOW() - INTERVAL '5 minutes'
-          ORDER BY last_seen_at DESC
+          WHERE COALESCE(last_seen_at, updated_at, created_at) >= NOW() - INTERVAL '5 minutes'
+          ORDER BY COALESCE(last_seen_at, updated_at, created_at) DESC
           LIMIT 50
         `);
 
