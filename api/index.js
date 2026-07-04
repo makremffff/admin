@@ -10,6 +10,9 @@ const DATABASE_URL = process.env.DATABASE_URL;
 const BOT_TOKEN    = process.env.BOT_TOKEN;
 const ADMIN_SECRET = process.env.ADMIN_SECRET; // ✅ Fixed: was INTERNAL_SECRET
 
+// 💸 قناة إثبات السحوبات — يُرسل لها تلقائياً بعد كل عملية دفع TON ناجحة
+const WITHDRAW_PROOF_CHANNEL = process.env.WITHDRAW_PROOF_CHANNEL || '@withdrawlProof2026';
+
 if (!ADMIN_SECRET) {
   throw new Error('[FATAL] ADMIN_SECRET env var is not set — refusing to run with an insecure fallback key');
 }
@@ -58,6 +61,90 @@ async function sendTelegramPhoto(chatId, photoBuffer, mimetype, caption) {
     return await doSend(false);
   }
   return json;
+}
+
+// 💱 سعر TON/USDT لحظي — يُستخدم لتحويل مبلغ السحب (بالدولار) لكمية TON قبل الدفع
+let _tonRateCache = { value: null, at: 0 };
+async function getTonUsdRate() {
+  // كاش 60 ثانية لتفادي إغراق CoinGecko بطلبات متكررة
+  if (_tonRateCache.value && (Date.now() - _tonRateCache.at) < 60_000) {
+    return _tonRateCache.value;
+  }
+  const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd');
+  if (!resp.ok) throw new Error(`CoinGecko HTTP ${resp.status}`);
+  const json = await resp.json();
+  const rate = json?.['the-open-network']?.usd;
+  if (!rate || isNaN(rate)) throw new Error('CoinGecko: invalid rate');
+  _tonRateCache = { value: rate, at: Date.now() };
+  return rate;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  TonCenter — التحقق من المعاملة الصادرة (out) من محفظة الأدمن باتجاه المستخدم
+//  بعد ما الأدمن يوقّع من محفظته عبر TonConnect، نبحث في history محفظة الأدمن
+//  عن المعاملة الصادرة المطابقة (قيمة + وجهة + توقيت) ونجيب hash الحقيقي على السلسلة.
+// ══════════════════════════════════════════════════════════════════════════════
+const TONCENTER_BASE    = process.env.TONCENTER_BASE || 'https://toncenter.com/api/v2';
+const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || '';
+
+function normalizeTonAddrAdmin(addr) {
+  if (!addr) return '';
+  const parts = String(addr).trim().toLowerCase().split(':');
+  if (parts.length !== 2) return String(addr).trim().toLowerCase();
+  return `${parts[0]}:${parts[1].replace(/^0+/, '') || '0'}`;
+}
+
+async function findOutgoingTonTx({ adminWallet, destRaw, nanotons, sinceMs, withdrawId, maxAttempts = 8 }) {
+  if (!adminWallet) throw new Error('Admin wallet address missing');
+
+  const wantDest  = normalizeTonAddrAdmin(destRaw);
+  const wantValue = String(nanotons);
+  const sinceSec  = Math.floor(sinceMs / 1000) - 60;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const url = new URL(`${TONCENTER_BASE}/getTransactions`);
+    url.searchParams.set('address', adminWallet);
+    url.searchParams.set('limit', '20');
+    if (TONCENTER_API_KEY) url.searchParams.set('api_key', TONCENTER_API_KEY);
+
+    const resp = await fetch(url.toString());
+    const rawBody = await resp.text();
+
+    if (resp.ok) {
+      let body;
+      try { body = JSON.parse(rawBody); } catch { body = null; }
+
+      if (body?.ok && Array.isArray(body.result)) {
+        for (const tx of body.result) {
+          if (Number(tx.utime) < sinceSec) continue;
+          const outMsgs = tx.out_msgs || [];
+          for (const outMsg of outMsgs) {
+            if (String(outMsg.value) !== wantValue) continue;
+            if (outMsg.destination && normalizeTonAddrAdmin(outMsg.destination) === wantDest) {
+              return { hash: tx.transaction_id?.hash || null, utime: tx.utime };
+            }
+          }
+        }
+      }
+    } else {
+      console.error(`[withdraw#${withdrawId}] TonCenter HTTP ${resp.status}: ${rawBody.slice(0, 200)}`);
+    }
+
+    await new Promise(r => setTimeout(r, 2500)); // انتظار قصير قبل إعادة المحاولة — المعاملة تحتاج وقت تظهر بالأرشيف
+  }
+
+  return null;
+}
+
+// 🧱 يضمن وجود أعمدة دفع TON بجدول withdrawals (idempotent — آمن يتكرر كل استدعاء)
+let _withdrawColsEnsured = false;
+async function ensureWithdrawTonColumns() {
+  if (_withdrawColsEnsured) return;
+  await sql(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS ton_amount NUMERIC(18,9)`);
+  await sql(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS ton_rate   NUMERIC(18,9)`);
+  await sql(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS tx_hash    TEXT`);
+  await sql(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS paid_at    TIMESTAMPTZ`);
+  _withdrawColsEnsured = true;
 }
 
 async function getActiveCompetition() {
@@ -228,9 +315,12 @@ module.exports = async function handler(req, res) {
         const where  = status ? `WHERE w.status = $1` : '';
         const params = status ? [status] : [];
 
+        await ensureWithdrawTonColumns();
+
         const [countRows, rows] = await Promise.all([
           sql(`SELECT COUNT(*)::INT AS count FROM withdrawals w ${where}`, params),
           sql(`SELECT w.id, w.address, w.memo, w.amount, w.status, w.created_at,
+                      w.ton_amount, w.ton_rate, w.tx_hash, w.paid_at,
                       u.first_name, u.username, u.telegram_id
                FROM withdrawals w JOIN users u ON u.id = w.user_id
                ${where}
@@ -246,6 +336,10 @@ module.exports = async function handler(req, res) {
             amount:      parseFloat(w.amount),
             status:      w.status,
             created_at:  w.created_at,
+            ton_amount:  w.ton_amount != null ? parseFloat(w.ton_amount) : null,
+            ton_rate:    w.ton_rate   != null ? parseFloat(w.ton_rate)   : null,
+            tx_hash:     w.tx_hash,
+            paid_at:     w.paid_at,
             first_name:  w.first_name,
             username:    w.username,
             telegram_id: Number(w.telegram_id)
@@ -255,10 +349,111 @@ module.exports = async function handler(req, res) {
       }
 
       // ────────────────────────────────────────────────────────────────────
+      //  💎 adminWithdrawTonQuote — يرجّع سعر TON/USDT اللحظي + كمية TON
+      //  المطلوبة لدفع طلب سحب معيّن، قبل ما الأدمن يوقّع من محفظته
+      // ────────────────────────────────────────────────────────────────────
+      case 'adminWithdrawTonQuote': {
+        const id = parseInt(data.id, 10);
+        if (!id) return res.status(400).json({ ok: false, error: 'Invalid request' });
+
+        const wRows = await sql(`SELECT * FROM withdrawals WHERE id = $1`, [id]);
+        if (!wRows.length) return res.status(404).json({ ok: false, error: 'Withdrawal not found' });
+        const w = wRows[0];
+        if (w.status === 'paid') return res.status(400).json({ ok: false, error: 'Already paid' });
+
+        let rate;
+        try { rate = await getTonUsdRate(); }
+        catch (e) {
+          console.error('[adminWithdrawTonQuote] rate fetch failed:', e.message);
+          return res.status(502).json({ ok: false, error: 'Could not fetch TON/USDT rate — try again' });
+        }
+
+        const usdAmount = parseFloat(w.amount);
+        const tonAmount = +(usdAmount / rate).toFixed(9);
+
+        return res.json({ ok: true, usdAmount, tonAmount, rate, address: w.address, memo: w.memo });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
+      //  💎 adminMarkWithdrawPaid — بعد ما الأدمن يرسل TON فعلياً من محفظته
+      //  عبر TonConnect، نتحقق من TonCenter لجلب TXID الحقيقي على السلسلة
+      //  ونسجّل الدفع + نرسل الإشعارات. لا نثق بأي "نجاح" من الفرونت وحده.
+      // ────────────────────────────────────────────────────────────────────
+      case 'adminMarkWithdrawPaid': {
+        await ensureWithdrawTonColumns();
+
+        const id          = parseInt(data.id, 10);
+        const tonAmount   = parseFloat(data.tonAmount);
+        const rate        = parseFloat(data.rate);
+        const adminWallet = (data.adminWallet || '').trim();
+        const sentAtMs    = parseInt(data.sentAtMs, 10) || Date.now();
+
+        if (!id || !adminWallet) return res.status(400).json({ ok: false, error: 'Invalid request' });
+        if (isNaN(tonAmount) || tonAmount <= 0) return res.status(400).json({ ok: false, error: 'Invalid TON amount' });
+
+        const wRows = await sql(`SELECT w.*, u.telegram_id, u.username, u.first_name
+                                  FROM withdrawals w JOIN users u ON u.id = w.user_id
+                                  WHERE w.id = $1`, [id]);
+        if (!wRows.length) return res.status(404).json({ ok: false, error: 'Withdrawal not found' });
+        const w = wRows[0];
+        if (w.status === 'paid') return res.status(400).json({ ok: false, error: 'Already paid' });
+
+        const nanotons = Math.round(tonAmount * 1e9);
+        let match;
+        try {
+          match = await findOutgoingTonTx({
+            adminWallet, destRaw: w.address, nanotons, sinceMs: sentAtMs, withdrawId: id
+          });
+        } catch (e) {
+          console.error('[adminMarkWithdrawPaid] TonCenter check failed:', e.message);
+          return res.status(502).json({ ok: false, error: 'Could not verify transaction on TonCenter — try again shortly' });
+        }
+
+        if (!match || !match.hash) {
+          return res.status(408).json({ ok: false, error: 'Transaction not found on-chain yet — wait a few seconds and retry' });
+        }
+
+        const txHash = match.hash;
+
+        await sql(
+          `UPDATE withdrawals SET status = 'paid', ton_amount = $1, ton_rate = $2, tx_hash = $3, paid_at = NOW() WHERE id = $4`,
+          [tonAmount, isNaN(rate) ? null : rate, txHash, id]
+        );
+
+        const usdAmount = parseFloat(w.amount);
+        const explorerUrl = `https://tonviewer.com/transaction/${txHash}`;
+
+        // ✅ إشعار المستخدم — فيه TXID الحقيقي
+        sendTelegramMessage(
+          Number(w.telegram_id),
+          `💸 *Withdrawal Paid*\n\n` +
+          `💵 *Amount:* $${usdAmount.toFixed(2)} USDT (${tonAmount} TON)\n` +
+          `👛 *To:* \`${w.address}\`\n` +
+          `🔗 *TX Hash:* \`${txHash}\`\n\n` +
+          `[View on Tonviewer](${explorerUrl})`
+        ).catch(e => console.error('[withdraw paid bot notify]', e.message));
+
+        // 📢 إثبات السحب — يُرسل تلقائياً لقناة الإثبات
+        const displayName = w.username ? '@' + w.username : (w.first_name || `User#${w.telegram_id}`);
+        sendTelegramMessage(
+          WITHDRAW_PROOF_CHANNEL,
+          `✅ *Withdrawal Proof*\n\n` +
+          `👤 *User:* ${displayName} (\`${w.telegram_id}\`)\n` +
+          `💵 *Amount:* $${usdAmount.toFixed(2)} USDT (${tonAmount} TON)\n` +
+          `👛 *Wallet:* \`${w.address}\`\n` +
+          `🔗 *TX Hash:* \`${txHash}\`\n` +
+          `[View on Tonviewer](${explorerUrl})`
+        ).catch(e => console.error('[withdraw proof channel notify]', e.message));
+
+        return res.json({ ok: true, txHash });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
       case 'adminUpdateWithdrawal': {
         const id      = parseInt(data.id, 10);
         const status  = data.status;
-        const allowed = ['pending', 'approved', 'rejected', 'paid'];
+        // 🛡️ 'paid' صار له مسار مخصص (adminMarkWithdrawPaid) لازم يمرّ فيه TXID حقيقي
+        const allowed = ['pending', 'approved', 'rejected'];
         if (!id || !allowed.includes(status)) {
           return res.status(400).json({ ok: false, error: 'Invalid request' });
         }
@@ -277,8 +472,7 @@ module.exports = async function handler(req, res) {
         const uRows = await sql(`SELECT telegram_id FROM users WHERE id = $1`, [w.user_id]);
         const labels = {
           approved: '✅ Your withdrawal request has been approved',
-          rejected: '❌ Your withdrawal request was rejected — the amount was refunded to your balance',
-          paid:     '💸 Your withdrawal has been paid'
+          rejected: '❌ Your withdrawal request was rejected — the amount was refunded to your balance'
         };
         if (uRows.length && labels[status]) {
           sendTelegramMessage(
