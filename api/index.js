@@ -87,10 +87,31 @@ async function getTonUsdRate() {
 const TONCENTER_BASE    = process.env.TONCENTER_BASE || 'https://toncenter.com/api/v2';
 const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || '';
 
+// 🔁 يحوّل عنوان TON بصيغة friendly (مثل UQAB...، EQAB...) إلى raw (workchain:hash)
+// لأن TonCenter يرجّع العناوين بصيغة raw دايماً، بينما عنوان المستخدم المخزّن
+// بجدول withdrawals غالباً friendly (اللي المستخدم يشوفه وينسخه من محفظته).
+// بدون هذا التحويل، المقارنة بين العنوانين ما تتطابق أبداً حتى لو المعاملة صحيحة 100%.
+function friendlyTonAddrToRaw(addr) {
+  const s = String(addr).trim();
+  if (!s) return '';
+  if (s.includes(':')) return s.toLowerCase(); // already raw
+  try {
+    const b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+    const buf = Buffer.from(b64, 'base64');
+    if (buf.length !== 36) return s.toLowerCase(); // مش friendly صالح، رجّعه كما هو
+    const workchain = buf.readInt8(1);
+    const hash = buf.subarray(2, 34).toString('hex');
+    return `${workchain}:${hash}`;
+  } catch {
+    return s.toLowerCase();
+  }
+}
+
 function normalizeTonAddrAdmin(addr) {
   if (!addr) return '';
-  const parts = String(addr).trim().toLowerCase().split(':');
-  if (parts.length !== 2) return String(addr).trim().toLowerCase();
+  const raw = friendlyTonAddrToRaw(addr);
+  const parts = raw.split(':');
+  if (parts.length !== 2) return raw;
   return `${parts[0]}:${parts[1].replace(/^0+/, '') || '0'}`;
 }
 
