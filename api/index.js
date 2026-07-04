@@ -22,20 +22,24 @@ async function sql(query, params = []) {
   return await _db(query, params);
 }
 
-async function sendTelegramMessage(chatId, text) {
+async function sendTelegramMessage(chatId, text, replyMarkup = null) {
   if (!BOT_TOKEN) return { ok: false };
+  const body = { chat_id: String(chatId), text, parse_mode: 'Markdown' };
+  if (replyMarkup) body.reply_markup = replyMarkup;
   const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: String(chatId), text, parse_mode: 'Markdown' })
+    body: JSON.stringify(body)
   });
   const json = await res.json();
   // 🛡️ لو فشل بسبب Markdown parse error، إعادة المحاولة كـ نص عادي
   if (!json.ok && /can't parse entities/i.test(json.description || '')) {
+    const retryBody = { chat_id: String(chatId), text };
+    if (replyMarkup) retryBody.reply_markup = replyMarkup;
     const retry = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: String(chatId), text })
+      body: JSON.stringify(retryBody)
     });
     return await retry.json();
   }
@@ -454,36 +458,42 @@ module.exports = async function handler(req, res) {
 
         // ✅ إشعار المستخدم — فيه TXID الحقيقي
         const userMsg =
-          `✅ *تم صرف سحبك بنجاح*\n` +
+          `✅ *Withdrawal Completed*\n` +
           `━━━━━━━━━━━━━━━━━━\n` +
-          `💵 *المبلغ:* \`$${usdAmount.toFixed(2)}\` USDT\n` +
-          `🔄 *يعادل:* \`${tonAmount}\` TON\n` +
-          `👛 *المحفظة:* \`${shortAddr}\`\n` +
-          `🕒 *التاريخ:* ${paidAtStr}\n` +
+          `💵 *Amount:* \`$${usdAmount.toFixed(2)}\` USDT\n` +
+          `🔄 *Equivalent:* \`${tonAmount}\` TON\n` +
+          `👛 *Wallet:* \`${shortAddr}\`\n` +
+          `🕒 *Date:* ${paidAtStr} UTC\n` +
           `━━━━━━━━━━━━━━━━━━\n` +
-          `🔗 [عرض المعاملة على Tonviewer](${explorerUrl})\n\n` +
-          `شكراً لثقتك بـ *BigLeague* 🏆`;
+          `🔗 [View Transaction on Tonviewer](${explorerUrl})\n\n` +
+          `Thank you for playing *BigLeague* 🏆`;
 
         // 📢 إثبات السحب — يُرسل تلقائياً لقناة الإثبات
         const displayName = w.username ? '@' + w.username : (w.first_name || `User#${w.telegram_id}`);
+        const botPlayUrl = `https://t.me/EarnlixBot/play?startapp=ref_${w.telegram_id}`;
         const channelMsg =
-          `💸 *إثبات سحب جديد*\n` +
+          `💸 *WITHDRAWAL PAID* ✅\n` +
           `━━━━━━━━━━━━━━━━━━\n` +
-          `👤 *المستخدم:* ${displayName}\n` +
+          `👤 *User:* ${displayName}\n` +
           `🆔 *ID:* \`${w.telegram_id}\`\n` +
-          `💵 *المبلغ:* \`$${usdAmount.toFixed(2)}\` USDT  •  \`${tonAmount}\` TON\n` +
-          `👛 *المحفظة:* \`${shortAddr}\`\n` +
-          `🕒 *التاريخ:* ${paidAtStr}\n` +
+          `💵 *Amount:* \`$${usdAmount.toFixed(2)}\` USDT\n` +
+          `🔄 *Paid:* \`${tonAmount}\` TON\n` +
+          `👛 *Wallet:* \`${shortAddr}\`\n` +
+          `🕒 *Date:* ${paidAtStr} UTC\n` +
           `━━━━━━━━━━━━━━━━━━\n` +
-          `🔗 [عرض المعاملة على Tonviewer](${explorerUrl})\n\n` +
-          `✅ *BigLeague — منصة الأرباح والتحديات*`;
+          `🔗 [View Transaction on Tonviewer](${explorerUrl})\n\n` +
+          `🏆 *BigLeague — Earn & Win Platform*\n` +
+          `_Real payouts, every day. Join the competition!_`;
+        const channelKeyboard = {
+          inline_keyboard: [[{ text: '🎮 Play Now', url: botPlayUrl }]]
+        };
 
         // 🛡️ ننتظر الإرسالين قبل ما نرجّع الرد — على Vercel، أي Promise معلّق بعد
         // res.json() ممكن ينقطع فوراً (تجميد/إنهاء الـ function)، فكان هذا سبب
         // عدم وصول إشعار القناة أحياناً رغم نجاح الدفع فعلياً.
         const [userNotify, channelNotify] = await Promise.allSettled([
           sendTelegramMessage(Number(w.telegram_id), userMsg),
-          sendTelegramMessage(WITHDRAW_PROOF_CHANNEL, channelMsg)
+          sendTelegramMessage(WITHDRAW_PROOF_CHANNEL, channelMsg, channelKeyboard)
         ]);
         if (userNotify.status === 'rejected' || userNotify.value?.ok === false) {
           console.error('[withdraw paid bot notify]', userNotify.reason?.message || JSON.stringify(userNotify.value));
