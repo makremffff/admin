@@ -345,6 +345,40 @@
   .action-btn.reject  { background: var(--rose-bg);    color: var(--rose);    }
   .action-btn.paid    { background: var(--gold-bg);    color: var(--gold);    }
 
+  /* ── Withdrawals/Deposits sub-tabs ── */
+  .subtab-toggle {
+    display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 4px; margin-bottom: 12px;
+  }
+  .subtab-btn {
+    flex: 1; padding: 8px; border: none; border-radius: 9px; background: transparent;
+    color: var(--text2); font-size: 12.5px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: background .15s, color .15s;
+  }
+  .subtab-btn.active { background: var(--gold); color: var(--gold-ink); }
+
+  /* ── Deposits ── */
+  .deposit-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px;
+    box-shadow: var(--shadow-sm); margin-bottom: 8px;
+  }
+  .deposit-header { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .deposit-user-info { flex: 1; min-width: 0; }
+  .deposit-user-name { font-size: 13px; font-weight: 700; }
+  .deposit-user-sub  { font-size: 10.5px; color: var(--text2); margin-top: 1px; }
+  .deposit-amount { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .deposit-amount span { font-size: 11px; color: var(--text2); font-weight: 600; }
+  .deposit-tx {
+    font-size: 10.5px; color: var(--text2); word-break: break-all; margin-bottom: 8px;
+    display: flex; align-items: flex-start; gap: 5px;
+  }
+  .deposit-tx .icon { width: 12px; height: 12px; margin-top: 1px; flex-shrink: 0; }
+  .deposit-tx a { color: var(--gold); text-decoration: none; }
+  .deposit-tx .no-tx { color: var(--text3); }
+  .deposit-date { font-size: 10px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
+  .withdraw-status.confirmed { background: var(--emerald-bg); color: var(--emerald); }
+  .withdraw-status.failed    { background: var(--rose-bg);    color: var(--rose);    }
+
   /* ── Competitions ── */
   .comp-card {
     background: var(--surface-2); border: 1px solid var(--gold-dim);
@@ -798,17 +832,35 @@
     <div class="pagination" id="users-pagination"></div>
   </div>
 
-  <!-- PAGE: السحوبات -->
+  <!-- PAGE: السحوبات / الإيداعات -->
   <div id="page-withdrawals" class="page-content">
-    <div class="filter-chips">
-      <div class="chip active" data-wfilter="all"     onclick="setWFilter(this,'all')">الكل</div>
-      <div class="chip"       data-wfilter="pending"  onclick="setWFilter(this,'pending')">انتظار</div>
-      <div class="chip"       data-wfilter="approved" onclick="setWFilter(this,'approved')">موافق</div>
-      <div class="chip"       data-wfilter="paid"     onclick="setWFilter(this,'paid')">مدفوع</div>
-      <div class="chip"       data-wfilter="rejected" onclick="setWFilter(this,'rejected')">مرفوض</div>
+    <div class="subtab-toggle">
+      <button class="subtab-btn active" id="subtab-withdrawals" onclick="switchWithdrawSubTab('withdrawals')">السحوبات</button>
+      <button class="subtab-btn" id="subtab-deposits" onclick="switchWithdrawSubTab('deposits')">الإيداعات</button>
     </div>
-    <div id="withdrawals-list"></div>
-    <div class="pagination" id="w-pagination"></div>
+
+    <div id="subpage-withdrawals">
+      <div class="filter-chips">
+        <div class="chip active" data-wfilter="all"     onclick="setWFilter(this,'all')">الكل</div>
+        <div class="chip"       data-wfilter="pending"  onclick="setWFilter(this,'pending')">انتظار</div>
+        <div class="chip"       data-wfilter="approved" onclick="setWFilter(this,'approved')">موافق</div>
+        <div class="chip"       data-wfilter="paid"     onclick="setWFilter(this,'paid')">مدفوع</div>
+        <div class="chip"       data-wfilter="rejected" onclick="setWFilter(this,'rejected')">مرفوض</div>
+      </div>
+      <div id="withdrawals-list"></div>
+      <div class="pagination" id="w-pagination"></div>
+    </div>
+
+    <div id="subpage-deposits" style="display:none">
+      <div class="filter-chips">
+        <div class="chip active" data-dfilter="all"       onclick="setDFilter(this,'all')">الكل</div>
+        <div class="chip"       data-dfilter="pending"   onclick="setDFilter(this,'pending')">انتظار</div>
+        <div class="chip"       data-dfilter="confirmed" onclick="setDFilter(this,'confirmed')">مؤكد</div>
+        <div class="chip"       data-dfilter="failed"    onclick="setDFilter(this,'failed')">فشل</div>
+      </div>
+      <div id="deposits-list"></div>
+      <div class="pagination" id="d-pagination"></div>
+    </div>
   </div>
 
   <!-- PAGE: الرسائل -->
@@ -970,8 +1022,10 @@ let onlinePollTimer = null;
 const state = {
   users:       { page: 1, filter: 'all', search: '', total: 0 },
   withdrawals: { page: 1, filter: 'all', total: 0 },
+  deposits:    { page: 1, filter: 'all', total: 0 },
   logs:        { page: 1, filter: '',    total: 0 },
 };
+let withdrawSubTab = 'withdrawals';
 
 // ═══════════════════════════════════════════════════════
 //  API
@@ -1067,15 +1121,29 @@ function switchPage(name) {
   if (nav) nav.classList.add('active');
   document.getElementById('page-title').textContent = titles[name] || 'لوحة التحكم';
   if (name === 'users'       && !document.getElementById('users-list').children.length) loadUsers();
-  if (name === 'withdrawals' && !document.getElementById('withdrawals-list').children.length) loadWithdrawals();
+  if (name === 'withdrawals') {
+    if (withdrawSubTab === 'deposits') { if (!document.getElementById('deposits-list').children.length) loadDeposits(); }
+    else if (!document.getElementById('withdrawals-list').children.length) loadWithdrawals();
+  }
   if (name === 'logs'        && !document.getElementById('logs-list').children.length) loadLogs();
+}
+
+function switchWithdrawSubTab(tab) {
+  withdrawSubTab = tab;
+  document.getElementById('subtab-withdrawals').classList.toggle('active', tab === 'withdrawals');
+  document.getElementById('subtab-deposits').classList.toggle('active', tab === 'deposits');
+  document.getElementById('subpage-withdrawals').style.display = tab === 'withdrawals' ? '' : 'none';
+  document.getElementById('subpage-deposits').style.display    = tab === 'deposits'    ? '' : 'none';
+  document.getElementById('page-title').textContent = tab === 'deposits' ? 'الإيداعات' : 'السحوبات';
+  if (tab === 'deposits' && !document.getElementById('deposits-list').children.length) loadDeposits();
+  if (tab === 'withdrawals' && !document.getElementById('withdrawals-list').children.length) loadWithdrawals();
 }
 
 function refreshCurrent() {
   const active = document.querySelector('.page-content.active');
   if (active?.id === 'page-home') loadDashboard();
   else if (active?.id === 'page-users') loadUsers();
-  else if (active?.id === 'page-withdrawals') loadWithdrawals();
+  else if (active?.id === 'page-withdrawals') { withdrawSubTab === 'deposits' ? loadDeposits() : loadWithdrawals(); }
   else if (active?.id === 'page-logs') loadLogs();
 }
 
@@ -1342,6 +1410,53 @@ async function updateWithdrawal(id, status, btn) {
   const res = await api('adminUpdateWithdrawal', { id, status });
   if (res.ok) { showToast(icon('check')+' تم التحديث'); loadWithdrawals(); }
   else { showToast(icon('x')+' ' + res.error); btn.disabled = false; }
+}
+
+// ═══════════════════════════════════════════════════════
+//  Deposits
+// ═══════════════════════════════════════════════════════
+function dStatusLabel(s) {
+  return { pending: 'انتظار', confirmed: 'مؤكد', failed: 'فشل' }[s] || s;
+}
+function setDFilter(el, filter) {
+  document.querySelectorAll('[data-dfilter]').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  state.deposits.filter = filter; state.deposits.page = 1; loadDeposits();
+}
+async function loadDeposits() {
+  const { page, filter } = state.deposits;
+  document.getElementById('deposits-list').innerHTML =
+    [1,2,3].map(()=>`<div class="skeleton" style="height:120px;border-radius:12px;margin-bottom:8px"></div>`).join('');
+  const res = await api('adminDeposits', { page, status: filter, limit: 20 });
+  if (!res.ok) return;
+  const dl = document.getElementById('deposits-list');
+  if (!res.deposits.length) {
+    dl.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('coin')}</div><p>لا توجد عمليات إيداع</p></div>`;
+    document.getElementById('d-pagination').innerHTML = ''; return;
+  }
+  dl.innerHTML = res.deposits.map(d => `
+    <div class="deposit-card">
+      <div class="deposit-header" onclick="openUserModal(${d.telegram_id})" style="cursor:pointer">
+        <div class="user-avatar">
+          ${d.photo_url ? `<img src="${d.photo_url}" onerror="this.parentNode.innerHTML='${esc((d.first_name||'?')[0])}'">` : esc((d.first_name||'?')[0])}
+        </div>
+        <div class="deposit-user-info">
+          <div class="deposit-user-name">${esc(d.first_name||'—')} ${d.username?'@'+d.username:''}</div>
+          <div class="deposit-user-sub num">#${d.telegram_id} · ${esc(d.package_id)}</div>
+        </div>
+        <span class="withdraw-status ${d.status}">${dStatusLabel(d.status)}</span>
+      </div>
+      <div class="deposit-amount num">${d.ton_amount} TON <span>· ${fNum(d.tickets)} تذكرة</span></div>
+      <div class="deposit-tx">
+        ${icon('link')}
+        ${d.tx_hash
+          ? `<a href="https://tonviewer.com/transaction/${d.tx_hash}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${d.tx_hash}</a>
+             <button class="copy-addr-btn" onclick="event.stopPropagation();copyAddr('${d.tx_hash.replace(/'/g,"\\'")}',this)" title="نسخ TX">${icon('copy')}</button>`
+          : `<span class="no-tx">لا يوجد TX بعد</span>`}
+      </div>
+      <div class="withdraw-date">${icon('clock')} <span class="num">${fDateTime(d.created_at)}</span>${d.confirmed_at?` · تأكيد: <span class="num">${fDateTime(d.confirmed_at)}</span>`:''}</div>
+    </div>`).join('');
+  renderPagination('d-pagination', page, Math.ceil(res.total / 20), p => { state.deposits.page = p; loadDeposits(); });
 }
 
 // ═══════════════════════════════════════════════════════
