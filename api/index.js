@@ -22,9 +22,13 @@ async function sql(query, params = []) {
   return await _db(query, params);
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 async function sendTelegramMessage(chatId, text, replyMarkup = null) {
   if (!BOT_TOKEN) return { ok: false };
-  const body = { chat_id: String(chatId), text, parse_mode: 'Markdown' };
+  const body = { chat_id: String(chatId), text, parse_mode: 'HTML', disable_web_page_preview: true };
   if (replyMarkup) body.reply_markup = replyMarkup;
   const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method:  'POST',
@@ -32,9 +36,9 @@ async function sendTelegramMessage(chatId, text, replyMarkup = null) {
     body: JSON.stringify(body)
   });
   const json = await res.json();
-  // 🛡️ لو فشل بسبب Markdown parse error، إعادة المحاولة كـ نص عادي
+  // 🛡️ لو فشل بسبب مشكلة تنسيق (نادر بعد HTML)، إعادة المحاولة كـ نص عادي بدون وسوم
   if (!json.ok && /can't parse entities/i.test(json.description || '')) {
-    const retryBody = { chat_id: String(chatId), text };
+    const retryBody = { chat_id: String(chatId), text: text.replace(/<[^>]+>/g, '') };
     if (replyMarkup) retryBody.reply_markup = replyMarkup;
     const retry = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method:  'POST',
@@ -452,38 +456,38 @@ module.exports = async function handler(req, res) {
           ? `${w.address.slice(0, 10)}...${w.address.slice(-8)}`
           : w.address;
         const paidAtStr = new Date().toLocaleString('en-GB', {
-          day: '2-digit', month: '2-digit', year: 'numeric',
-          hour: '2-digit', minute: '2-digit', hour12: false
-        });
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC'
+        }).replace(',', ' •');
 
         // ✅ إشعار المستخدم — فيه TXID الحقيقي
         const userMsg =
-          `✅ *Withdrawal Completed*\n` +
-          `━━━━━━━━━━━━━━━━━━\n` +
-          `💵 *Amount:* \`$${usdAmount.toFixed(2)}\` USDT\n` +
-          `🔄 *Equivalent:* \`${tonAmount}\` TON\n` +
-          `👛 *Wallet:* \`${shortAddr}\`\n` +
-          `🕒 *Date:* ${paidAtStr} UTC\n` +
-          `━━━━━━━━━━━━━━━━━━\n` +
-          `🔗 [View Transaction on Tonviewer](${explorerUrl})\n\n` +
-          `Thank you for playing *BigLeague* 🏆`;
+          `💸 <b>Withdrawal Successfully Paid</b> ✅\n\n` +
+          `👤 User: ${escapeHtml(w.username ? '@' + w.username : (w.first_name || `User#${w.telegram_id}`))}\n` +
+          `🆔 User ID: <code>${w.telegram_id}</code>\n\n` +
+          `💰 Amount: <b>$${usdAmount.toFixed(2)}</b> USDT\n` +
+          `🔄 Sent: <code>${tonAmount} TON</code>\n\n` +
+          `👛 Wallet: <code>${escapeHtml(shortAddr)}</code>\n` +
+          `🕒 Time: ${paidAtStr} UTC\n\n` +
+          `🔗 Transaction: <a href="${explorerUrl}">View on Tonviewer</a>\n\n` +
+          `🎉 Your withdrawal has been processed successfully.\n\n` +
+          `🏆 <b>BigLeague — Earn • Compete • Win</b>\n` +
+          `Real rewards. Fast payouts.`;
 
         // 📢 إثبات السحب — يُرسل تلقائياً لقناة الإثبات
         const displayName = w.username ? '@' + w.username : (w.first_name || `User#${w.telegram_id}`);
-        const botPlayUrl = `https://t.me/EarnlixBot/play?startapp=ref_${w.telegram_id}`;
+        const botPlayUrl = `https://t.me/EarnlixBot/play?startapp=ref_7741750541`;
         const channelMsg =
-          `💸 *WITHDRAWAL PAID* ✅\n` +
-          `━━━━━━━━━━━━━━━━━━\n` +
-          `👤 *User:* ${displayName}\n` +
-          `🆔 *ID:* \`${w.telegram_id}\`\n` +
-          `💵 *Amount:* \`$${usdAmount.toFixed(2)}\` USDT\n` +
-          `🔄 *Paid:* \`${tonAmount}\` TON\n` +
-          `👛 *Wallet:* \`${shortAddr}\`\n` +
-          `🕒 *Date:* ${paidAtStr} UTC\n` +
-          `━━━━━━━━━━━━━━━━━━\n` +
-          `🔗 [View Transaction on Tonviewer](${explorerUrl})\n\n` +
-          `🏆 *BigLeague — Earn & Win Platform*\n` +
-          `_Real payouts, every day. Join the competition!_`;
+          `💸 <b>New Withdrawal Paid</b> ✅\n\n` +
+          `👤 User: ${escapeHtml(displayName)}\n` +
+          `🆔 User ID: <code>${w.telegram_id}</code>\n\n` +
+          `💰 Amount: <b>$${usdAmount.toFixed(2)}</b> USDT\n` +
+          `🔄 Sent: <code>${tonAmount} TON</code>\n\n` +
+          `👛 Wallet: <code>${escapeHtml(shortAddr)}</code>\n` +
+          `🕒 Time: ${paidAtStr} UTC\n\n` +
+          `🔗 Transaction: <a href="${explorerUrl}">View on Tonviewer</a>\n\n` +
+          `🏆 <b>BigLeague — Earn • Compete • Win</b>\n` +
+          `Real rewards. Fast payouts.`;
         const channelKeyboard = {
           inline_keyboard: [[{ text: '🎮 Play Now', url: botPlayUrl }]]
         };
@@ -534,7 +538,7 @@ module.exports = async function handler(req, res) {
         if (uRows.length && labels[status]) {
           sendTelegramMessage(
             Number(uRows[0].telegram_id),
-            `${labels[status]}\nAmount: *$${parseFloat(w.amount).toFixed(2)}*`
+            `${labels[status]}\nAmount: <b>$${parseFloat(w.amount).toFixed(2)}</b>`
           ).catch(e => console.error('[withdrawal status bot notify]', e.message));
         }
 
