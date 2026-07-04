@@ -413,7 +413,8 @@ module.exports = async function handler(req, res) {
           return res.status(408).json({ ok: false, error: 'Transaction not found on-chain yet — wait a few seconds and retry' });
         }
 
-        const txHash = match.hash;
+        const txHashHex = match.hash ? Buffer.from(match.hash, 'base64').toString('hex') : null;
+        const txHash = txHashHex || match.hash;
 
         await sql(
           `UPDATE withdrawals SET status = 'paid', ton_amount = $1, ton_rate = $2, tx_hash = $3, paid_at = NOW() WHERE id = $4`,
