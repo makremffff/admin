@@ -146,11 +146,14 @@ module.exports = async function handler(req, res) {
 
       // ────────────────────────────────────────────────────────────────────
       case 'adminOnlineUsers': {
+        // 🛠️ كان بيرجع 0 دايماً لأن العمودين updated_at/last_seen_at ما كانوش موجودين
+        // فعلياً بجدول users (كان بيفشل الاستعلام بصمت). دلوقتي last_seen_at بيتحدث
+        // مع كل طلب من المستخدم (شوف api/index.js) فالاستعلام بيشتغل صح.
         const rows = await sql(`
           SELECT telegram_id, first_name, username, photo_url
           FROM users
-          WHERE COALESCE(last_seen_at, updated_at, created_at) >= NOW() - INTERVAL '5 minutes'
-          ORDER BY COALESCE(last_seen_at, updated_at, created_at) DESC
+          WHERE last_seen_at >= NOW() - INTERVAL '5 minutes'
+          ORDER BY last_seen_at DESC
           LIMIT 50
         `);
 
@@ -285,6 +288,49 @@ module.exports = async function handler(req, res) {
         }
 
         return res.json({ ok: true });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
+      //  💎 Deposits — عمليات إيداع TON (صورة/اسم اللاعب + TX hash)
+      // ────────────────────────────────────────────────────────────────────
+      case 'adminDeposits': {
+        const page   = Math.max(1, parseInt(data.page, 10) || 1);
+        const limit  = Math.min(50, Math.max(1, parseInt(data.limit, 10) || 20));
+        const offset = (page - 1) * limit;
+        const status = (data.status && data.status !== 'all') ? data.status : null;
+
+        const where  = status ? `WHERE d.status = $1` : '';
+        const params = status ? [status] : [];
+
+        const [countRows, rows] = await Promise.all([
+          sql(`SELECT COUNT(*)::INT AS count FROM deposits d ${where}`, params),
+          sql(`SELECT d.id, d.package_id, d.tickets, d.ton_amount, d.wallet_address,
+                      d.status, d.tx_hash, d.created_at, d.confirmed_at,
+                      u.telegram_id, u.first_name, u.username, u.photo_url
+               FROM deposits d JOIN users u ON u.id = d.user_id
+               ${where}
+               ORDER BY d.created_at DESC LIMIT ${limit} OFFSET ${offset}`, params)
+        ]);
+
+        return res.json({
+          ok: true,
+          deposits: rows.map(d => ({
+            id:             d.id,
+            package_id:     d.package_id,
+            tickets:        d.tickets,
+            ton_amount:     parseFloat(d.ton_amount),
+            wallet_address: d.wallet_address,
+            status:         d.status,
+            tx_hash:        d.tx_hash,
+            created_at:     d.created_at,
+            confirmed_at:   d.confirmed_at,
+            telegram_id:    Number(d.telegram_id),
+            first_name:     d.first_name,
+            username:       d.username,
+            photo_url:      d.photo_url
+          })),
+          total: countRows[0].count
+        });
       }
 
       // ────────────────────────────────────────────────────────────────────
