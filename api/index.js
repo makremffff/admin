@@ -444,28 +444,53 @@ module.exports = async function handler(req, res) {
 
         const usdAmount = parseFloat(w.amount);
         const explorerUrl = `https://tonviewer.com/transaction/${txHash}`;
+        const shortAddr = w.address.length > 20
+          ? `${w.address.slice(0, 10)}...${w.address.slice(-8)}`
+          : w.address;
+        const paidAtStr = new Date().toLocaleString('en-GB', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: false
+        });
 
         // ✅ إشعار المستخدم — فيه TXID الحقيقي
-        sendTelegramMessage(
-          Number(w.telegram_id),
-          `💸 *Withdrawal Paid*\n\n` +
-          `💵 *Amount:* $${usdAmount.toFixed(2)} USDT (${tonAmount} TON)\n` +
-          `👛 *To:* \`${w.address}\`\n` +
-          `🔗 *TX Hash:* \`${txHash}\`\n\n` +
-          `[View on Tonviewer](${explorerUrl})`
-        ).catch(e => console.error('[withdraw paid bot notify]', e.message));
+        const userMsg =
+          `✅ *تم صرف سحبك بنجاح*\n` +
+          `━━━━━━━━━━━━━━━━━━\n` +
+          `💵 *المبلغ:* \`$${usdAmount.toFixed(2)}\` USDT\n` +
+          `🔄 *يعادل:* \`${tonAmount}\` TON\n` +
+          `👛 *المحفظة:* \`${shortAddr}\`\n` +
+          `🕒 *التاريخ:* ${paidAtStr}\n` +
+          `━━━━━━━━━━━━━━━━━━\n` +
+          `🔗 [عرض المعاملة على Tonviewer](${explorerUrl})\n\n` +
+          `شكراً لثقتك بـ *BigLeague* 🏆`;
 
         // 📢 إثبات السحب — يُرسل تلقائياً لقناة الإثبات
         const displayName = w.username ? '@' + w.username : (w.first_name || `User#${w.telegram_id}`);
-        sendTelegramMessage(
-          WITHDRAW_PROOF_CHANNEL,
-          `✅ *Withdrawal Proof*\n\n` +
-          `👤 *User:* ${displayName} (\`${w.telegram_id}\`)\n` +
-          `💵 *Amount:* $${usdAmount.toFixed(2)} USDT (${tonAmount} TON)\n` +
-          `👛 *Wallet:* \`${w.address}\`\n` +
-          `🔗 *TX Hash:* \`${txHash}\`\n` +
-          `[View on Tonviewer](${explorerUrl})`
-        ).catch(e => console.error('[withdraw proof channel notify]', e.message));
+        const channelMsg =
+          `💸 *إثبات سحب جديد*\n` +
+          `━━━━━━━━━━━━━━━━━━\n` +
+          `👤 *المستخدم:* ${displayName}\n` +
+          `🆔 *ID:* \`${w.telegram_id}\`\n` +
+          `💵 *المبلغ:* \`$${usdAmount.toFixed(2)}\` USDT  •  \`${tonAmount}\` TON\n` +
+          `👛 *المحفظة:* \`${shortAddr}\`\n` +
+          `🕒 *التاريخ:* ${paidAtStr}\n` +
+          `━━━━━━━━━━━━━━━━━━\n` +
+          `🔗 [عرض المعاملة على Tonviewer](${explorerUrl})\n\n` +
+          `✅ *BigLeague — منصة الأرباح والتحديات*`;
+
+        // 🛡️ ننتظر الإرسالين قبل ما نرجّع الرد — على Vercel، أي Promise معلّق بعد
+        // res.json() ممكن ينقطع فوراً (تجميد/إنهاء الـ function)، فكان هذا سبب
+        // عدم وصول إشعار القناة أحياناً رغم نجاح الدفع فعلياً.
+        const [userNotify, channelNotify] = await Promise.allSettled([
+          sendTelegramMessage(Number(w.telegram_id), userMsg),
+          sendTelegramMessage(WITHDRAW_PROOF_CHANNEL, channelMsg)
+        ]);
+        if (userNotify.status === 'rejected' || userNotify.value?.ok === false) {
+          console.error('[withdraw paid bot notify]', userNotify.reason?.message || JSON.stringify(userNotify.value));
+        }
+        if (channelNotify.status === 'rejected' || channelNotify.value?.ok === false) {
+          console.error('[withdraw proof channel notify]', channelNotify.reason?.message || JSON.stringify(channelNotify.value));
+        }
 
         return res.json({ ok: true, txHash });
       }
