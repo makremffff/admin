@@ -1537,7 +1537,7 @@ async function payWithdrawalTon(id, btn) {
 
     const nanotons = Math.round(quote.tonAmount * 1e9).toString();
     let payload;
-    try { payload = tonCommentPayloadAdmin(`Withdrawal #${id}`); } catch (e) { console.warn('[payWithdrawalTon] payload skipped:', e); }
+    try { payload = tonCommentPayloadAdmin(`EarnBox 🧸`); } catch (e) { console.warn('[payWithdrawalTon] payload skipped:', e); }
 
     const adminWalletAddr = adminTonConnectUI.wallet.account.address;
     const sentAtMs = Date.now();
