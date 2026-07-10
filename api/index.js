@@ -805,6 +805,26 @@ module.exports = async function handler(req, res) {
         });
       }
 
+      case 'adminCompetitionAdjustTime': {
+        const hours = parseFloat(data.hours);
+        if (!hours || isNaN(hours)) return res.status(400).json({ ok: false, error: 'عدد الساعات مطلوب' });
+        if (Math.abs(hours) > 24 * 90) return res.status(400).json({ ok: false, error: 'قيمة غير منطقية' });
+
+        const rows = await sql(`
+          UPDATE competition
+          SET end_at = end_at + ($1 || ' hours')::INTERVAL
+          WHERE active = TRUE AND prize_distributed = FALSE
+          RETURNING id, name, end_at, start_at
+        `, [String(hours)]);
+        if (!rows.length) return res.status(400).json({ ok: false, error: 'لا يوجد موسم نشط حالياً' });
+
+        if (new Date(rows[0].end_at) <= new Date(rows[0].start_at)) {
+          return res.status(400).json({ ok: false, error: 'وقت النهاية لازم يكون بعد وقت البداية' });
+        }
+
+        return res.json({ ok: true, competition: rows[0] });
+      }
+
       // ────────────────────────────────────────────────────────────────────
       case 'adminBroadcast': {
         const text      = (data.text || '').trim();
