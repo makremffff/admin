@@ -589,6 +589,46 @@ module.exports = async function handler(req, res) {
       }
 
       // ────────────────────────────────────────────────────────────────────
+      case 'adminCheatAttempts': {
+        const page   = Math.max(1, parseInt(data.page, 10) || 1);
+        const limit  = Math.min(50, Math.max(1, parseInt(data.limit, 10) || 20));
+        const offset = (page - 1) * limit;
+
+        const [countRows, rows] = await Promise.all([
+          sql(`SELECT COUNT(DISTINCT al.user_id)::INT AS count
+               FROM activity_logs al WHERE al.action = 'sec_event'`),
+          sql(`SELECT u.telegram_id, u.first_name, u.username, u.photo_url,
+                      u.risk_score, u.banned, u.shadow_banned,
+                      COUNT(al.id)::INT AS attempts,
+                      MAX(al.created_at) AS last_attempt,
+                      array_agg(DISTINCT COALESCE(al.meta->>'event', al.action)) AS events
+               FROM activity_logs al
+               JOIN users u ON u.id = al.user_id
+               WHERE al.action = 'sec_event'
+               GROUP BY u.id, u.telegram_id, u.first_name, u.username, u.photo_url,
+                        u.risk_score, u.banned, u.shadow_banned
+               ORDER BY last_attempt DESC LIMIT ${limit} OFFSET ${offset}`)
+        ]);
+
+        return res.json({
+          ok: true,
+          cheaters: rows.map(r => ({
+            telegram_id:   Number(r.telegram_id),
+            first_name:    r.first_name,
+            username:      r.username,
+            photo_url:     r.photo_url,
+            risk_score:    r.risk_score,
+            banned:        r.banned,
+            shadow_banned: r.shadow_banned,
+            attempts:      r.attempts,
+            last_attempt:  r.last_attempt,
+            events:        r.events
+          })),
+          total: countRows[0].count
+        });
+      }
+
+      // ────────────────────────────────────────────────────────────────────
       case 'adminActivityLogs': {
         const page        = Math.max(1, parseInt(data.page, 10) || 1);
         const limit       = Math.min(100, Math.max(1, parseInt(data.limit, 10) || 30));
