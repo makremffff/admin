@@ -927,17 +927,29 @@
 
   <!-- PAGE: السجل -->
   <div id="page-logs" class="page-content">
-    <div class="filter-chips">
-      <div class="chip active" data-log=""           onclick="setLogFilter(this,'')">الكل</div>
-      <div class="chip"       data-log="game_round" onclick="setLogFilter(this,'game_round')">لعبة</div>
-      <div class="chip"       data-log="ref_copy"   onclick="setLogFilter(this,'ref_copy')">إحالة</div>
-      <div class="chip"       data-log="sec_event"  onclick="setLogFilter(this,'sec_event')">أمان</div>
-      <div class="chip"       data-log="admin_adjust_pts" onclick="setLogFilter(this,'admin_adjust_pts')">ضبط نقاط</div>
+    <div class="subtab-toggle">
+      <button class="subtab-btn active" id="subtab-logs"   onclick="switchLogsSubTab('logs')">السجل</button>
+      <button class="subtab-btn" id="subtab-cheats" onclick="switchLogsSubTab('cheats')">محاولات غش</button>
     </div>
-    <div class="section-card" style="padding:6px 12px">
-      <div id="logs-list"></div>
+
+    <div id="subpage-logs">
+      <div class="filter-chips">
+        <div class="chip active" data-log=""           onclick="setLogFilter(this,'')">الكل</div>
+        <div class="chip"       data-log="game_round" onclick="setLogFilter(this,'game_round')">لعبة</div>
+        <div class="chip"       data-log="ref_copy"   onclick="setLogFilter(this,'ref_copy')">إحالة</div>
+        <div class="chip"       data-log="sec_event"  onclick="setLogFilter(this,'sec_event')">أمان</div>
+        <div class="chip"       data-log="admin_adjust_pts" onclick="setLogFilter(this,'admin_adjust_pts')">ضبط نقاط</div>
+      </div>
+      <div class="section-card" style="padding:6px 12px">
+        <div id="logs-list"></div>
+      </div>
+      <div class="pagination" id="logs-pagination"></div>
     </div>
-    <div class="pagination" id="logs-pagination"></div>
+
+    <div id="subpage-cheats" style="display:none">
+      <div id="cheats-list"></div>
+      <div class="pagination" id="cheats-pagination"></div>
+    </div>
   </div>
 
   <!-- Bottom Nav -->
@@ -1052,8 +1064,10 @@ const state = {
   withdrawals: { page: 1, filter: 'all', total: 0 },
   deposits:    { page: 1, filter: 'all', total: 0 },
   logs:        { page: 1, filter: '',    total: 0 },
+  cheats:      { page: 1, total: 0 },
 };
 let withdrawSubTab = 'withdrawals';
+let logsSubTab = 'logs';
 
 // ═══════════════════════════════════════════════════════
 //  API
@@ -1154,7 +1168,8 @@ function switchPage(name) {
     if (withdrawSubTab === 'deposits') { if (!document.getElementById('deposits-list').children.length) loadDeposits(); }
     else if (!document.getElementById('withdrawals-list').children.length) loadWithdrawals();
   }
-  if (name === 'logs'        && !document.getElementById('logs-list').children.length) loadLogs();
+  if (name === 'logs'        && logsSubTab === 'logs'   && !document.getElementById('logs-list').children.length)   loadLogs();
+  if (name === 'logs'        && logsSubTab === 'cheats' && !document.getElementById('cheats-list').children.length) loadCheats();
 }
 
 function switchWithdrawSubTab(tab) {
@@ -1168,12 +1183,23 @@ function switchWithdrawSubTab(tab) {
   if (tab === 'withdrawals' && !document.getElementById('withdrawals-list').children.length) loadWithdrawals();
 }
 
+function switchLogsSubTab(tab) {
+  logsSubTab = tab;
+  document.getElementById('subtab-logs').classList.toggle('active', tab === 'logs');
+  document.getElementById('subtab-cheats').classList.toggle('active', tab === 'cheats');
+  document.getElementById('subpage-logs').style.display   = tab === 'logs'   ? '' : 'none';
+  document.getElementById('subpage-cheats').style.display = tab === 'cheats' ? '' : 'none';
+  document.getElementById('page-title').textContent = tab === 'cheats' ? 'محاولات غش' : 'السجل';
+  if (tab === 'cheats' && !document.getElementById('cheats-list').children.length) loadCheats();
+  if (tab === 'logs'   && !document.getElementById('logs-list').children.length)   loadLogs();
+}
+
 function refreshCurrent() {
   const active = document.querySelector('.page-content.active');
   if (active?.id === 'page-home') loadDashboard();
   else if (active?.id === 'page-users') loadUsers();
   else if (active?.id === 'page-withdrawals') { withdrawSubTab === 'deposits' ? loadDeposits() : loadWithdrawals(); }
-  else if (active?.id === 'page-logs') loadLogs();
+  else if (active?.id === 'page-logs') { logsSubTab === 'cheats' ? loadCheats() : loadLogs(); }
 }
 
 function toggleMenu() { logout(); }
@@ -1664,8 +1690,54 @@ async function loadLogs() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  User Detail Sheet  ★ محسّن كاملاً
+//  Cheat Attempts — مستخدمين عندهم أحداث أمان (فتح Developer Tools، دمج DOM، إلخ)
 // ═══════════════════════════════════════════════════════
+const cheatEventLabels = {
+  devtools_open: 'فتح أدوات المطوّر',
+  dom_tamper:    'تلاعب بالـ DOM',
+  sec_event:     'حدث أمان'
+};
+function cheatEventLabel(ev) { return cheatEventLabels[ev] || ev; }
+
+async function loadCheats() {
+  const { page } = state.cheats;
+  document.getElementById('cheats-list').innerHTML =
+    [1,2,3,4,5].map(()=>`<div class="skeleton" style="height:80px;border-radius:12px;margin-bottom:8px"></div>`).join('');
+  const res = await api('adminCheatAttempts', { page, limit: 20 });
+  if (!res.ok) return;
+  state.cheats.total = res.total;
+  const cl = document.getElementById('cheats-list');
+  if (!res.cheaters.length) {
+    cl.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('shield')}</div><p>ولا محاولة غش لهلق</p></div>`;
+    document.getElementById('cheats-pagination').innerHTML = ''; return;
+  }
+  cl.innerHTML = res.cheaters.map(c => {
+    const riskColor = c.risk_score > 70 ? 'var(--rose)' : c.risk_score > 40 ? 'var(--amber)' : 'var(--emerald)';
+    return `
+    <div class="user-card" onclick="openUserModal(${c.telegram_id})">
+      <div class="user-avatar">
+        ${c.photo_url ? `<img src="${c.photo_url}" onerror="this.parentNode.innerHTML='${esc((c.first_name||'?')[0])}'">` : esc((c.first_name||'?')[0])}
+        <span class="tg-icon">${icon('alert')}</span>
+      </div>
+      <div class="user-card-info">
+        <div class="user-card-name">${esc(c.first_name||'—')}</div>
+        <div class="user-card-sub">${c.username?'@'+c.username:'بدون username'} · <span class="num">#${c.telegram_id}</span></div>
+        <div class="user-card-stats">
+          <span class="user-stat-pill"><span class="dot" style="background:${riskColor}"></span>Risk <span class="num">${c.risk_score}</span></span>
+          <span class="user-stat-pill"><span class="dot" style="background:var(--rose)"></span><span class="num">${c.attempts}</span> محاولة</span>
+        </div>
+        <div class="log-meta" style="margin-top:4px">${(c.events||[]).map(e=>esc(cheatEventLabel(e))).join(' · ')}</div>
+        <div class="log-time num" style="margin-top:2px">${icon('clock')} ${fDateTime(c.last_attempt)}</div>
+      </div>
+      <span class="badge ${c.banned?'banned':c.shadow_banned?'shadow':'normal'}">
+        ${c.banned?'محظور':c.shadow_banned?'شادو':'نشط'}
+      </span>
+    </div>`;
+  }).join('');
+  renderPagination('cheats-pagination', page, Math.ceil(res.total / 20), p => { state.cheats.page = p; loadCheats(); });
+}
+
+
 let currentUser = null;
 
 async function openUserModal(tgId) {
