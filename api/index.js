@@ -223,14 +223,15 @@ module.exports = async function handler(req, res) {
                       COALESCE(SUM(balance_usd),0)::NUMERIC AS total_balance
                FROM users`),
           sql(`SELECT COUNT(*)::INT AS count FROM users WHERE created_at >= NOW() - INTERVAL '${range} days'`),
-          sql(`SELECT COUNT(*)::INT AS total,
-                      COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)::INT AS today
-               FROM ad_watches`),
+          // 📊 من ad_daily_stats — إجمالي شامل (إعلانات عادية + إعلانات الدوبل) بدل ad_watches وحدها
+          sql(`SELECT COALESCE(SUM(total_count), 0)::INT AS total,
+                      COALESCE(SUM(total_count) FILTER (WHERE day = CURRENT_DATE), 0)::INT AS today
+               FROM ad_daily_stats`),
           sql(`SELECT COUNT(*)::INT AS count FROM withdrawals WHERE status = 'pending'`),
-          sql(`SELECT DATE(created_at) AS day, COUNT(*)::INT AS count
-               FROM ad_watches
-               WHERE created_at >= NOW() - INTERVAL '${range} days'
-               GROUP BY DATE(created_at) ORDER BY day ASC`),
+          sql(`SELECT day, total_count::INT AS count
+               FROM ad_daily_stats
+               WHERE day >= CURRENT_DATE - INTERVAL '${range} days'
+               ORDER BY day ASC`),
           sql(`SELECT telegram_id, first_name, username, photo_url, pts, created_at
                FROM users ORDER BY created_at DESC LIMIT 8`),
           getActiveCompetition()
