@@ -844,10 +844,11 @@
       <input id="user-search" type="text" placeholder="ابحث بالاسم أو @username أو ID..." oninput="debounceSearch()">
     </div>
     <div class="filter-chips">
-      <div class="chip active" data-filter="all"    onclick="setUserFilter(this,'all')">الكل</div>
-      <div class="chip"       data-filter="top"    onclick="setUserFilter(this,'top')">الأعلى</div>
-      <div class="chip"       data-filter="banned" onclick="setUserFilter(this,'banned')">محظور</div>
-      <div class="chip"       data-filter="shadow" onclick="setUserFilter(this,'shadow')">شادو</div>
+      <div class="chip active" data-filter="all"       onclick="setUserFilter(this,'all')">الكل</div>
+      <div class="chip"       data-filter="top"        onclick="setUserFilter(this,'top')">الأعلى</div>
+      <div class="chip"       data-filter="referrals"  onclick="setUserFilter(this,'referrals')">الأكثر إحالة</div>
+      <div class="chip"       data-filter="banned"     onclick="setUserFilter(this,'banned')">محظور</div>
+      <div class="chip"       data-filter="shadow"     onclick="setUserFilter(this,'shadow')">شادو</div>
     </div>
     <div id="users-list"></div>
     <div class="pagination" id="users-pagination"></div>
@@ -1410,6 +1411,7 @@ async function loadUsers() {
           <span class="user-stat-pill"><span class="dot" style="background:var(--gold)"></span><span class="num">${fNum(u.pts)}</span> نقطة</span>
           <span class="user-stat-pill"><span class="dot" style="background:var(--emerald)"></span><span class="num">$${parseFloat(u.balance_usd).toFixed(2)}</span></span>
           <span class="user-stat-pill"><span class="dot" style="background:var(--violet)"></span><span class="num">${u.daily_ads||0}</span> إعلان</span>
+          ${u.referrals ? `<span class="user-stat-pill"><span class="dot" style="background:var(--gold)"></span><span class="num">${fNum(u.referrals)}</span> إحالة</span>` : ''}
         </div>
       </div>
       <span class="badge ${u.banned?'banned':u.shadow_banned?'shadow':'normal'}">
