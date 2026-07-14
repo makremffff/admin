@@ -317,12 +317,28 @@ module.exports = async function handler(req, res) {
           }
         }
         const where   = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-        const orderBy = filter === 'top' ? 'pts DESC' : 'created_at DESC';
+        const orderBy = filter === 'top'        ? 'u.pts DESC'
+                       : filter === 'referrals'  ? 'ref_count DESC'
+                       : 'u.created_at DESC';
+
+        // 🔗 عدّاد الإحالات لكل مستخدم (بيشمل كل المُحالين، نشطين أو مش نشطين)
+        const refJoin = `LEFT JOIN (
+          SELECT referred_by, COUNT(*)::INT AS ref_count
+          FROM users WHERE referred_by IS NOT NULL GROUP BY referred_by
+        ) r ON r.referred_by = u.telegram_id`;
+
+        const whereU = where
+          .replace(/\bshadow_banned\b/g, 'u.shadow_banned')
+          .replace(/(?<!u\.)\bbanned\b/g, 'u.banned')
+          .replace(/\bfirst_name\b/g, 'u.first_name')
+          .replace(/\busername\b/g, 'u.username')
+          .replace(/\btelegram_id\b/g, 'u.telegram_id');
 
         const [countRows, rows] = await Promise.all([
-          sql(`SELECT COUNT(*)::INT AS count FROM users ${where}`, params),
-          sql(`SELECT telegram_id, first_name, username, photo_url, pts, balance_usd, daily_ads, banned, shadow_banned
-               FROM users ${where} ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`, params)
+          sql(`SELECT COUNT(*)::INT AS count FROM users u ${whereU}`, params),
+          sql(`SELECT u.telegram_id, u.first_name, u.username, u.photo_url, u.pts, u.balance_usd, u.daily_ads, u.banned, u.shadow_banned,
+                      COALESCE(r.ref_count, 0) AS ref_count
+               FROM users u ${refJoin} ${whereU} ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`, params)
         ]);
 
         return res.json({
@@ -336,7 +352,8 @@ module.exports = async function handler(req, res) {
             balance_usd:   parseFloat(u.balance_usd),
             daily_ads:     u.daily_ads,
             banned:        u.banned,
-            shadow_banned: u.shadow_banned
+            shadow_banned: u.shadow_banned,
+            referrals:     Number(u.ref_count)
           })),
           total: countRows[0].count
         });
