@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#07090f">
 <meta name="color-scheme" content="dark">
-<title>لوحة التحكم — BigLeague</title>
+<title>لوحة التحكم — Real Cash</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=DynaPuff:wght@500;600;700&family=Permanent+Marker&display=swap');
 
@@ -345,37 +345,6 @@
   .action-btn.reject  { background: var(--rose-bg);    color: var(--rose);    }
   .action-btn.paid    { background: var(--gold-bg);    color: var(--gold);    }
 
-  /* ── Withdrawals/Deposits sub-tabs ── */
-  .subtab-toggle {
-    display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--line);
-    border-radius: 12px; padding: 4px; margin-bottom: 12px;
-  }
-  .subtab-btn {
-    flex: 1; padding: 8px; border: none; border-radius: 9px; background: transparent;
-    color: var(--text2); font-size: 12.5px; font-weight: 700; cursor: pointer;
-    font-family: inherit; transition: background .15s, color .15s;
-  }
-  .subtab-btn.active { background: var(--gold); color: var(--gold-ink); }
-
-  /* ── Deposits ── */
-  .deposit-card {
-    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px;
-    box-shadow: var(--shadow-sm); margin-bottom: 8px;
-  }
-  .deposit-header { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
-  .deposit-user-info { flex: 1; min-width: 0; }
-  .deposit-user-name { font-size: 13px; font-weight: 700; }
-  .deposit-user-sub  { font-size: 10.5px; color: var(--text2); margin-top: 1px; }
-  .deposit-amount { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-  .deposit-amount span { font-size: 11px; color: var(--text2); font-weight: 600; }
-  .deposit-tx {
-    font-size: 10.5px; color: var(--text2); word-break: break-all; margin-bottom: 8px;
-    display: flex; align-items: flex-start; gap: 5px;
-  }
-  .deposit-tx .icon { width: 12px; height: 12px; margin-top: 1px; flex-shrink: 0; }
-  .deposit-tx a { color: var(--gold); text-decoration: none; }
-  .deposit-tx .no-tx { color: var(--text3); }
-  .deposit-date { font-size: 10px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
   .withdraw-status.confirmed { background: var(--emerald-bg); color: var(--emerald); }
   .withdraw-status.failed    { background: var(--rose-bg);    color: var(--rose);    }
 
@@ -637,17 +606,6 @@
   }
   .photo-remove-btn .icon { width: 11px; height: 11px; stroke-width: 3; }
 
-  /* ── Sessions ── */
-  .sessions-wrap { margin-top: 4px; }
-  .session-item {
-    background: var(--surface); border-radius: 10px; padding: 9px 11px;
-    margin-bottom: 6px; font-size: 11px; color: var(--text2);
-  }
-  .session-fp { font-family: monospace; font-size: 10px; color: var(--text3); word-break: break-all; margin-top: 3px; }
-  .session-time { font-size: 10px; color: var(--text3); margin-top: 2px; }
-  .session-flags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-  .session-flag { padding: 2px 6px; border-radius: 6px; font-size: 9px; font-weight: 700; background: var(--rose-bg); color: var(--rose); }
-
   /* ── Modal buttons (sheet actions) ── */
   .modal-btn {
     flex: 1; min-width: 0; padding: 11px 10px; border-radius: 11px; border: none;
@@ -739,7 +697,7 @@
 <div id="login-screen">
   <div class="login-card">
     <div class="login-icon"><svg class="icon"><use href="#i-shield"></use></svg></div>
-    <h1 class="brand-mark login-brand">BigLeague</h1>
+    <h1 class="brand-mark login-brand">Real Cash</h1>
     <p class="login-sub">لوحة التحكم — أدخل كلمة السر للمتابعة</p>
     <input id="login-input" class="form-input" type="password" placeholder="كلمة السر" autocomplete="off" style="text-align:center;margin-bottom:0">
     <div class="login-error" id="login-error" style="display:none">
@@ -760,7 +718,7 @@
       <h1 id="page-title">لوحة التحكم</h1>
       <div class="sub">
         <span class="tg-badge"><svg class="icon"><use href="#i-send"></use></svg></span>
-        <span class="brand-mark" style="font-size:11px">BigLeague</span>
+        <span class="brand-mark" style="font-size:11px">Real Cash</span>
       </div>
     </div>
     <button class="icon-btn notif-btn" onclick="refreshCurrent()">
@@ -854,13 +812,8 @@
     <div class="pagination" id="users-pagination"></div>
   </div>
 
-  <!-- PAGE: السحوبات / الإيداعات -->
+  <!-- PAGE: السحوبات -->
   <div id="page-withdrawals" class="page-content">
-    <div class="subtab-toggle">
-      <button class="subtab-btn active" id="subtab-withdrawals" onclick="switchWithdrawSubTab('withdrawals')">السحوبات</button>
-      <button class="subtab-btn" id="subtab-deposits" onclick="switchWithdrawSubTab('deposits')">الإيداعات</button>
-    </div>
-
     <div id="subpage-withdrawals">
       <div class="ton-wallet-bar">
         <div class="tw-info">
@@ -878,17 +831,6 @@
       </div>
       <div id="withdrawals-list"></div>
       <div class="pagination" id="w-pagination"></div>
-    </div>
-
-    <div id="subpage-deposits" style="display:none">
-      <div class="filter-chips">
-        <div class="chip active" data-dfilter="all"       onclick="setDFilter(this,'all')">الكل</div>
-        <div class="chip"       data-dfilter="pending"   onclick="setDFilter(this,'pending')">انتظار</div>
-        <div class="chip"       data-dfilter="confirmed" onclick="setDFilter(this,'confirmed')">مؤكد</div>
-        <div class="chip"       data-dfilter="failed"    onclick="setDFilter(this,'failed')">فشل</div>
-      </div>
-      <div id="deposits-list"></div>
-      <div class="pagination" id="d-pagination"></div>
     </div>
   </div>
 
@@ -1063,11 +1005,9 @@ let onlinePollTimer = null;
 const state = {
   users:       { page: 1, filter: 'all', search: '', total: 0 },
   withdrawals: { page: 1, filter: 'all', total: 0 },
-  deposits:    { page: 1, filter: 'all', total: 0 },
   logs:        { page: 1, filter: '',    total: 0 },
   cheats:      { page: 1, total: 0 },
 };
-let withdrawSubTab = 'withdrawals';
 let logsSubTab = 'logs';
 
 // ═══════════════════════════════════════════════════════
@@ -1165,23 +1105,9 @@ function switchPage(name) {
   if (nav) nav.classList.add('active');
   document.getElementById('page-title').textContent = titles[name] || 'لوحة التحكم';
   if (name === 'users'       && !document.getElementById('users-list').children.length) loadUsers();
-  if (name === 'withdrawals') {
-    if (withdrawSubTab === 'deposits') { if (!document.getElementById('deposits-list').children.length) loadDeposits(); }
-    else if (!document.getElementById('withdrawals-list').children.length) loadWithdrawals();
-  }
+  if (name === 'withdrawals' && !document.getElementById('withdrawals-list').children.length) loadWithdrawals();
   if (name === 'logs'        && logsSubTab === 'logs'   && !document.getElementById('logs-list').children.length)   loadLogs();
   if (name === 'logs'        && logsSubTab === 'cheats' && !document.getElementById('cheats-list').children.length) loadCheats();
-}
-
-function switchWithdrawSubTab(tab) {
-  withdrawSubTab = tab;
-  document.getElementById('subtab-withdrawals').classList.toggle('active', tab === 'withdrawals');
-  document.getElementById('subtab-deposits').classList.toggle('active', tab === 'deposits');
-  document.getElementById('subpage-withdrawals').style.display = tab === 'withdrawals' ? '' : 'none';
-  document.getElementById('subpage-deposits').style.display    = tab === 'deposits'    ? '' : 'none';
-  document.getElementById('page-title').textContent = tab === 'deposits' ? 'الإيداعات' : 'السحوبات';
-  if (tab === 'deposits' && !document.getElementById('deposits-list').children.length) loadDeposits();
-  if (tab === 'withdrawals' && !document.getElementById('withdrawals-list').children.length) loadWithdrawals();
 }
 
 function switchLogsSubTab(tab) {
@@ -1199,7 +1125,7 @@ function refreshCurrent() {
   const active = document.querySelector('.page-content.active');
   if (active?.id === 'page-home') loadDashboard();
   else if (active?.id === 'page-users') loadUsers();
-  else if (active?.id === 'page-withdrawals') { withdrawSubTab === 'deposits' ? loadDeposits() : loadWithdrawals(); }
+  else if (active?.id === 'page-withdrawals') { loadWithdrawals(); }
   else if (active?.id === 'page-logs') { logsSubTab === 'cheats' ? loadCheats() : loadLogs(); }
 }
 
@@ -1447,7 +1373,7 @@ async function loadWithdrawals() {
         <span class="withdraw-status ${w.status}">${wStatusLabel(w.status)}</span>
       </div>
       <div class="withdraw-amount num">$${parseFloat(w.amount).toFixed(2)} USDT</div>
-      <div class="withdraw-addr">${icon('pin')} <span style="flex:1">${esc(w.address)}${w.memo?' · '+esc(w.memo):''}</span><button class="copy-addr-btn" onclick="event.stopPropagation();copyAddr('${w.address.replace(/'/g,"\\'")}',this)" title="نسخ العنوان">${icon('copy')}</button></div>
+      <div class="withdraw-addr">${icon('pin')} <span style="flex:1">${esc(w.address)}</span><button class="copy-addr-btn" onclick="event.stopPropagation();copyAddr('${w.address.replace(/'/g,"\\'")}',this)" title="نسخ العنوان">${icon('copy')}</button></div>
       <div class="withdraw-date">${icon('clock')} <span class="num">${fDateTime(w.created_at)}</span> · <span class="num">#${w.telegram_id}</span></div>
       ${(w.status==='pending'||w.status==='approved')?`
       <div class="withdraw-actions">
@@ -1565,7 +1491,7 @@ async function payWithdrawalTon(id, btn) {
 
     const nanotons = Math.round(quote.tonAmount * 1e9).toString();
     let payload;
-    try { payload = tonCommentPayloadAdmin(`EarnBox 🧸`); } catch (e) { console.warn('[payWithdrawalTon] payload skipped:', e); }
+    try { payload = tonCommentPayloadAdmin(`Real Cash`); } catch (e) { console.warn('[payWithdrawalTon] payload skipped:', e); }
 
     const adminWalletAddr = adminTonConnectUI.wallet.account.address;
     const sentAtMs = Date.now();
@@ -1609,53 +1535,6 @@ async function markWithdrawPaidWithRetry(id, tonAmount, rate, adminWallet, sentA
     }
     return res;
   }
-}
-
-// ═══════════════════════════════════════════════════════
-//  Deposits
-// ═══════════════════════════════════════════════════════
-function dStatusLabel(s) {
-  return { pending: 'انتظار', confirmed: 'مؤكد', failed: 'فشل' }[s] || s;
-}
-function setDFilter(el, filter) {
-  document.querySelectorAll('[data-dfilter]').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  state.deposits.filter = filter; state.deposits.page = 1; loadDeposits();
-}
-async function loadDeposits() {
-  const { page, filter } = state.deposits;
-  document.getElementById('deposits-list').innerHTML =
-    [1,2,3].map(()=>`<div class="skeleton" style="height:120px;border-radius:12px;margin-bottom:8px"></div>`).join('');
-  const res = await api('adminDeposits', { page, status: filter, limit: 20 });
-  if (!res.ok) return;
-  const dl = document.getElementById('deposits-list');
-  if (!res.deposits.length) {
-    dl.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('coin')}</div><p>لا توجد عمليات إيداع</p></div>`;
-    document.getElementById('d-pagination').innerHTML = ''; return;
-  }
-  dl.innerHTML = res.deposits.map(d => `
-    <div class="deposit-card">
-      <div class="deposit-header" onclick="openUserModal(${d.telegram_id})" style="cursor:pointer">
-        <div class="user-avatar">
-          ${d.photo_url ? `<img src="${d.photo_url}" onerror="this.parentNode.innerHTML='${esc((d.first_name||'?')[0])}'">` : esc((d.first_name||'?')[0])}
-        </div>
-        <div class="deposit-user-info">
-          <div class="deposit-user-name">${esc(d.first_name||'—')} ${d.username?'@'+d.username:''}</div>
-          <div class="deposit-user-sub num">#${d.telegram_id} · ${esc(d.package_id)}</div>
-        </div>
-        <span class="withdraw-status ${d.status}">${dStatusLabel(d.status)}</span>
-      </div>
-      <div class="deposit-amount num">${d.ton_amount} TON <span>· ${fNum(d.tickets)} تذكرة</span></div>
-      <div class="deposit-tx">
-        ${icon('link')}
-        ${d.tx_hash
-          ? `<a href="https://tonviewer.com/transaction/${d.tx_hash}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${d.tx_hash}</a>
-             <button class="copy-addr-btn" onclick="event.stopPropagation();copyAddr('${d.tx_hash.replace(/'/g,"\\'")}',this)" title="نسخ TX">${icon('copy')}</button>`
-          : `<span class="no-tx">لا يوجد TX بعد</span>`}
-      </div>
-      <div class="withdraw-date">${icon('clock')} <span class="num">${fDateTime(d.created_at)}</span>${d.confirmed_at?` · تأكيد: <span class="num">${fDateTime(d.confirmed_at)}</span>`:''}</div>
-    </div>`).join('');
-  renderPagination('d-pagination', page, Math.ceil(res.total / 20), p => { state.deposits.page = p; loadDeposits(); });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1871,16 +1750,6 @@ function renderUserSheet(res) {
       </div>
     </div>
 
-    <!-- الجلسات -->
-    <div class="detail-section">
-      <div class="detail-section-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>الجلسات الأخيرة</span>
-        <span style="font-size:10px;color:var(--violet);cursor:pointer;text-transform:none;letter-spacing:0" onclick="loadUserSessions(${u.telegram_id})">تحديث</span>
-      </div>
-      <div id="sessions-wrap" class="sessions-wrap">
-        <div style="color:var(--text3);font-size:11px;padding:8px 0">اضغط تحديث لعرض الجلسات</div>
-      </div>
-    </div>
   `;
 
   document.getElementById('modal-actions').innerHTML = `
@@ -1932,26 +1801,6 @@ async function saveUserField(tgId, field) {
     if (currentUser) { currentUser.pts = res.pts; currentUser.balance_usd = res.balance_usd; }
     if (document.getElementById('page-users').classList.contains('active')) loadUsers();
   } else showToast(icon('x')+' ' + res.error);
-}
-
-async function loadUserSessions(tgId) {
-  const wrap = document.getElementById('sessions-wrap');
-  wrap.innerHTML = `<div class="skeleton" style="height:52px;border-radius:10px;margin-bottom:6px"></div><div class="skeleton" style="height:52px;border-radius:10px"></div>`;
-  const res = await api('adminUserSessions', { telegram_id: tgId });
-  if (!res.ok) { wrap.innerHTML = `<div style="color:var(--rose);font-size:11px;padding:6px 0">${res.error}</div>`; return; }
-  if (!res.sessions.length) { wrap.innerHTML = `<div style="color:var(--text3);font-size:11px;padding:8px 0">لا توجد جلسات</div>`; return; }
-  wrap.innerHTML = res.sessions.map(s => {
-    const flags = Array.isArray(s.risk_flags) ? s.risk_flags : [];
-    return `<div class="session-item">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <span style="font-weight:700;font-size:11px">${icon('device')} جلسة</span>
-        <span style="font-size:9.5px;color:var(--text3)">${fDateTime(s.last_active_at)}</span>
-      </div>
-      <div class="session-fp">${esc(s.device_fingerprint||'—')}</div>
-      <div class="session-time">بدأت: ${fDateTime(s.created_at)}</div>
-      ${flags.length ? `<div class="session-flags">${flags.map(f=>`<span class="session-flag">${esc(f)}</span>`).join('')}</div>` : ''}
-    </div>`;
-  }).join('');
 }
 
 function closeModal(e) {
