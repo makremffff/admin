@@ -11,9 +11,7 @@ const BOT_TOKEN    = process.env.BOT_TOKEN;
 const ADMIN_SECRET = process.env.ADMIN_SECRET; // ✅ Fixed: was INTERNAL_SECRET
 
 // 💸 قناة إثبات السحوبات — يُرسل لها تلقائياً بعد كل عملية دفع TON ناجحة
-// ⚠️ لازم تضبط WITHDRAW_PROOF_CHANNEL في Vercel env vars (يوزرنيم القناة بصيغة @channel)
-// لو ماكانتش مضبوطة، الإرسال للقناة بيتخطّى تلقائياً بدون أي خطأ (شوف adminMarkWithdrawPaid)
-const WITHDRAW_PROOF_CHANNEL = process.env.WITHDRAW_PROOF_CHANNEL || '';
+const WITHDRAW_PROOF_CHANNEL = '@ReaalCashbot';
 
 if (!ADMIN_SECRET) {
   throw new Error('[FATAL] ADMIN_SECRET env var is not set — refusing to run with an insecure fallback key');
@@ -481,19 +479,13 @@ module.exports = async function handler(req, res) {
           hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC'
         }).replace(',', ' •');
 
-        // ✅ إشعار المستخدم — فيه TXID الحقيقي
+        // ✅ إشعار المستخدم — بسيط: يوزر، كمية، TXID
         const userMsg =
-          `💸 <b>Withdrawal Successfully Paid</b> ✅\n\n` +
-          `👤 User: ${escapeHtml(w.username ? '@' + w.username : (w.first_name || `User#${w.telegram_id}`))}\n` +
-          `🆔 User ID: <code>${w.telegram_id}</code>\n\n` +
-          `💰 Amount: <b>$${usdAmount.toFixed(2)}</b> USDT\n` +
-          `🔄 Sent: <code>${tonAmount} TON</code>\n\n` +
-          `👛 Wallet: <code>${escapeHtml(shortAddr)}</code>\n` +
-          `🕒 Time: ${paidAtStr} UTC\n\n` +
-          `🔗 Transaction: <a href="${explorerUrl}">View on Tonviewer</a>\n\n` +
-          `🎉 Your withdrawal has been processed successfully.\n\n` +
-          `💵 <b>Real Cash — Earn • Compete • Win</b>\n` +
-          `Real rewards. Fast payouts.`;
+          `✅ <b>تم دفع السحب</b>\n\n` +
+          `👤 ${escapeHtml(w.username ? '@' + w.username : (w.first_name || `User#${w.telegram_id}`))}\n` +
+          `💰 <b>$${usdAmount.toFixed(2)}</b>\n` +
+          `🆔 TXID: <code>${txHash}</code>\n` +
+          `🔗 <a href="${explorerUrl}">Tonviewer</a>`;
 
         // 📢 إثبات السحب — يُرسل تلقائياً لقناة الإثبات (لو مضبوطة عبر WITHDRAW_PROOF_CHANNEL)
         const displayName = w.username ? '@' + w.username : (w.first_name || `User#${w.telegram_id}`);
