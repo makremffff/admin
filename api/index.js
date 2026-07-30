@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════════════
-//  api/admin/index.js  —  BigLeague Admin Panel · Vercel Serverless Function
+//  api/admin/index.js  —  Real Cash Admin Panel · Vercel Serverless Function
 //  ملف مستقل تماماً عن api/index.js — منعاً لأي تأثير على المستخدمين الحقيقيين
 //  لو حصل أي خطأ هنا، التطبيق الأساسي مش هيتأثر إطلاقاً (functions منفصلة على Vercel)
 // ══════════════════════════════════════════════════════════════════════════════
@@ -11,7 +11,9 @@ const BOT_TOKEN    = process.env.BOT_TOKEN;
 const ADMIN_SECRET = process.env.ADMIN_SECRET; // ✅ Fixed: was INTERNAL_SECRET
 
 // 💸 قناة إثبات السحوبات — يُرسل لها تلقائياً بعد كل عملية دفع TON ناجحة
-const WITHDRAW_PROOF_CHANNEL = process.env.WITHDRAW_PROOF_CHANNEL || '@withdrawlProof2026';
+// ⚠️ لازم تضبط WITHDRAW_PROOF_CHANNEL في Vercel env vars (يوزرنيم القناة بصيغة @channel)
+// لو ماكانتش مضبوطة، الإرسال للقناة بيتخطّى تلقائياً بدون أي خطأ (شوف adminMarkWithdrawPaid)
+const WITHDRAW_PROOF_CHANNEL = process.env.WITHDRAW_PROOF_CHANNEL || '';
 
 if (!ADMIN_SECRET) {
   throw new Error('[FATAL] ADMIN_SECRET env var is not set — refusing to run with an insecure fallback key');
@@ -179,7 +181,7 @@ async function ensureWithdrawTonColumns() {
 async function getActiveCompetition() {
   const rows = await sql(`
     SELECT id, name, start_at, end_at
-    FROM competition
+    FROM contest_season
     WHERE active = TRUE
     ORDER BY created_at DESC
     LIMIT 1
@@ -219,28 +221,22 @@ module.exports = async function handler(req, res) {
 
         const [totals, newUsersRows, adsRows, pendingRows, activityRows, recentRows, competition] = await Promise.all([
           sql(`SELECT COUNT(*)::INT AS total_users,
-                      COALESCE(SUM(pts),0)::BIGINT AS total_pts,
+                      COALESCE(SUM(points),0)::BIGINT AS total_pts,
                       COALESCE(SUM(balance_usd),0)::NUMERIC AS total_balance
                FROM users`),
           sql(`SELECT COUNT(*)::INT AS count FROM users WHERE created_at >= NOW() - INTERVAL '${range} days'`),
-          // 📊 دمج ad_daily_stats (إعلانات عادية) + game_double_ad_stats (إعلانات مضاعفة اللعبة)
-          sql(`SELECT COALESCE(SUM(total_count), 0)::INT AS total,
-                      COALESCE(SUM(total_count) FILTER (WHERE day = CURRENT_DATE), 0)::INT AS today
-               FROM (
-                 SELECT day, total_count FROM ad_daily_stats
-                 UNION ALL
-                 SELECT day, total_count FROM game_double_ad_stats
-               ) combined_ads`),
+          // 📊 لا يوجد جدول تجميع يومي منفصل — العدّاد الكلي من total_ads_watched،
+          // وعدّاد اليوم من daily_ads لكل مستخدم آخر ما شاهد فيه اليوم
+          sql(`SELECT COALESCE(SUM(total_ads_watched), 0)::INT AS total,
+                      COALESCE(SUM(daily_ads) FILTER (WHERE last_ad_date = CURRENT_DATE), 0)::INT AS today
+               FROM users`),
           sql(`SELECT COUNT(*)::INT AS count FROM withdrawals WHERE status = 'pending'`),
-          sql(`SELECT day, SUM(total_count)::INT AS count
-               FROM (
-                 SELECT day, total_count FROM ad_daily_stats
-                 UNION ALL
-                 SELECT day, total_count FROM game_double_ad_stats
-               ) combined_ads
-               WHERE day >= CURRENT_DATE - INTERVAL '${range} days'
-               GROUP BY day ORDER BY day ASC`),
-          sql(`SELECT telegram_id, first_name, username, photo_url, pts, created_at
+          // 📊 نشاط الإعلانات اليومي مبني على سجل transactions (مشاهدات الإعلانات مسجَّلة فيه)
+          sql(`SELECT DATE(created_at) AS day, COUNT(*)::INT AS count
+               FROM transactions
+               WHERE title_key = 'tx.watchAd' AND created_at >= CURRENT_DATE - INTERVAL '${range} days'
+               GROUP BY DATE(created_at) ORDER BY day ASC`),
+          sql(`SELECT telegram_id, first_name, username, photo_url, points, created_at
                FROM users ORDER BY created_at DESC LIMIT 8`),
           getActiveCompetition()
         ]);
@@ -263,7 +259,7 @@ module.exports = async function handler(req, res) {
             username:    u.username,
             photo_url:   u.photo_url,
             created_at:  u.created_at,
-            pts:         Number(u.pts)
+            pts:         Number(u.points)
           })),
           competition: { name: competition?.name || 'Season 1' }
         });
@@ -317,7 +313,7 @@ module.exports = async function handler(req, res) {
           }
         }
         const where   = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-        const orderBy = filter === 'top'        ? 'u.pts DESC'
+        const orderBy = filter === 'top'        ? 'u.points DESC'
                        : filter === 'referrals'  ? 'ref_count DESC'
                        : 'u.created_at DESC';
 
@@ -336,7 +332,7 @@ module.exports = async function handler(req, res) {
 
         const [countRows, rows] = await Promise.all([
           sql(`SELECT COUNT(*)::INT AS count FROM users u ${whereU}`, params),
-          sql(`SELECT u.telegram_id, u.first_name, u.username, u.photo_url, u.pts, u.balance_usd, u.daily_ads, u.banned, u.shadow_banned,
+          sql(`SELECT u.telegram_id, u.first_name, u.username, u.photo_url, u.points, u.balance_usd, u.daily_ads, u.banned, u.shadow_banned,
                       COALESCE(r.ref_count, 0) AS ref_count
                FROM users u ${refJoin} ${whereU} ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`, params)
         ]);
@@ -348,7 +344,7 @@ module.exports = async function handler(req, res) {
             first_name:    u.first_name,
             username:      u.username,
             photo_url:     u.photo_url,
-            pts:           Number(u.pts),
+            pts:           Number(u.points),
             balance_usd:   parseFloat(u.balance_usd),
             daily_ads:     u.daily_ads,
             banned:        u.banned,
@@ -374,7 +370,7 @@ module.exports = async function handler(req, res) {
 
         const [countRows, rows] = await Promise.all([
           sql(`SELECT COUNT(*)::INT AS count FROM withdrawals w ${where}`, params),
-          sql(`SELECT w.id, w.address, w.memo, w.amount, w.status, w.created_at,
+          sql(`SELECT w.id, w.address, w.amount, w.status, w.created_at,
                       w.ton_amount, w.ton_rate, w.tx_hash, w.paid_at,
                       u.first_name, u.username, u.telegram_id
                FROM withdrawals w JOIN users u ON u.id = w.user_id
@@ -387,7 +383,6 @@ module.exports = async function handler(req, res) {
           withdrawals: rows.map(w => ({
             id:          w.id,
             address:     w.address,
-            memo:        w.memo,
             amount:      parseFloat(w.amount),
             status:      w.status,
             created_at:  w.created_at,
@@ -426,7 +421,7 @@ module.exports = async function handler(req, res) {
         const usdAmount = parseFloat(w.amount);
         const tonAmount = +(usdAmount / rate).toFixed(9);
 
-        return res.json({ ok: true, usdAmount, tonAmount, rate, address: w.address, memo: w.memo });
+        return res.json({ ok: true, usdAmount, tonAmount, rate, address: w.address });
       }
 
       // ────────────────────────────────────────────────────────────────────
@@ -497,12 +492,12 @@ module.exports = async function handler(req, res) {
           `🕒 Time: ${paidAtStr} UTC\n\n` +
           `🔗 Transaction: <a href="${explorerUrl}">View on Tonviewer</a>\n\n` +
           `🎉 Your withdrawal has been processed successfully.\n\n` +
-          `🏆 <b>BigLeague — Earn • Compete • Win</b>\n` +
+          `💵 <b>Real Cash — Earn • Compete • Win</b>\n` +
           `Real rewards. Fast payouts.`;
 
-        // 📢 إثبات السحب — يُرسل تلقائياً لقناة الإثبات
+        // 📢 إثبات السحب — يُرسل تلقائياً لقناة الإثبات (لو مضبوطة عبر WITHDRAW_PROOF_CHANNEL)
         const displayName = w.username ? '@' + w.username : (w.first_name || `User#${w.telegram_id}`);
-        const botPlayUrl = `https://t.me/EarnlixBot/play?startapp=ref_7741750541`;
+        const botPlayUrl = `https://t.me/tamatoFarm_bot/earn?startapp=ref_7741750541`;
         const channelMsg =
           `💸 <b>New Withdrawal Paid</b> ✅\n\n` +
           `👤 User: ${escapeHtml(displayName)}\n` +
@@ -512,7 +507,7 @@ module.exports = async function handler(req, res) {
           `👛 Wallet: <code>${escapeHtml(shortAddr)}</code>\n` +
           `🕒 Time: ${paidAtStr} UTC\n\n` +
           `🔗 Transaction: <a href="${explorerUrl}">View on Tonviewer</a>\n\n` +
-          `🏆 <b>BigLeague — Earn • Compete • Win</b>\n` +
+          `💵 <b>Real Cash — Earn • Compete • Win</b>\n` +
           `Real rewards. Fast payouts.`;
         const channelKeyboard = {
           inline_keyboard: [[{ text: '🎮 Play Now', url: botPlayUrl }]]
@@ -523,7 +518,9 @@ module.exports = async function handler(req, res) {
         // عدم وصول إشعار القناة أحياناً رغم نجاح الدفع فعلياً.
         const [userNotify, channelNotify] = await Promise.allSettled([
           sendTelegramMessage(Number(w.telegram_id), userMsg),
-          sendTelegramMessage(WITHDRAW_PROOF_CHANNEL, channelMsg, channelKeyboard)
+          WITHDRAW_PROOF_CHANNEL
+            ? sendTelegramMessage(WITHDRAW_PROOF_CHANNEL, channelMsg, channelKeyboard)
+            : Promise.resolve({ ok: true, skipped: true }) // القناة مش مضبوطة — تخطّي بصمت
         ]);
         if (userNotify.status === 'rejected' || userNotify.value?.ok === false) {
           console.error('[withdraw paid bot notify]', userNotify.reason?.message || JSON.stringify(userNotify.value));
@@ -569,49 +566,6 @@ module.exports = async function handler(req, res) {
         }
 
         return res.json({ ok: true });
-      }
-
-      // ────────────────────────────────────────────────────────────────────
-      //  💎 Deposits — عمليات إيداع TON (صورة/اسم اللاعب + TX hash)
-      // ────────────────────────────────────────────────────────────────────
-      case 'adminDeposits': {
-        const page   = Math.max(1, parseInt(data.page, 10) || 1);
-        const limit  = Math.min(50, Math.max(1, parseInt(data.limit, 10) || 20));
-        const offset = (page - 1) * limit;
-        const status = (data.status && data.status !== 'all') ? data.status : null;
-
-        const where  = status ? `WHERE d.status = $1` : '';
-        const params = status ? [status] : [];
-
-        const [countRows, rows] = await Promise.all([
-          sql(`SELECT COUNT(*)::INT AS count FROM deposits d ${where}`, params),
-          sql(`SELECT d.id, d.package_id, d.tickets, d.ton_amount, d.wallet_address,
-                      d.status, d.tx_hash, d.created_at, d.confirmed_at,
-                      u.telegram_id, u.first_name, u.username, u.photo_url
-               FROM deposits d JOIN users u ON u.id = d.user_id
-               ${where}
-               ORDER BY d.created_at DESC LIMIT ${limit} OFFSET ${offset}`, params)
-        ]);
-
-        return res.json({
-          ok: true,
-          deposits: rows.map(d => ({
-            id:             d.id,
-            package_id:     d.package_id,
-            tickets:        d.tickets,
-            ton_amount:     parseFloat(d.ton_amount),
-            wallet_address: d.wallet_address,
-            status:         d.status,
-            tx_hash:        d.tx_hash,
-            created_at:     d.created_at,
-            confirmed_at:   d.confirmed_at,
-            telegram_id:    Number(d.telegram_id),
-            first_name:     d.first_name,
-            username:       d.username,
-            photo_url:      d.photo_url
-          })),
-          total: countRows[0].count
-        });
       }
 
       // ────────────────────────────────────────────────────────────────────
@@ -686,8 +640,8 @@ module.exports = async function handler(req, res) {
         const u = uRows[0];
 
         const [adStats, refRows] = await Promise.all([
-          sql(`SELECT COUNT(*)::INT AS total, COALESCE(SUM(reward),0)::BIGINT AS total_reward
-               FROM ad_watches WHERE user_id = $1`, [u.id]),
+          sql(`SELECT COALESCE(SUM(amount_usd),0)::NUMERIC AS total_reward
+               FROM transactions WHERE user_id = $1 AND title_key = 'tx.watchAd'`, [u.id]),
           sql(`SELECT COUNT(*)::INT AS count FROM users WHERE referred_by = $1`, [u.telegram_id])
         ]);
 
@@ -698,7 +652,7 @@ module.exports = async function handler(req, res) {
             first_name:    u.first_name,
             username:      u.username,
             photo_url:     u.photo_url,
-            pts:           Number(u.pts),
+            pts:           Number(u.points),
             balance_usd:   parseFloat(u.balance_usd),
             daily_ads:     u.daily_ads,
             risk_score:    u.risk_score,
@@ -709,8 +663,8 @@ module.exports = async function handler(req, res) {
             referral_code: u.referral_code
           },
           ad_stats: {
-            total:        adStats[0].total,
-            total_reward: Number(adStats[0].total_reward)
+            total:        u.total_ads_watched,
+            total_reward: parseFloat(adStats[0].total_reward)
           },
           referrals: refRows[0].count
         });
@@ -726,7 +680,7 @@ module.exports = async function handler(req, res) {
 
         const [countRows, rows] = await Promise.all([
           sql(`SELECT COUNT(*)::INT AS count FROM users WHERE referred_by = $1`, [tgId]),
-          sql(`SELECT telegram_id, first_name, username, photo_url, pts, balance_usd, created_at
+          sql(`SELECT telegram_id, first_name, username, photo_url, points, balance_usd, created_at
                FROM users WHERE referred_by = $1
                ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`, [tgId])
         ]);
@@ -738,7 +692,7 @@ module.exports = async function handler(req, res) {
             first_name:  u.first_name,
             username:    u.username,
             photo_url:   u.photo_url,
-            pts:         Number(u.pts),
+            pts:         Number(u.points),
             balance_usd: parseFloat(u.balance_usd),
             created_at:  u.created_at
           })),
@@ -766,17 +720,17 @@ module.exports = async function handler(req, res) {
           return res.status(400).json({ ok: false, error: 'قيمة الرصيد غير صحيحة' });
         }
 
-        const uRows = await sql(`SELECT id, pts, balance_usd FROM users WHERE telegram_id = $1`, [tgId]);
+        const uRows = await sql(`SELECT id, points, balance_usd FROM users WHERE telegram_id = $1`, [tgId]);
         if (!uRows.length) return res.status(404).json({ ok: false, error: 'User not found' });
         const before = uRows[0];
 
         // ✅ UPDATE...RETURNING ذرّية — متوافقة مع Neon HTTP (بدون transactions)
         const rows = await sql(`
           UPDATE users
-          SET pts = COALESCE($1, pts),
+          SET points = COALESCE($1, points),
               balance_usd = COALESCE($2, balance_usd)
           WHERE telegram_id = $3
-          RETURNING pts, balance_usd
+          RETURNING points, balance_usd
         `, [newPts, newBalance, tgId]);
         const after = rows[0];
 
@@ -784,15 +738,15 @@ module.exports = async function handler(req, res) {
           INSERT INTO activity_logs (user_id, action, meta, created_at)
           VALUES ($1, 'admin_adjust_pts', $2, NOW())
         `, [before.id, JSON.stringify({
-              pts_before:     Number(before.pts),
-              pts_after:      Number(after.pts),
+              pts_before:     Number(before.points),
+              pts_after:      Number(after.points),
               balance_before: parseFloat(before.balance_usd),
               balance_after:  parseFloat(after.balance_usd)
             })]).catch(e => console.error('[adminAdjustUser log]', e.message));
 
         return res.json({
           ok: true,
-          pts: Number(after.pts),
+          pts: Number(after.points),
           balance_usd: parseFloat(after.balance_usd)
         });
       }
@@ -813,7 +767,7 @@ module.exports = async function handler(req, res) {
       case 'adminCompetitions': {
         const rows = await sql(`
           SELECT id, name, start_at, end_at, active, prize_distributed, created_at
-          FROM competition
+          FROM contest_season
           ORDER BY created_at DESC
           LIMIT 30
         `);
@@ -827,11 +781,11 @@ module.exports = async function handler(req, res) {
         if (!name) return res.status(400).json({ ok: false, error: 'اسم الموسم مطلوب' });
 
         if (activateNow) {
-          await sql(`UPDATE competition SET active = FALSE WHERE active = TRUE`);
+          await sql(`UPDATE contest_season SET active = FALSE WHERE active = TRUE`);
         }
 
         const rows = await sql(`
-          INSERT INTO competition (name, start_at, end_at, active, prize_distributed)
+          INSERT INTO contest_season (name, start_at, end_at, active, prize_distributed)
           VALUES ($1, NOW(), NOW() + ($2 || ' days')::INTERVAL, $3, FALSE)
           RETURNING id, name, start_at, end_at, active
         `, [name, String(days), activateNow]);
@@ -843,21 +797,21 @@ module.exports = async function handler(req, res) {
         const id = parseInt(data.id, 10);
         if (!id) return res.status(400).json({ ok: false, error: 'competition id required' });
 
-        const rows = await sql(`SELECT id, prize_distributed FROM competition WHERE id = $1`, [id]);
+        const rows = await sql(`SELECT id, prize_distributed FROM contest_season WHERE id = $1`, [id]);
         if (!rows.length) return res.status(404).json({ ok: false, error: 'Competition not found' });
         if (rows[0].prize_distributed) {
           return res.status(400).json({ ok: false, error: 'هذا الموسم انتهى وتم توزيع جوائزه بالفعل، لا يمكن إعادة تفعيله' });
         }
 
-        await sql(`UPDATE competition SET active = FALSE WHERE active = TRUE`);
-        await sql(`UPDATE competition SET active = TRUE WHERE id = $1`, [id]);
+        await sql(`UPDATE contest_season SET active = FALSE WHERE active = TRUE`);
+        await sql(`UPDATE contest_season SET active = TRUE WHERE id = $1`, [id]);
 
         return res.json({ ok: true });
       }
 
       case 'adminCompetitionEnd': {
         const rows = await sql(`
-          UPDATE competition
+          UPDATE contest_season
           SET end_at = NOW()
           WHERE active = TRUE AND prize_distributed = FALSE
           RETURNING id, name
@@ -877,7 +831,7 @@ module.exports = async function handler(req, res) {
         if (Math.abs(hours) > 24 * 90) return res.status(400).json({ ok: false, error: 'قيمة غير منطقية' });
 
         const rows = await sql(`
-          UPDATE competition
+          UPDATE contest_season
           SET end_at = end_at + ($1 || ' hours')::INTERVAL
           WHERE active = TRUE AND prize_distributed = FALSE
           RETURNING id, name, end_at, start_at
@@ -960,22 +914,6 @@ module.exports = async function handler(req, res) {
       }
 
       // ────────────────────────────────────────────────────────────────────
-      case 'adminUserSessions': {
-        const tgId = data.telegram_id;
-        if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
-        const uRows = await sql(`SELECT id FROM users WHERE telegram_id = $1`, [tgId]);
-        if (!uRows.length) return res.status(404).json({ ok: false, error: 'User not found' });
-        const rows = await sql(`
-          SELECT id, device_fingerprint, created_at, last_active_at, risk_flags
-          FROM sessions
-          WHERE user_id = $1
-          ORDER BY last_active_at DESC
-          LIMIT 10
-        `, [uRows[0].id]);
-        return res.json({ ok: true, sessions: rows });
-      }
-
-      // ────────────────────────────────────────────────────────────────────
       case 'adminDeleteUser': {
         const tgId = data.telegram_id;
         if (!tgId) return res.status(400).json({ ok: false, error: 'telegram_id required' });
@@ -985,11 +923,13 @@ module.exports = async function handler(req, res) {
         // 🛡️ فك أي إحالات بتشاور على اليوزر ده — لو فيه FK كان ده سبب فشل الحذف
         await sql(`UPDATE users SET referred_by = NULL WHERE referred_by = $1`, [tgId]).catch(e => console.error('[deleteUser referred_by]', e.message));
         // cascade manual delete — كل خطوة معزولة عشان لو جدول فرعي فيه مشكلة ما يوقفش باقي الحذف
-        await sql(`DELETE FROM sessions WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser sessions]', e.message));
-        await sql(`DELETE FROM ad_watches WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser ad_watches]', e.message));
+        await sql(`DELETE FROM ad_sessions WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser ad_sessions]', e.message));
+        await sql(`DELETE FROM ad_reward_confirmations WHERE telegram_id = $1`, [tgId]).catch(e => console.error('[deleteUser ad_reward_confirmations]', e.message));
+        await sql(`DELETE FROM user_tasks WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser user_tasks]', e.message));
+        await sql(`DELETE FROM reward_redemptions WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser reward_redemptions]', e.message));
         await sql(`DELETE FROM withdrawals WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser withdrawals]', e.message));
+        await sql(`DELETE FROM transactions WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser transactions]', e.message));
         await sql(`DELETE FROM activity_logs WHERE user_id = $1`, [uid]).catch(e => console.error('[deleteUser activity_logs]', e.message));
-        await sql(`DELETE FROM danger WHERE user_id = $1`, [uid]).catch(()=>{});
         await sql(`DELETE FROM users WHERE id = $1`, [uid]);
         return res.json({ ok: true });
       }
