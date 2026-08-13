@@ -13,6 +13,10 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET; // ✅ Fixed: was INTERNAL_SECRET
 // 💸 قناة إثبات السحوبات — يُرسل لها تلقائياً بعد كل عملية دفع TON ناجحة
 const WITHDRAW_PROOF_CHANNEL = '@ReaalCashbot';
 
+// ⚠️ لازم يتطابق يدوياً مع APP_CFG.SMARTLINK_REWARD_POINTS في api/index.js —
+// مافي جدول transactions لمكافأة الـ Smart Link حالياً، فالمبلغ هنا تقديري بالسعر الحالي فقط
+const SMARTLINK_REWARD_POINTS_ESTIMATE = 5;
+
 if (!ADMIN_SECRET) {
   throw new Error('[FATAL] ADMIN_SECRET env var is not set — refusing to run with an insecure fallback key');
 }
@@ -217,7 +221,7 @@ module.exports = async function handler(req, res) {
       case 'adminStats': {
         const range = Math.max(1, Math.min(90, parseInt(data.range, 10) || 7));
 
-        const [totals, newUsersRows, adsRows, pendingRows, activityRows, recentRows, competition] = await Promise.all([
+        const [totals, newUsersRows, adsRows, pendingRows, activityRows, recentRows, competition, linksRows] = await Promise.all([
           sql(`SELECT COUNT(*)::INT AS total_users,
                       COALESCE(SUM(points),0)::BIGINT AS total_pts,
                       COALESCE(SUM(balance_usd),0)::NUMERIC AS total_balance
@@ -236,7 +240,11 @@ module.exports = async function handler(req, res) {
                GROUP BY DATE(created_at) ORDER BY day ASC`),
           sql(`SELECT telegram_id, first_name, username, photo_url, points, created_at
                FROM users ORDER BY created_at DESC LIMIT 8`),
-          getActiveCompetition()
+          getActiveCompetition(),
+          // 🔗 روابط اليوم: جلسات "تصفح واربح" المكتملة + روابط المهام (Smart Link) المُحصَّلة
+          sql(`SELECT
+                 (SELECT COUNT(*) FROM ad_surf_sessions      WHERE completed = TRUE AND started_at::date = CURRENT_DATE)::INT AS surf_today,
+                 (SELECT COUNT(*) FROM ad_smartlink_sessions WHERE claimed   = TRUE AND started_at::date = CURRENT_DATE)::INT AS task_today`)
         ]);
 
         return res.json({
@@ -249,6 +257,9 @@ module.exports = async function handler(req, res) {
             pending_withdrawals: pendingRows[0].count,
             total_ads:           adsRows[0].total,
             today_ads:           adsRows[0].today,
+            today_surf_links:    linksRows[0].surf_today,
+            today_task_links:    linksRows[0].task_today,
+            today_links_total:   linksRows[0].surf_today + linksRows[0].task_today,
           },
           activity: activityRows.map(a => ({ day: a.day, count: a.count })),
           recent_users: recentRows.map(u => ({
@@ -631,10 +642,19 @@ module.exports = async function handler(req, res) {
         if (!uRows.length) return res.status(404).json({ ok: false, error: 'User not found' });
         const u = uRows[0];
 
-        const [adStats, refRows] = await Promise.all([
+        const [adStats, refRows, surfStats, taskLinkStats] = await Promise.all([
           sql(`SELECT COALESCE(SUM(amount_usd),0)::NUMERIC AS total_reward
                FROM transactions WHERE user_id = $1 AND title_key = 'tx.watchAd'`, [u.id]),
-          sql(`SELECT COUNT(*)::INT AS count FROM users WHERE referred_by = $1`, [u.telegram_id])
+          sql(`SELECT COUNT(*)::INT AS count FROM users WHERE referred_by = $1`, [u.telegram_id]),
+          // 🔗 تصفح واربح: العدد من ad_surf_sessions، والربح بالظبط من transactions (tx.surfSession مسجَّلة بالمبلغ الفعلي وقت كل جلسة)
+          sql(`SELECT
+                 (SELECT COUNT(*) FROM ad_surf_sessions WHERE user_id = $1 AND completed = TRUE)::INT AS count,
+                 (SELECT COALESCE(SUM(amount_usd),0) FROM transactions WHERE user_id = $1 AND title_key = 'tx.surfSession')::NUMERIC AS earned_usd
+              `, [u.id]),
+          // 🔗 روابط المهام (Smart Link): العدد من ad_smartlink_sessions.
+          // ⚠️ لا يوجد سجل transactions لهذه المكافأة حالياً بباك-إند RealCash (تُضاف للنقاط مباشرة بدون logTx)،
+          // فالمبلغ هنا تقديري بسعر المكافأة الحالي (APP_CFG.SMARTLINK_REWARD_POINTS) وليس دقيقاً تاريخياً لو تغيّر السعر سابقاً
+          sql(`SELECT COUNT(*)::INT AS count FROM ad_smartlink_sessions WHERE user_id = $1 AND claimed = TRUE`, [u.id])
         ]);
 
         return res.json({
@@ -657,6 +677,13 @@ module.exports = async function handler(req, res) {
           ad_stats: {
             total:        u.total_ads_watched,
             total_reward: parseFloat(adStats[0].total_reward)
+          },
+          link_stats: {
+            surf_count:        surfStats[0].count,
+            surf_earned_usd:   parseFloat(surfStats[0].earned_usd),
+            task_link_count:   taskLinkStats[0].count,
+            // تقديري وليس دقيقاً تاريخياً — راجع الملاحظة عند SMARTLINK_REWARD_POINTS_ESTIMATE بالأعلى
+            task_link_earned_points_est: taskLinkStats[0].count * SMARTLINK_REWARD_POINTS_ESTIMATE
           },
           referrals: refRows[0].count
         });
