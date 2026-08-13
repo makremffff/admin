@@ -1189,6 +1189,14 @@ function renderDashboard(res) {
         <div class="stat-value num">${fNum(stats.total_ads)}</div>
         <div class="stat-change up">${icon('trending-up')} ${fNum(stats.today_ads)} اليوم</div>
       </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">${icon('link')}</div>
+      <div class="stat-info">
+        <div class="stat-label">روابط اليوم</div>
+        <div class="stat-value num">${fNum(stats.today_links_total)}</div>
+        <div class="stat-change neutral"><span class="num">${fNum(stats.today_surf_links)}</span> تصفح · <span class="num">${fNum(stats.today_task_links)}</span> مهام</div>
+      </div>
     </div>`;
   drawChart(activity);
   const ul = document.getElementById('recent-users-list');
@@ -1703,6 +1711,14 @@ function renderUserSheet(res) {
       <div class="detail-row">
         <span class="detail-key">مكافآت الإعلانات</span>
         <span class="detail-val num">${fNum(res.ad_stats.total_reward)} نقطة</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">روابط التصفح (تصفح واربح)</span>
+        <span class="detail-val num">${fNum(res.link_stats.surf_count)} — $${res.link_stats.surf_earned_usd.toFixed(4)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">روابط المهام (Smart Link)</span>
+        <span class="detail-val num">${fNum(res.link_stats.task_link_count)} — ~${fNum(res.link_stats.task_link_earned_points_est)} نقطة</span>
       </div>
       <div class="detail-row">
         <span class="detail-key">الإحالات</span>
