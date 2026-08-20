@@ -1,24 +1,61 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+
+<html dir="rtl" lang="ar">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#07090f">
-<meta name="color-scheme" content="dark">
-<title>لوحة التحكم — Real Cash</title>
+<script type="module">
+import { createHotContext } from "/@vite/client";
+const hot = createHotContext("/__dummy__runtime-error-plugin");
+
+function sendError(error) {
+  if (!(error instanceof Error)) {
+    error = new Error("(unknown runtime error)");
+  }
+  const serialized = {
+    message: error.message,
+    stack: error.stack,
+  };
+  hot.send("runtime-error-plugin:error", serialized);
+}
+
+// Only notify the parent frame after the server confirms the error passed
+// the filter and the overlay will be shown.
+hot.on("runtime-error-plugin:notify-parent", () => {
+  try {
+    window.parent.postMessage({ type: "runtime-error", id: null }, "*");
+  } catch (_) {}
+});
+
+window.addEventListener("error", (evt) => {
+  sendError(evt.error);
+});
+
+window.addEventListener("unhandledrejection", (evt) => {
+  sendError(evt.reason);
+});
+</script>
+<script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+<script src="js/client" type="module"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta content="#07090f" name="theme-color"/>
+<meta content="dark" name="color-scheme"/>
+<title>ÙÙØ­Ø© Ø§ÙØªØ­ÙÙ â Real Cash</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=DynaPuff:wght@500;600;700&family=Permanent+Marker&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg:        #07090f;
-    --surface:   rgba(255,255,255,.035);
-    --surface-2: rgba(255,255,255,.07);
-    --line:      rgba(255,255,255,.07);
-    --gold:      #f5c840;
-    --gold-dim:  #d4a72c;
-    --gold-bg:   rgba(245,200,64,.14);
-    --gold-ink:  #1a1406;
+    --bg:        #0b1020;
+    --surface:   rgba(255,255,255,.065);
+    --surface-2: rgba(255,255,255,.105);
+    --line:      rgba(255,255,255,.12);
+    --gold:      #ffd166;
+    --gold-dim:  #eab84f;
+    --gold-bg:   rgba(255,209,102,.16);
+    --gold-ink:  #211907;
     --emerald:    #34d399;
     --emerald-bg: rgba(52,211,153,.14);
     --rose:       #fb7185;
@@ -28,19 +65,19 @@
     --violet:     #a78bfa;
     --violet-bg:  rgba(167,139,250,.14);
     --text:  rgba(255,255,255,.94);
-    --text2: rgba(255,255,255,.52);
-    --text3: rgba(255,255,255,.32);
+    --text2: rgba(235,242,255,.68);
+    --text3: rgba(235,242,255,.42);
     --nav-h:    64px;
     --header-h: 56px;
-    --radius:    18px;
-    --radius-sm: 12px;
-    --shadow:    0 14px 32px -14px rgba(0,0,0,.65);
-    --shadow-sm: 0 6px 18px -8px rgba(0,0,0,.55);
+    --radius:    22px;
+    --radius-sm: 14px;
+    --shadow:    0 20px 42px -18px rgba(0,0,0,.7);
+    --shadow-sm: 0 8px 22px -10px rgba(0,0,0,.55);
   }
   html, body { height: 100%; font-family:'Cairo', system-ui, sans-serif; overflow-x: hidden; }
   body {
     background: var(--bg); color: var(--text); font-size: 14px;
-    background-image: radial-gradient(circle at 50% -8%, rgba(245,200,64,.07), transparent 55%);
+    background-image: radial-gradient(circle at 88% -10%, rgba(110,168,255,.15), transparent 42%), radial-gradient(circle at 10% 0%, rgba(255,209,102,.08), transparent 38%);
   }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-thumb { background: rgba(245,200,64,.2); border-radius: 2px; }
@@ -53,10 +90,10 @@
           stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; vertical-align: -3px; }
   .icon-fill { fill: currentColor; stroke: none; }
 
-  /* ── App shell ── */
+  /* ââ App shell ââ */
   #app { display: flex; flex-direction: column; min-height: 100vh; width: 100%; }
 
-  /* ── Top header ── */
+  /* ââ Top header ââ */
   .top-header {
     position: sticky; top: 0; z-index: 100;
     background: rgba(7,9,15,.88); backdrop-filter: blur(12px);
@@ -91,7 +128,7 @@
     border: 1.5px solid var(--bg);
   }
 
-  /* ── Scrollable content ── */
+  /* ââ Scrollable content ââ */
   .page-content {
     flex: 1; overflow-y: auto;
     padding: 12px 12px calc(var(--nav-h) + 12px);
@@ -99,7 +136,7 @@
   }
   .page-content.active { display: block; }
 
-  /* ── Greeting row ── */
+  /* ââ Greeting row ââ */
   .greeting-row {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 14px;
@@ -119,7 +156,7 @@
     border: 2px solid var(--bg);
   }
 
-  /* ── Date filter ── */
+  /* ââ Date filter ââ */
   .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
   .date-select {
     display: flex; align-items: center; gap: 7px;
@@ -134,7 +171,7 @@
   }
   .date-select select option { background: #14171f; color: var(--text); }
 
-  /* ── Stat Cards ── */
+  /* ââ Stat Cards ââ */
   .stat-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     margin-bottom: 14px;
@@ -162,7 +199,7 @@
   .stat-change.down { color: var(--rose); }
   .stat-change.neutral { color: var(--amber); }
 
-  /* ── Section card ── */
+  /* ââ Section card ââ */
   .section-card {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 12px;
     box-shadow: var(--shadow-sm); margin-bottom: 12px;
@@ -174,7 +211,7 @@
   .section-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 7px; }
   .section-action { font-size: 12px; font-weight: 700; color: var(--gold); cursor: pointer; padding: 4px 0; }
 
-  /* ── Live / Online ── */
+  /* ââ Live / Online ââ */
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--emerald); position: relative; flex-shrink: 0; }
   .live-dot::after {
     content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--emerald);
@@ -199,7 +236,7 @@
   .online-empty { display: flex; align-items: center; gap: 7px; color: var(--text3); font-size: 12px; padding: 8px 2px; }
   .online-empty .icon { width: 15px; height: 15px; }
 
-  /* ── Chart ── */
+  /* ââ Chart ââ */
   .chart-filter {
     background: var(--surface-2); border: 1px solid var(--line);
     border-radius: 9px; padding: 6px 10px; font-size: 11px; font-weight: 600;
@@ -208,7 +245,7 @@
   canvas#activityChart { width: 100% !important; height: 160px !important; margin-top: 10px; }
   .chart-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--text3); margin-top: 5px; }
 
-  /* ── Users list (home) ── */
+  /* ââ Users list (home) ââ */
   .user-row {
     display: flex; align-items: center; gap: 10px;
     padding: 9px 0; border-bottom: 1px solid var(--line);
@@ -236,7 +273,7 @@
   .user-time  { font-size: 10px; color: var(--text3); margin-bottom: 2px; }
   .user-pts   { font-size: 11px; font-weight: 700; color: var(--gold); }
 
-  /* ── Bottom Nav ── */
+  /* ââ Bottom Nav ââ */
   .bottom-nav {
     position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-h);
     background: rgba(7,9,15,.92); backdrop-filter: blur(12px);
@@ -268,7 +305,7 @@
     border: 1.5px solid var(--bg);
   }
 
-  /* ── Users page ── */
+  /* ââ Users page ââ */
   .search-bar {
     display: flex; align-items: center; gap: 9px;
     background: var(--surface); border-radius: 12px; padding: 10px 12px;
@@ -290,7 +327,7 @@
   }
   .chip.active { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
 
-  /* ── User card (users page) ── */
+  /* ââ User card (users page) ââ */
   .user-card {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px;
     box-shadow: var(--shadow-sm); margin-bottom: 8px;
@@ -308,7 +345,7 @@
   .badge.shadow  { background: var(--amber-bg);   color: var(--amber);   }
   .badge.normal  { background: var(--emerald-bg); color: var(--emerald); }
 
-  /* ── Withdrawals ── */
+  /* ââ Withdrawals ââ */
   .withdraw-card {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px;
     box-shadow: var(--shadow-sm); margin-bottom: 8px;
@@ -348,7 +385,7 @@
   .withdraw-status.confirmed { background: var(--emerald-bg); color: var(--emerald); }
   .withdraw-status.failed    { background: var(--rose-bg);    color: var(--rose);    }
 
-  /* ── Competitions ── */
+  /* ââ Competitions ââ */
   .comp-card {
     background: var(--surface-2); border: 1px solid var(--gold-dim);
     border-radius: var(--radius-sm); padding: 13px;
@@ -367,7 +404,7 @@
   .comp-row-name { font-size: 13px; font-weight: 700; }
   .comp-row-meta { font-size: 11px; margin-top: 2px; }
 
-  /* ── Broadcast ── */
+  /* ââ Broadcast ââ */
   .broadcast-wrap { padding: 2px 0; }
   .form-label { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
   .form-label .icon { width: 14px; height: 14px; color: var(--gold); }
@@ -404,7 +441,7 @@
   .broadcast-result.success { background: var(--emerald-bg); color: var(--emerald); display: flex; }
   .broadcast-result.error   { background: var(--rose-bg);    color: var(--rose);    display: flex; }
 
-  /* ── Logs ── */
+  /* ââ Logs ââ */
   .log-item { display: flex; gap: 9px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
   .log-item:last-child { border-bottom: none; }
   .log-icon {
@@ -417,7 +454,7 @@
   .log-time   { font-size: 9.5px; color: var(--text3); margin-top: 2px; }
   .log-meta   { font-size: 9.5px; color: var(--text3); margin-top: 2px; font-family: monospace; word-break: break-all; }
 
-  /* ── Login Screen ── */
+  /* ââ Login Screen ââ */
   #login-screen {
     position: fixed; inset: 0; z-index: 300;
     display: flex; align-items: center; justify-content: center;
@@ -442,7 +479,7 @@
   }
   .login-error .icon { width: 13px; height: 13px; }
 
-  /* ── Skeleton & Empty ── */
+  /* ââ Skeleton & Empty ââ */
   .skeleton {
     background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%);
     background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px;
@@ -465,7 +502,7 @@
   .toast .icon { width: 14px; height: 14px; }
   .toast.show { opacity: 1; }
 
-  /* ── Pagination ── */
+  /* ââ Pagination ââ */
   .pagination { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 0; }
   .page-btn {
     width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line);
@@ -476,9 +513,9 @@
   .page-btn.active { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
   .page-btn:disabled { opacity: .35; cursor: not-allowed; }
 
-  /* ══════════════════════════════════════════════════════
+  /* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
      FULL-SCREEN BOTTOM SHEET (user detail)
-  ══════════════════════════════════════════════════════ */
+  ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
   .sheet-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(6px);
     z-index: 200; display: none; align-items: flex-end; justify-content: center;
@@ -506,7 +543,7 @@
   .sheet-body { flex: 1; padding: 14px 16px 0; overflow-y: visible; }
   .sheet-actions { display: flex; gap: 9px; padding: 14px 16px 20px; flex-shrink: 0; flex-wrap: wrap; }
 
-  /* ── User profile hero (inside sheet) ── */
+  /* ââ User profile hero (inside sheet) ââ */
   .user-hero {
     display: flex; align-items: center; gap: 14px;
     margin-bottom: 16px; padding-bottom: 16px;
@@ -538,7 +575,7 @@
   .hero-badge.shadow  { background: var(--amber-bg);   color: var(--amber);   }
   .hero-badge.normal  { background: var(--emerald-bg); color: var(--emerald); }
 
-  /* ── Detail rows ── */
+  /* ââ Detail rows ââ */
   .detail-section { margin-bottom: 14px; }
   .detail-section-title {
     font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase;
@@ -554,7 +591,7 @@
   .detail-key { font-size: 12px; color: var(--text2); flex-shrink: 0; }
   .detail-val { font-size: 12.5px; font-weight: 700; text-align: left; max-width: 60%; word-break: break-all; display: flex; align-items: center; gap: 5px; justify-content: flex-end; }
 
-  /* ── Risk score editor ── */
+  /* ââ Risk score editor ââ */
   .risk-editor {
     display: flex; align-items: center; gap: 8px; justify-content: flex-end;
   }
@@ -577,7 +614,7 @@
   }
   .risk-save-btn:active { opacity: .7; }
 
-  /* ── Editable value (pts / balance) ── */
+  /* ââ Editable value (pts / balance) ââ */
   .value-input {
     width: 96px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line);
     background: var(--surface-2); color: var(--text); font-size: 12.5px; text-align: center;
@@ -585,7 +622,7 @@
   }
   .value-input:focus { border-color: rgba(245,200,64,.4); box-shadow: 0 0 0 3px var(--gold-bg); }
 
-  /* ── Photo attach (broadcast / DM) ── */
+  /* ââ Photo attach (broadcast / DM) ââ */
   .photo-attach { margin-top: 9px; }
   .photo-attach-btn {
     display: inline-flex; align-items: center; gap: 6px;
@@ -606,7 +643,33 @@
   }
   .photo-remove-btn .icon { width: 11px; height: 11px; stroke-width: 3; }
 
-  /* ── Modal buttons (sheet actions) ── */
+  /* Softer broadcast composer: the message, media and link are one clear flow. */
+  .broadcast-wrap {
+    background: linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.045));
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: var(--shadow-sm);
+  }
+  .broadcast-intro {
+    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px;
+    color: var(--text2); font-size: 12px; line-height: 1.7;
+  }
+  .broadcast-intro .intro-icon {
+    flex: 0 0 34px; height: 34px; display: grid; place-items: center;
+    border-radius: 12px; color: var(--gold); background: var(--gold-bg);
+  }
+  .broadcast-intro strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+  .inline-link-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; margin-top: 10px; }
+  .inline-link-grid .form-input { margin: 0; }
+  .link-preview {
+    margin-top: 9px; padding: 9px 11px; border-radius: 12px;
+    background: rgba(52,211,153,.08); color: var(--emerald); font-size: 11px;
+    display: none; align-items: center; gap: 6px; overflow: hidden;
+  }
+  .link-preview.visible { display: flex; }
+  .link-preview span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; }
+  @media (max-width: 420px) { .inline-link-grid { grid-template-columns: 1fr; } }
+
+  /* ââ Modal buttons (sheet actions) ââ */
   .modal-btn {
     flex: 1; min-width: 0; padding: 11px 10px; border-radius: 11px; border: none;
     font-size: 13px; font-weight: 700; cursor: pointer;
@@ -622,11 +685,11 @@
   .modal-btn.del    { background: var(--rose-bg);    color: var(--rose);    opacity: .7; }
   .modal-btn.close  { background: var(--surface-2);  color: var(--text);    flex: 0 0 44px; }
 
-  /* ── Spinner ── */
+  /* ââ Spinner ââ */
   .spin { animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── TON Payout (Connect Wallet + Pay Modal) ── */
+  /* ââ TON Payout (Connect Wallet + Pay Modal) ââ */
   .ton-wallet-bar {
     display: flex; align-items: center; justify-content: space-between;
     background: var(--surface-1); border: 1px solid var(--border);
@@ -646,303 +709,423 @@
   }
   .tx-hash-row a { color: var(--gold); text-decoration: none; }
 </style>
-<script src="https://unpkg.com/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
+<script src="js/tonconnect-ui.min.js"></script>
+<script type="module">"use strict";(()=>{var B="0.5.21";var y={HIGHLIGHT_COLOR:"#0079F2",HIGHLIGHT_BG:"#0079F210",ALLOWED_PARENT_DOMAINS:[".replit.dev",".replit.com",".replit-staging.com",".rp-humain.com",".repl.co"],THEME_PREVIEW_STYLE_ID:"replit-theme-preview",MAX_SIBLING_HIGHLIGHTERS:1e3,MAX_DESCENDANTS_FOR_SCREENSHOT:1500},oe=`
+  [contenteditable] {
+    outline: none !important;
+  }
+
+  [contenteditable]:focus {
+    outline: none !important;
+  }
+`,se=`
+  .beacon-highlighter {
+    content: '';
+    position: absolute;
+    z-index: ${Number.MAX_SAFE_INTEGER-3};
+    box-sizing: border-box;
+    pointer-events: none;
+    outline: 2px dashed ${y.HIGHLIGHT_COLOR} !important;
+    outline-offset: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    background: ${y.HIGHLIGHT_BG} !important;
+    opacity: 0;
+  }
+  
+  .beacon-hover-highlighter {
+    position: fixed;
+    z-index: ${Number.MAX_SAFE_INTEGER};
+  }
+  
+  .beacon-selected-highlighter {
+    position: fixed;
+    pointer-events: none;
+    outline: 2px solid ${y.HIGHLIGHT_COLOR} !important;
+    outline-offset: 3px !important;
+    background: none !important;
+  }
+  
+  .beacon-label {
+    position: absolute;
+    background-color: ${y.HIGHLIGHT_COLOR};
+    color: #FFFFFF;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: monospace;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transform: translateY(-100%);
+    margin-top: -4px;
+    left: 0;
+    z-index: ${Number.MAX_SAFE_INTEGER-2};
+    pointer-events: none;
+    opacity: 0;
+  }
+  
+  .beacon-hover-label {
+    position: fixed;
+    z-index: ${Number.MAX_SAFE_INTEGER};
+  }
+  
+  .beacon-selected-label {
+    position: fixed;
+    pointer-events: none;
+  }
+  
+  .beacon-sibling-highlighter {
+    position: fixed;
+    pointer-events: none;
+    outline: 2px dashed ${y.HIGHLIGHT_COLOR} !important;
+    outline-offset: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    background: ${y.HIGHLIGHT_BG} !important;
+  }
+`;function je(n,t){return n[13]=1,n[14]=t>>8,n[15]=t&255,n[16]=t>>8,n[17]=t&255,n}var ge=112,me=72,fe=89,pe=115,$;function qe(){let n=new Int32Array(256);for(let t=0;t<256;t++){let e=t;for(let i=0;i<8;i++)e=e&1?3988292384^e>>>1:e>>>1;n[t]=e}return n}function Qe(n){let t=-1;$||($=qe());for(let e=0;e<n.length;e++)t=$[(t^n[e])&255]^t>>>8;return t^-1}function Ze(n){let t=n.length-1;for(let e=t;e>=4;e--)if(n[e-4]===9&&n[e-3]===ge&&n[e-2]===me&&n[e-1]===fe&&n[e]===pe)return e-3;return 0}function Je(n,t,e=!1){let i=new Uint8Array(13);t*=39.3701,i[0]=ge,i[1]=me,i[2]=fe,i[3]=pe,i[4]=t>>>24,i[5]=t>>>16,i[6]=t>>>8,i[7]=t&255,i[8]=i[4],i[9]=i[5],i[10]=i[6],i[11]=i[7],i[12]=1;let r=Qe(i),o=new Uint8Array(4);if(o[0]=r>>>24,o[1]=r>>>16,o[2]=r>>>8,o[3]=r&255,e){let l=Ze(n);return n.set(i,l),n.set(o,l+13),n}else{let l=new Uint8Array(4);l[0]=0,l[1]=0,l[2]=0,l[3]=9;let s=new Uint8Array(54);return s.set(n,0),s.set(l,33),s.set(i,37),s.set(o,50),s}}var Ee="[modern-screenshot]",A=typeof window<"u",et=A&&"Worker"in window,tt=A&&"atob"in window,Fn=A&&"btoa"in window,Y=A?window.navigator?.userAgent:"",be=Y.includes("Chrome"),k=Y.includes("AppleWebKit")&&!be,X=Y.includes("Firefox"),nt=n=>n&&"__CONTEXT__"in n,it=n=>n.constructor.name==="CSSFontFaceRule",rt=n=>n.constructor.name==="CSSImportRule",v=n=>n.nodeType===1,I=n=>typeof n.className=="object",ye=n=>n.tagName==="image",ot=n=>n.tagName==="use",L=n=>v(n)&&typeof n.style<"u"&&!I(n),st=n=>n.nodeType===8,lt=n=>n.nodeType===3,H=n=>n.tagName==="IMG",F=n=>n.tagName==="VIDEO",at=n=>n.tagName==="CANVAS",ct=n=>n.tagName==="TEXTAREA",ht=n=>n.tagName==="INPUT",dt=n=>n.tagName==="STYLE",ut=n=>n.tagName==="SCRIPT",gt=n=>n.tagName==="SELECT",mt=n=>n.tagName==="SLOT",ft=n=>n.tagName==="IFRAME",pt=(...n)=>console.warn(Ee,...n);function Et(n){let t=n?.createElement?.("canvas");return t&&(t.height=t.width=1),!!t&&"toDataURL"in t&&!!t.toDataURL("image/webp").includes("image/webp")}var K=n=>n.startsWith("data:");function we(n,t){if(n.match(/^[a-z]+:\/\//i))return n;if(A&&n.match(/^\/\//))return window.location.protocol+n;if(n.match(/^[a-z]+:/i)||!A)return n;let e=U().implementation.createHTMLDocument(),i=e.createElement("base"),r=e.createElement("a");return e.head.appendChild(i),e.body.appendChild(r),t&&(i.href=t),r.href=n,r.href}function U(n){return(n&&v(n)?n?.ownerDocument:n)??window.document}var V="http://www.w3.org/2000/svg";function bt(n,t,e){let i=U(e).createElementNS(V,"svg");return i.setAttributeNS(null,"width",n.toString()),i.setAttributeNS(null,"height",t.toString()),i.setAttributeNS(null,"viewBox",`0 0 ${n} ${t}`),i}function yt(n,t){let e=new XMLSerializer().serializeToString(n);return t&&(e=e.replace(/[\u0000-\u0008\v\f\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/gu,"")),`data:image/svg+xml;charset=utf-8,${encodeURIComponent(e)}`}async function wt(n,t="image/png",e=1){try{return await new Promise((i,r)=>{n.toBlob(o=>{o?i(o):r(new Error("Blob is null"))},t,e)})}catch(i){if(tt)return St(n.toDataURL(t,e));throw i}}function St(n){let[t,e]=n.split(","),i=t.match(/data:(.+);/)?.[1]??void 0,r=window.atob(e),o=r.length,l=new Uint8Array(o);for(let s=0;s<o;s+=1)l[s]=r.charCodeAt(s);return new Blob([l],{type:i})}function Se(n,t){return new Promise((e,i)=>{let r=new FileReader;r.onload=()=>e(r.result),r.onerror=()=>i(r.error),r.onabort=()=>i(new Error(`Failed read blob to ${t}`)),t==="dataUrl"?r.readAsDataURL(n):t==="arrayBuffer"&&r.readAsArrayBuffer(n)})}var vt=n=>Se(n,"dataUrl"),Tt=n=>Se(n,"arrayBuffer");function R(n,t){let e=U(t).createElement("img");return e.decoding="sync",e.loading="eager",e.src=n,e}function M(n,t){return new Promise(e=>{let{timeout:i,ownerDocument:r,onError:o,onWarn:l}=t??{},s=typeof n=="string"?R(n,U(r)):n,c=null,h=null;function a(){e(s),c&&clearTimeout(c),h?.()}if(i&&(c=setTimeout(a,i)),F(s)){let d=s.currentSrc||s.src;if(!d)return s.poster?M(s.poster,t).then(e):a();if(s.readyState>=2)return a();let u=a,m=g=>{l?.("Failed video load",d,g),o?.(g),a()};h=()=>{s.removeEventListener("loadeddata",u),s.removeEventListener("error",m)},s.addEventListener("loadeddata",u,{once:!0}),s.addEventListener("error",m,{once:!0})}else{let d=ye(s)?s.href.baseVal:s.currentSrc||s.src;if(!d)return a();let u=async()=>{if(H(s)&&"decode"in s)try{await s.decode()}catch(g){l?.("Failed to decode image, trying to render anyway",s.dataset.originalSrc||d,g)}a()},m=g=>{l?.("Failed image load",s.dataset.originalSrc||d,g),a()};if(H(s)&&s.complete)return u();h=()=>{s.removeEventListener("load",u),s.removeEventListener("error",m)},s.addEventListener("load",u,{once:!0}),s.addEventListener("error",m,{once:!0})}})}async function Ct(n,t){L(n)&&(H(n)||F(n)?await M(n,t):await Promise.all(["img","video"].flatMap(e=>Array.from(n.querySelectorAll(e)).map(i=>M(i,t)))))}var ve=function(){let t=0,e=()=>`0000${(Math.random()*36**4<<0).toString(36)}`.slice(-4);return()=>(t+=1,`u${e()}${t}`)}();function Te(n){return n?.split(",").map(t=>t.trim().replace(/"|'/g,"").toLowerCase()).filter(Boolean)}var le=0;function At(n){let t=`${Ee}[#${le}]`;return le++,{time:e=>n&&console.time(`${t} ${e}`),timeEnd:e=>n&&console.timeEnd(`${t} ${e}`),warn:(...e)=>n&&pt(...e)}}function Rt(n){return{cache:n?"no-cache":"force-cache"}}async function z(n,t){return nt(n)?n:Ht(n,{...t,autoDestruct:!0})}async function Ht(n,t){let{scale:e=1,workerUrl:i,workerNumber:r=1}=t||{},o=!!t?.debug,l=t?.features??!0,s=n.ownerDocument??(A?window.document:void 0),c=n.ownerDocument?.defaultView??(A?window:void 0),h=new Map,a={width:0,height:0,quality:1,type:"image/png",scale:e,backgroundColor:null,style:null,filter:null,maximumCanvasSize:0,timeout:3e4,progress:null,debug:o,fetch:{requestInit:Rt(t?.fetch?.bypassingCache),placeholderImage:"data:image/png;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",bypassingCache:!1,...t?.fetch},fetchFn:null,font:{},drawImageInterval:100,workerUrl:null,workerNumber:r,onCloneNode:null,onEmbedNode:null,onCreateForeignObjectSvg:null,includeStyleProperties:null,autoDestruct:!1,...t,__CONTEXT__:!0,log:At(o),node:n,ownerDocument:s,ownerWindow:c,dpi:e===1?null:96*e,svgStyleElement:Ce(s),svgDefsElement:s?.createElementNS(V,"defs"),svgStyles:new Map,defaultComputedStyles:new Map,workers:[...Array.from({length:et&&i&&r?r:0})].map(()=>{try{let m=new Worker(i);return m.onmessage=async g=>{let{url:f,result:E}=g.data;E?h.get(f)?.resolve?.(E):h.get(f)?.reject?.(new Error(`Error receiving message from worker: ${f}`))},m.onmessageerror=g=>{let{url:f}=g.data;h.get(f)?.reject?.(new Error(`Error receiving message from worker: ${f}`))},m}catch(m){return a.log.warn("Failed to new Worker",m),null}}).filter(Boolean),fontFamilies:new Map,fontCssTexts:new Map,acceptOfImage:`${[Et(s)&&"image/webp","image/svg+xml","image/*","*/*"].filter(Boolean).join(",")};q=0.8`,requests:h,drawImageCount:0,tasks:[],features:l,isEnable:m=>m==="restoreScrollPosition"?typeof l=="boolean"?!1:l[m]??!1:typeof l=="boolean"?l:l[m]??!0};a.log.time("wait until load"),await Ct(n,{timeout:a.timeout,onWarn:a.log.warn}),a.log.timeEnd("wait until load");let{width:d,height:u}=xt(n,a);return a.width=d,a.height=u,a}function Ce(n){if(!n)return;let t=n.createElement("style"),e=t.ownerDocument.createTextNode(`
+.______background-clip--text {
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+`);return t.appendChild(e),t}function xt(n,t){let{width:e,height:i}=t;if(v(n)&&(!e||!i)){let r=n.getBoundingClientRect();e=e||r.width||Number(n.getAttribute("width"))||0,i=i||r.height||Number(n.getAttribute("height"))||0}return{width:e,height:i}}async function Lt(n,t){let{log:e,timeout:i,drawImageCount:r,drawImageInterval:o}=t;e.time("image to canvas");let l=await M(n,{timeout:i,onWarn:t.log.warn}),{canvas:s,context2d:c}=Mt(n.ownerDocument,t),h=()=>{try{c?.drawImage(l,0,0,s.width,s.height)}catch(a){t.log.warn("Failed to drawImage",a)}};if(h(),t.isEnable("fixSvgXmlDecode"))for(let a=0;a<r;a++)await new Promise(d=>{setTimeout(()=>{h(),d()},a+o)});return t.drawImageCount=0,e.timeEnd("image to canvas"),s}function Mt(n,t){let{width:e,height:i,scale:r,backgroundColor:o,maximumCanvasSize:l}=t,s=n.createElement("canvas");s.width=Math.floor(e*r),s.height=Math.floor(i*r),s.style.width=`${e}px`,s.style.height=`${i}px`,l&&(s.width>l||s.height>l)&&(s.width>l&&s.height>l?s.width>s.height?(s.height*=l/s.width,s.width=l):(s.width*=l/s.height,s.height=l):s.width>l?(s.height*=l/s.width,s.width=l):(s.width*=l/s.height,s.height=l));let c=s.getContext("2d");return c&&o&&(c.fillStyle=o,c.fillRect(0,0,s.width,s.height)),{canvas:s,context2d:c}}function Ae(n,t){if(n.ownerDocument)try{let o=n.toDataURL();if(o!=="data:,")return R(o,n.ownerDocument)}catch(o){t.log.warn("Failed to clone canvas",o)}let e=n.cloneNode(!1),i=n.getContext("2d"),r=e.getContext("2d");try{return i&&r&&r.putImageData(i.getImageData(0,0,n.width,n.height),0,0),e}catch(o){t.log.warn("Failed to clone canvas",o)}return e}function _t(n,t){try{if(n?.contentDocument?.body)return j(n.contentDocument.body,t)}catch(e){t.log.warn("Failed to clone iframe",e)}return n.cloneNode(!1)}function It(n){let t=n.cloneNode(!1);return n.currentSrc&&n.currentSrc!==n.src&&(t.src=n.currentSrc,t.srcset=""),t.loading==="lazy"&&(t.loading="eager"),t}async function Pt(n,t){if(n.ownerDocument&&!n.currentSrc&&n.poster)return R(n.poster,n.ownerDocument);let e=n.cloneNode(!1);e.crossOrigin="anonymous",n.currentSrc&&n.currentSrc!==n.src&&(e.src=n.currentSrc);let i=e.ownerDocument;if(i){let r=!0;if(await M(e,{onError:()=>r=!1,onWarn:t.log.warn}),!r)return n.poster?R(n.poster,n.ownerDocument):e;e.currentTime=n.currentTime,await new Promise(l=>{e.addEventListener("seeked",l,{once:!0})});let o=i.createElement("canvas");o.width=n.offsetWidth,o.height=n.offsetHeight;try{let l=o.getContext("2d");l&&l.drawImage(e,0,0,o.width,o.height)}catch(l){return t.log.warn("Failed to clone video",l),n.poster?R(n.poster,n.ownerDocument):e}return Ae(o,t)}return e}function Dt(n,t){return at(n)?Ae(n,t):ft(n)?_t(n,t):H(n)?It(n):F(n)?Pt(n,t):n.cloneNode(!1)}function Nt(n){let t=n.sandbox;if(!t){let{ownerDocument:e}=n;try{e&&(t=e.createElement("iframe"),t.id=`__SANDBOX__-${ve()}`,t.width="0",t.height="0",t.style.visibility="hidden",t.style.position="fixed",e.body.appendChild(t),t.contentWindow?.document.write('<!DOCTYPE html><meta charset="UTF-8"><title></title><body>'),n.sandbox=t)}catch(i){n.log.warn("Failed to getSandBox",i)}}return t}var Ot=["width","height","-webkit-text-fill-color"],Bt=["stroke","fill"];function Re(n,t,e){let{defaultComputedStyles:i}=e,r=n.nodeName.toLowerCase(),o=I(n)&&r!=="svg",l=o?Bt.map(f=>[f,n.getAttribute(f)]).filter(([,f])=>f!==null):[],s=[o&&"svg",r,l.map((f,E)=>`${f}=${E}`).join(","),t].filter(Boolean).join(":");if(i.has(s))return i.get(s);let h=Nt(e)?.contentWindow;if(!h)return new Map;let a=h?.document,d,u;o?(d=a.createElementNS(V,"svg"),u=d.ownerDocument.createElementNS(d.namespaceURI,r),l.forEach(([f,E])=>{u.setAttributeNS(null,f,E)}),d.appendChild(u)):d=u=a.createElement(r),u.textContent=" ",a.body.appendChild(d);let m=h.getComputedStyle(u,t),g=new Map;for(let f=m.length,E=0;E<f;E++){let p=m.item(E);Ot.includes(p)||g.set(p,m.getPropertyValue(p))}return a.body.removeChild(d),i.set(s,g),g}function He(n,t,e){let i=new Map,r=[],o=new Map;if(e)for(let s of e)l(s);else for(let s=n.length,c=0;c<s;c++){let h=n.item(c);l(h)}for(let s=r.length,c=0;c<s;c++)o.get(r[c])?.forEach((h,a)=>i.set(a,h));function l(s){let c=n.getPropertyValue(s),h=n.getPropertyPriority(s),a=s.lastIndexOf("-"),d=a>-1?s.substring(0,a):void 0;if(d){let u=o.get(d);u||(u=new Map,o.set(d,u)),u.set(s,[c,h])}t.get(s)===c&&!h||(d?r.push(d):i.set(s,[c,h]))}return i}function kt(n,t,e,i){let{ownerWindow:r,includeStyleProperties:o,currentParentNodeStyle:l}=i,s=t.style,c=r.getComputedStyle(n),h=Re(n,null,i);l?.forEach((d,u)=>{h.delete(u)});let a=He(c,h,o);a.delete("transition-property"),a.delete("all"),a.delete("d"),a.delete("content"),e&&(a.delete("margin-top"),a.delete("margin-right"),a.delete("margin-bottom"),a.delete("margin-left"),a.delete("margin-block-start"),a.delete("margin-block-end"),a.delete("margin-inline-start"),a.delete("margin-inline-end"),a.set("box-sizing",["border-box",""])),a.get("background-clip")?.[0]==="text"&&t.classList.add("______background-clip--text"),be&&(a.has("font-kerning")||a.set("font-kerning",["normal",""]),(a.get("overflow-x")?.[0]==="hidden"||a.get("overflow-y")?.[0]==="hidden")&&a.get("text-overflow")?.[0]==="ellipsis"&&n.scrollWidth===n.clientWidth&&a.set("text-overflow",["clip",""]));for(let d=s.length,u=0;u<d;u++)s.removeProperty(s.item(u));return a.forEach(([d,u],m)=>{s.setProperty(m,d,u)}),a}function Ft(n,t){(ct(n)||ht(n)||gt(n))&&t.setAttribute("value",n.value)}var Ut=[":before",":after"],Vt=[":-webkit-scrollbar",":-webkit-scrollbar-button",":-webkit-scrollbar-thumb",":-webkit-scrollbar-track",":-webkit-scrollbar-track-piece",":-webkit-scrollbar-corner",":-webkit-resizer"];function Gt(n,t,e,i,r){let{ownerWindow:o,svgStyleElement:l,svgStyles:s,currentNodeStyle:c}=i;if(!l||!o)return;function h(a){let d=o.getComputedStyle(n,a),u=d.getPropertyValue("content");if(!u||u==="none")return;r?.(u),u=u.replace(/(')|(")|(counter\(.+\))/g,"");let m=[ve()],g=Re(n,a,i);c?.forEach((b,S)=>{g.delete(S)});let f=He(d,g,i.includeStyleProperties);f.delete("content"),f.delete("-webkit-locale"),f.get("background-clip")?.[0]==="text"&&t.classList.add("______background-clip--text");let E=[`content: '${u}';`];if(f.forEach(([b,S],C)=>{E.push(`${C}: ${b}${S?" !important":""};`)}),E.length===1)return;try{t.className=[t.className,...m].join(" ")}catch(b){i.log.warn("Failed to copyPseudoClass",b);return}let p=E.join(`
+  `),w=s.get(p);w||(w=[],s.set(p,w)),w.push(`.${m[0]}:${a}`)}Ut.forEach(h),e&&Vt.forEach(h)}var ae=new Set(["symbol"]);async function ce(n,t,e,i,r){if(v(e)&&(dt(e)||ut(e))||i.filter&&!i.filter(e))return;ae.has(t.nodeName)||ae.has(e.nodeName)?i.currentParentNodeStyle=void 0:i.currentParentNodeStyle=i.currentNodeStyle;let o=await j(e,i,!1,r);i.isEnable("restoreScrollPosition")&&Wt(n,o),t.appendChild(o)}async function he(n,t,e,i){let r=(v(n)?n.shadowRoot?.firstChild:void 0)??n.firstChild;for(let o=r;o;o=o.nextSibling)if(!st(o))if(v(o)&&mt(o)&&typeof o.assignedNodes=="function"){let l=o.assignedNodes();for(let s=0;s<l.length;s++)await ce(n,t,l[s],e,i)}else await ce(n,t,o,e,i)}function Wt(n,t){if(!L(n)||!L(t))return;let{scrollTop:e,scrollLeft:i}=n;if(!e&&!i)return;let{transform:r}=t.style,o=new DOMMatrix(r),{a:l,b:s,c,d:h}=o;o.a=1,o.b=0,o.c=0,o.d=1,o.translateSelf(-i,-e),o.a=l,o.b=s,o.c=c,o.d=h,t.style.transform=o.toString()}function $t(n,t){let{backgroundColor:e,width:i,height:r,style:o}=t,l=n.style;if(e&&l.setProperty("background-color",e,"important"),i&&l.setProperty("width",`${i}px`,"important"),r&&l.setProperty("height",`${r}px`,"important"),o)for(let s in o)l[s]=o[s]}var Kt=/^[\w-:]+$/;async function j(n,t,e=!1,i){let{ownerDocument:r,ownerWindow:o,fontFamilies:l}=t;if(r&&lt(n))return i&&/\S/.test(n.data)&&i(n.data),r.createTextNode(n.data);if(r&&o&&v(n)&&(L(n)||I(n))){let c=await Dt(n,t);if(t.isEnable("removeAbnormalAttributes")){let g=c.getAttributeNames();for(let f=g.length,E=0;E<f;E++){let p=g[E];Kt.test(p)||c.removeAttribute(p)}}let h=t.currentNodeStyle=kt(n,c,e,t);e&&$t(c,t);let a=!1;if(t.isEnable("copyScrollbar")){let g=[h.get("overflow-x")?.[0],h.get("overflow-y")?.[0]];a=g.includes("scroll")||(g.includes("auto")||g.includes("overlay"))&&(n.scrollHeight>n.clientHeight||n.scrollWidth>n.clientWidth)}let d=h.get("text-transform")?.[0],u=Te(h.get("font-family")?.[0]),m=u?g=>{d==="uppercase"?g=g.toUpperCase():d==="lowercase"?g=g.toLowerCase():d==="capitalize"&&(g=g[0].toUpperCase()+g.substring(1)),u.forEach(f=>{let E=l.get(f);E||l.set(f,E=new Set),g.split("").forEach(p=>E.add(p))})}:void 0;return Gt(n,c,a,t,m),Ft(n,c),F(n)||await he(n,c,t,m),c}let s=n.cloneNode(!1);return await he(n,s,t),s}function Yt(n){if(n.ownerDocument=void 0,n.ownerWindow=void 0,n.svgStyleElement=void 0,n.svgDefsElement=void 0,n.svgStyles.clear(),n.defaultComputedStyles.clear(),n.sandbox){try{n.sandbox.remove()}catch(t){n.log.warn("Failed to destroyContext",t)}n.sandbox=void 0}n.workers=[],n.fontFamilies.clear(),n.fontCssTexts.clear(),n.requests.clear(),n.tasks=[]}function Xt(n){let{url:t,timeout:e,responseType:i,...r}=n,o=new AbortController,l=e?setTimeout(()=>o.abort(),e):void 0;return fetch(t,{signal:o.signal,...r}).then(s=>{if(!s.ok)throw new Error("Failed fetch, not 2xx response",{cause:s});switch(i){case"arrayBuffer":return s.arrayBuffer();case"dataUrl":return s.blob().then(vt);case"text":default:return s.text()}}).finally(()=>clearTimeout(l))}function _(n,t){let{url:e,requestType:i="text",responseType:r="text",imageDom:o}=t,l=e,{timeout:s,acceptOfImage:c,requests:h,fetchFn:a,fetch:{requestInit:d,bypassingCache:u,placeholderImage:m},font:g,workers:f,fontFamilies:E}=n;i==="image"&&(k||X)&&n.drawImageCount++;let p=h.get(e);if(!p){u&&u instanceof RegExp&&u.test(l)&&(l+=(/\?/.test(l)?"&":"?")+new Date().getTime());let w=i.startsWith("font")&&g&&g.minify,b=new Set;w&&i.split(";")[1].split(",").forEach(O=>{E.has(O)&&E.get(O).forEach(re=>b.add(re))});let S=w&&b.size,C={url:l,timeout:s,responseType:S?"arrayBuffer":r,headers:i==="image"?{accept:c}:void 0,...d};p={type:i,resolve:void 0,reject:void 0,response:null},p.response=(async()=>{if(a&&i==="image"){let T=await a(e);if(T)return T}return!k&&e.startsWith("http")&&f.length?new Promise((T,O)=>{f[h.size&f.length-1].postMessage({rawUrl:e,...C}),p.resolve=T,p.reject=O}):Xt(C)})().catch(T=>{if(h.delete(e),i==="image"&&m)return n.log.warn("Failed to fetch image base64, trying to use placeholder image",l),typeof m=="string"?m:m(o);throw T}),h.set(e,p)}return p.response}async function xe(n,t,e,i){if(!Le(n))return n;for(let[r,o]of zt(n,t))try{let l=await _(e,{url:o,requestType:i?"image":"text",responseType:"dataUrl"});n=n.replace(jt(r),`$1${l}$3`)}catch(l){e.log.warn("Failed to fetch css data url",r,l)}return n}function Le(n){return/url\((['"]?)([^'"]+?)\1\)/.test(n)}var Me=/url\((['"]?)([^'"]+?)\1\)/g;function zt(n,t){let e=[];return n.replace(Me,(i,r,o)=>(e.push([o,we(o,t)]),i)),e.filter(([i])=>!K(i))}function jt(n){let t=n.replace(/([.*+?^${}()|\[\]\/\\])/g,"\\$1");return new RegExp(`(url\\(['"]?)(${t})(['"]?\\))`,"g")}var qt=["background-image","border-image-source","-webkit-border-image","-webkit-mask-image","list-style-image"];function Qt(n,t){return qt.map(e=>{let i=n.getPropertyValue(e);return!i||i==="none"?null:((k||X)&&t.drawImageCount++,xe(i,null,t,!0).then(r=>{!r||i===r||n.setProperty(e,r,n.getPropertyPriority(e))}))}).filter(Boolean)}function Zt(n,t){if(H(n)){let e=n.currentSrc||n.src;if(!K(e))return[_(t,{url:e,imageDom:n,requestType:"image",responseType:"dataUrl"}).then(i=>{i&&(n.srcset="",n.dataset.originalSrc=e,n.src=i||"")})];(k||X)&&t.drawImageCount++}else if(I(n)&&!K(n.href.baseVal)){let e=n.href.baseVal;return[_(t,{url:e,imageDom:n,requestType:"image",responseType:"dataUrl"}).then(i=>{i&&(n.dataset.originalSrc=e,n.href.baseVal=i||"")})]}return[]}function Jt(n,t){let{ownerDocument:e,svgDefsElement:i}=t,r=n.getAttribute("href")??n.getAttribute("xlink:href");if(!r)return[];let[o,l]=r.split("#");if(l){let s=`#${l}`,c=e?.querySelector(`svg ${s}`);if(o&&n.setAttribute("href",s),i?.querySelector(s))return[];if(c)return i?.appendChild(c.cloneNode(!0)),[];if(o)return[_(t,{url:o,responseType:"text"}).then(h=>{i?.insertAdjacentHTML("beforeend",h)})]}return[]}function _e(n,t){let{tasks:e}=t;v(n)&&((H(n)||ye(n))&&e.push(...Zt(n,t)),ot(n)&&e.push(...Jt(n,t))),L(n)&&e.push(...Qt(n.style,t)),n.childNodes.forEach(i=>{_e(i,t)})}async function en(n,t){let{ownerDocument:e,svgStyleElement:i,fontFamilies:r,fontCssTexts:o,tasks:l,font:s}=t;if(!(!e||!i||!r.size))if(s&&s.cssText){let c=ue(s.cssText,t);i.appendChild(e.createTextNode(`${c}
+`))}else{let c=Array.from(e.styleSheets).filter(a=>{try{return"cssRules"in a&&!!a.cssRules.length}catch(d){return t.log.warn(`Error while reading CSS rules from ${a.href}`,d),!1}});await Promise.all(c.flatMap(a=>Array.from(a.cssRules).map(async(d,u)=>{if(rt(d)){let m=u+1,g=d.href,f="";try{f=await _(t,{url:g,requestType:"text",responseType:"text"})}catch(p){t.log.warn(`Error fetch remote css import from ${g}`,p)}let E=f.replace(Me,(p,w,b)=>p.replace(b,we(b,g)));for(let p of nn(E))try{a.insertRule(p,p.startsWith("@import")?m+=1:a.cssRules.length)}catch(w){t.log.warn("Error inserting rule from remote css import",{rule:p,error:w})}}}))),c.flatMap(a=>Array.from(a.cssRules)).filter(a=>it(a)&&Le(a.style.getPropertyValue("src"))&&Te(a.style.getPropertyValue("font-family"))?.some(d=>r.has(d))).forEach(a=>{let d=a,u=o.get(d.cssText);u?i.appendChild(e.createTextNode(`${u}
+`)):l.push(xe(d.cssText,d.parentStyleSheet?d.parentStyleSheet.href:null,t).then(m=>{m=ue(m,t),o.set(d.cssText,m),i.appendChild(e.createTextNode(`${m}
+`))}))})}}var tn=/(\/\*[\s\S]*?\*\/)/g,de=/((@.*?keyframes [\s\S]*?){([\s\S]*?}\s*?)})/gi;function nn(n){if(n==null)return[];let t=[],e=n.replace(tn,"");for(;;){let o=de.exec(e);if(!o)break;t.push(o[0])}e=e.replace(de,"");let i=/@import[\s\S]*?url\([^)]*\)[\s\S]*?;/gi,r=new RegExp("((\\s*?(?:\\/\\*[\\s\\S]*?\\*\\/)?\\s*?@media[\\s\\S]*?){([\\s\\S]*?)}\\s*?})|(([\\s\\S]*?){([\\s\\S]*?)})","gi");for(;;){let o=i.exec(e);if(o)r.lastIndex=i.lastIndex;else if(o=r.exec(e),o)i.lastIndex=r.lastIndex;else break;t.push(o[0])}return t}var rn=/url\([^)]+\)\s*format\((["']?)([^"']+)\1\)/g,on=/src:\s*(?:url\([^)]+\)\s*format\([^)]+\)[,;]\s*)+/g;function ue(n,t){let{font:e}=t,i=e?e?.preferredFormat:void 0;return i?n.replace(on,r=>{for(;;){let[o,,l]=rn.exec(r)||[];if(!l)return"";if(l===i)return`src: ${o};`}}):n}async function sn(n,t){let e=await z(n,t);if(v(e.node)&&I(e.node))return e.node;let{ownerDocument:i,log:r,tasks:o,svgStyleElement:l,svgDefsElement:s,svgStyles:c,font:h,progress:a,autoDestruct:d,onCloneNode:u,onEmbedNode:m,onCreateForeignObjectSvg:g}=e;r.time("clone node");let f=await j(e.node,e,!0);if(l&&i){let S="";c.forEach((C,T)=>{S+=`${C.join(`,
+`)} {
+  ${T}
+}
+`}),l.appendChild(i.createTextNode(S))}r.timeEnd("clone node"),await u?.(f),h!==!1&&v(f)&&(r.time("embed web font"),await en(f,e),r.timeEnd("embed web font")),r.time("embed node"),_e(f,e);let E=o.length,p=0,w=async()=>{for(;;){let S=o.pop();if(!S)break;try{await S}catch(C){e.log.warn("Failed to run task",C)}a?.(++p,E)}};a?.(p,E),await Promise.all([...Array.from({length:4})].map(w)),r.timeEnd("embed node"),await m?.(f);let b=ln(f,e);return s&&b.insertBefore(s,b.children[0]),l&&b.insertBefore(l,b.children[0]),d&&Yt(e),await g?.(b),b}function ln(n,t){let{width:e,height:i}=t,r=bt(e,i,n.ownerDocument),o=r.ownerDocument.createElementNS(r.namespaceURI,"foreignObject");return o.setAttributeNS(null,"x","0%"),o.setAttributeNS(null,"y","0%"),o.setAttributeNS(null,"width","100%"),o.setAttributeNS(null,"height","100%"),o.append(n),r.appendChild(o),r}async function an(n,t){let e=await z(n,t),i=await sn(e),r=yt(i,e.isEnable("removeControlCharacter"));e.autoDestruct||(e.svgStyleElement=Ce(e.ownerDocument),e.svgDefsElement=e.ownerDocument?.createElementNS(V,"defs"),e.svgStyles.clear());let o=R(r,i.ownerDocument);return await Lt(o,e)}async function q(n,t){let e=await z(n,t),{log:i,type:r,quality:o,dpi:l}=e,s=await an(e);i.time("canvas to blob");let c=await wt(s,r,o);if(["image/png","image/jpeg"].includes(r)&&l){let h=await Tt(c.slice(0,33)),a=new Uint8Array(h);return r==="image/png"?a=Je(a,l):r==="image/jpeg"&&(a=je(a,l)),i.timeEnd("canvas to blob"),new Blob([a,c.slice(33)],{type:r})}return i.timeEnd("canvas to blob"),c}var P={METADATA:"data-replit-metadata",COMPONENT_NAME:"data-component-name"};var Ie={color:"color",radius:"borderTopLeftRadius",text:"fontSize",font:"fontFamily"};function De(n){try{let t=new URL(n);return cn(t)?!0:y.ALLOWED_PARENT_DOMAINS.some(e=>t.hostname===e.slice(1)||t.hostname.endsWith(e))}catch{return!1}}function cn(n){return n.protocol!=="http:"||!n.port?!1:n.hostname==="localhost"||n.hostname==="127.0.0.1"||n.hostname==="[::1]"}function W(n){if(!n)return null;let t=document.elementFromPoint(n.clientX,n.clientY);return t instanceof HTMLElement?t:null}function hn(n,t=300){if(!n)return"";let e=String(n);return e.length<=t?e:e.slice(0,t)+"..."}function x(n){let t=n.getAttribute(P.COMPONENT_NAME)??n.tagName.toLowerCase();return hn(t,50)}function Q(n){return n.className.toString?n.className.toString():String(n.className)}function Ne(n,t=80){let e="";for(let i=0;i<n.childNodes.length;i++){let r=n.childNodes[i];if(r.nodeType===Node.TEXT_NODE&&(e+=r.textContent??"",e.length>t))return e.slice(0,t)+"..."}return e.trim()}var dn=new Set(["script","style","noscript","link","meta","br","svg"]);function Oe(n){let t={children:[],parent:null};return Object.defineProperty(t,"parent",{value:n,writable:!0,enumerable:!1,configurable:!0}),t}function Be(n,t,e,i){let r=Oe(t),o={tagName:n.tagName.toLowerCase(),textContent:Ne(n),id:n.id||void 0,className:Q(n)||void 0,nodeId:e.get(n),relatedElements:r};i.set(n,o);for(let l=0;l<n.children.length;l++)Be(n.children[l],o,e,i)}var G=class{ids=new WeakMap;nextId=0;get(t){let e=this.ids.get(t);if(e!==void 0)return e;let i=this.nextId++;return this.ids.set(t,i),i}};function Z(n,t,e,i,r){let o=e.get(n),l=Oe(t),s=l.children,c={tagName:n.tagName.toLowerCase(),textContent:Ne(n),id:n.id||void 0,className:Q(n)||void 0,nodeId:o,relatedElements:l};i.set(n,c);for(let h=0;h<n.children.length;h++){let a=n.children[h],d=a.tagName.toLowerCase();if(a!==r){if(d==="svg"){Be(a,c,e,i);continue}dn.has(d)||s.push(Z(a,c,e,i,r))}}return c}function un(n){let t={};if(typeof document>"u"||typeof CSS>"u")return t;let e=document.createElement("div");e.style.cssText="position:fixed;left:-9999px;top:-9999px;visibility:hidden;pointer-events:none";try{document.body.appendChild(e);let i=window.getComputedStyle(e);for(let[r,o]of Object.entries(n)){let l=Ie[r];l&&(t[r]=o.map(({suffix:s,expr:c})=>{let h="";try{e.style[l]="",e.style[l]=c,h=i[l]}catch{h=""}return{suffix:s,value:h}}))}}catch{}finally{e.remove()}return t}function gn(){let n=typeof window>"u"?void 0:window.REPLIT_APP_THEME_TOKENS;if(n)return un(n)}function J(n,t){let e=window.getComputedStyle(n),i=p=>p.toLowerCase()==="currentcolor"?e.color:p,r=i(e.borderTopColor),o=i(e.borderRightColor),l=i(e.borderBottomColor),s=i(e.borderLeftColor),c=n.nextElementSibling,h=n.parentElement?.parentElement??null,a=mn(n),d={backgroundColor:e.backgroundColor,borderTopColor:r,borderRightColor:o,borderBottomColor:l,borderLeftColor:s,borderTopLeftRadius:e.borderTopLeftRadius,borderTopRightRadius:e.borderTopRightRadius,borderBottomRightRadius:e.borderBottomRightRadius,borderBottomLeftRadius:e.borderBottomLeftRadius,borderTopWidth:e.borderTopWidth,borderRightWidth:e.borderRightWidth,borderBottomWidth:e.borderBottomWidth,borderLeftWidth:e.borderLeftWidth,color:e.color,display:e.display,position:e.position,width:e.width,height:e.height,fontSize:e.fontSize,fontFamily:e.fontFamily,fontWeight:e.fontWeight,margin:e.margin,padding:e.padding,opacity:e.opacity,textAlign:e.textAlign,flexDirection:e.flexDirection,flexWrap:e.flexWrap,justifyContent:e.justifyContent,alignItems:e.alignItems,gap:e.gap,rowGap:e.rowGap,columnGap:e.columnGap},u=t.get(n),m=n.parentElement?t.get(n.parentElement)??null:null,g={children:u?.relatedElements.children??[],parent:u?.relatedElements.parent??m,nextSibling:c?t.get(c)??void 0:void 0,grandParent:h?t.get(h)??void 0:void 0},f=gn();return{tagName:n.tagName.toLowerCase(),nodeId:u?.nodeId,elementPath:n.getAttribute(P.METADATA)??"",elementName:x(n),textContent:n.textContent??"",originalTextContent:n.getAttribute("data-original-text")?decodeURIComponent(n.getAttribute("data-original-text")??""):void 0,srcAttribute:n.getAttribute("src")??"",hasChildElements:n.childElementCount>0,id:n.id,className:Q(n),colorVariables:a,...f?{themeTokens:f}:{},computedStyles:d,textAlign:e.textAlign,relatedElements:g}}function mn(n){let t=new Set(["inherit","initial","unset","revert","revert-layer"]),e={},i=window.getComputedStyle(n);for(let r=0;r<i.length;r++){let o=i.item(r);if(!o.startsWith("--"))continue;let l=i.getPropertyValue(o).trim();!l||t.has(l.toLowerCase())||!CSS.supports("color",l)||(e[o]=l)}return e}async function ke(n){try{let e=window.getComputedStyle(n).backgroundColor;return Fe(e)&&(e=window.getComputedStyle(document.documentElement).backgroundColor),await q(n,{type:"image/png",backgroundColor:e})}catch(t){console.error("[replit-cartographer] Failed to take screenshot:",t);return}}function Fe(n){return n==="transparent"||n==="rgba(0, 0, 0, 0)"||n.endsWith(", 0)")||n.endsWith(",0)")}async function ee({restoreScrollPosition:n=!1}={}){try{let t=document.documentElement,e=window.getComputedStyle(t).backgroundColor,i=Fe(e)?"#ffffff":e;return await q(t,{type:"image/png",backgroundColor:i,...n?{features:{restoreScrollPosition:!0}}:{}})}catch(t){console.error("[replit-cartographer] Failed to take page screenshot:",t);return}}function fn(){return{x:window.scrollX||document.documentElement.scrollLeft||document.body?.scrollLeft||0,y:window.scrollY||document.documentElement.scrollTop||document.body?.scrollTop||0}}function pn(){return{width:Math.max(1,Math.ceil(window.innerWidth||document.documentElement.clientWidth)),height:Math.max(1,Math.ceil(window.innerHeight||document.documentElement.clientHeight))}}function En(n){let t=document.documentElement,e=document.body;return{width:Math.max(n.width,t.scrollWidth,t.offsetWidth,t.clientWidth,e?.scrollWidth??0,e?.offsetWidth??0,e?.clientWidth??0),height:Math.max(n.height,t.scrollHeight,t.offsetHeight,t.clientHeight,e?.scrollHeight??0,e?.offsetHeight??0,e?.clientHeight??0)}}function bn(n){return new Promise((t,e)=>{let i=URL.createObjectURL(n),r=new Image,o=()=>{URL.revokeObjectURL(i)};r.onload=()=>{o(),t(r)},r.onerror=()=>{o(),e(new Error("Failed to load screenshot blob"))},r.src=i})}function yn(n){return new Promise(t=>{n.toBlob(e=>{t(e??void 0)},"image/png")})}function Pe({documentSize:n,imageSize:t,scrollOffset:e,viewportSize:i}){if(t<=i+1)return{start:0,size:Math.max(1,t)};let r=t/n,o=Math.max(1,Math.min(t,Math.ceil(i*r))),l=Math.max(0,t-o);return{start:Math.min(l,Math.max(0,Math.floor(e*r))),size:o}}function wn({documentSize:n,rootRect:t,scrollOffset:e,viewport:i}){let r=({rootAxisSize:l,viewportAxisSize:s})=>Math.ceil(l)<=s+1,o=({documentAxisSize:l,rootAxisSize:s,scrollAxisOffset:c,viewportAxisSize:h})=>c!==0&&l>h+1&&r({rootAxisSize:s,viewportAxisSize:h});return o({documentAxisSize:n.width,rootAxisSize:t.width,scrollAxisOffset:e.x,viewportAxisSize:i.width})||o({documentAxisSize:n.height,rootAxisSize:t.height,scrollAxisOffset:e.y,viewportAxisSize:i.height})}async function Ue(){try{let n=pn(),t=En(n),e=fn(),i=document.documentElement.getBoundingClientRect(),r=wn({documentSize:t,rootRect:i,scrollOffset:e,viewport:n}),o=r?{x:0,y:0}:e,l=await ee({restoreScrollPosition:r});if(!l)return;let s=await bn(l),c={height:s.naturalHeight||s.height,width:s.naturalWidth||s.width},h=Pe({documentSize:t.width,imageSize:c.width,scrollOffset:o.x,viewportSize:n.width}),a=Pe({documentSize:t.height,imageSize:c.height,scrollOffset:o.y,viewportSize:n.height}),d=document.createElement("canvas");d.width=h.size,d.height=a.size;let u=d.getContext("2d");return u?(u.drawImage(s,h.start,a.start,h.size,a.size,0,0,h.size,a.size),await yn(d)):void 0}catch{return}}function te(n){let t=n.getBoundingClientRect(),e=window.innerHeight,i=window.innerWidth;return t.bottom>0&&t.top<e&&t.right>0&&t.left<i}function D(n,t=y.MAX_SIBLING_HIGHLIGHTERS,e=!1){let o=n.getAttribute(P.METADATA);if(!o)return[];let l=`[${P.METADATA}="${o}"]`,s=document,c=n.parentElement;c&&c.childElementCount>50&&(s=c);let h=s.querySelectorAll(l),a=Math.min(t,5e3),d=[],u=0;for(let m=0;m<h.length&&u<a;m++){let g=h[m];if(g instanceof HTMLElement&&g!==n){if(e&&!te(g))continue;d.push(g),u++}}return d}function Ve(n,t,e){let i=n.children;for(let r=0;r<i.length;r++)if(e.value+=1,e.value>t||Ve(i[r],t,e))return!0;return!1}function Ge(n){let t={value:0};return Ve(n,y.MAX_DESCENDANTS_FOR_SCREENSHOT,t)}var Sn=9,We=2,vn=new Set(["auto","scroll","overlay"]),Tn=32;function Cn(n,t){let e=document.createElement("div").style;e.cssText=n;let i=document.createElement("div").style;i.cssText=t;for(let r=0;r<i.length;r+=1){let o=i.item(r);o&&e.setProperty(o,i.getPropertyValue(o),i.getPropertyPriority(o))}return e.cssText.trim()}function An(n){let t=n.getAttribute("data-original-style");return t!==null?decodeURIComponent(t):n.getAttribute("style")??""}function Rn(n){return Math.ceil(Math.max(n.body?.scrollHeight??0,n.documentElement?.scrollHeight??0,n.body?.offsetHeight??0,n.documentElement?.offsetHeight??0,n.body?.clientHeight??0,n.documentElement?.clientHeight??0))}function $e(n){return vn.has(n)}function Hn(n,t){let i=(n.defaultView??window).getComputedStyle(t);return t.scrollHeight>t.clientHeight&&($e(i.overflowY)||$e(i.overflow))}function xn(n){if(n.parentElement)return n.parentElement;let t=n.getRootNode();return t instanceof ShadowRoot&&t.host instanceof HTMLElement?t.host:null}function Ln(n,t){let e=n.defaultView??window,i=t;for(;i;){let r=e.getComputedStyle(i);if(r.visibility==="hidden"||r.display==="none"||parseFloat(r.opacity)===0)return!0;i=xn(i)}return!1}function*Ye(n){for(let t of n.querySelectorAll("*"))yield t,t.shadowRoot&&(yield*Ye(t.shadowRoot))}function Mn(n,t){let e=Xe(n,t);return e.height>0&&e.width>0}function _n(n){return Math.ceil(Math.max(n.scrollHeight,n.offsetHeight,n.clientHeight))}function Xe(n,t){let e=n.defaultView??window,i=t.getBoundingClientRect(),r=Math.max(i.top,0),o=Math.min(i.right,e.innerWidth),l=Math.min(i.bottom,e.innerHeight),s=Math.max(i.left,0);return{height:Math.max(0,Math.ceil(l-r)),width:Math.max(0,Math.ceil(o-s))}}function Ke(n){return n.visibleHeight*n.visibleWidth}function In(n,t){if(!t)return!0;let e=Ke(n),i=Ke(t);return e!==i?e>i:n.visibleWidth!==t.visibleWidth?n.visibleWidth>t.visibleWidth:n.visibleHeight!==t.visibleHeight?n.visibleHeight>t.visibleHeight:n.contentHeight>t.contentHeight}function Pn(n){if(!n.body)return 0;let t=null;for(let e of Ye(n.body)){if(!Hn(n,e)||Ln(n,e)||!Mn(n,e))continue;let i=Xe(n,e),r={contentHeight:_n(e),visibleHeight:i.height,visibleWidth:i.width};In(r,t)&&(t=r)}return t?.contentHeight??0}function Dn(n,t){let e=n.documentElement?.clientHeight??0;return t>e+Tn}function Nn(n=document){let t=Rn(n);return Dn(n,t)?t:Math.max(t,Pn(n))}function On(n){Event.prototype.stopPropagation.call(n)}var N=class n{selectedElement=null;selectedSiblingElements=[];visibleSelectedSiblingElements=[];isActive=!1;isCanvasGestureRelayEnabled=!1;isContextMenuRelayEnabled=!1;lastHighlightedElement=null;enableEditing=!1;dragStartPointer=null;dragRelayPointerId=null;scrollGestureState="idle";scrollGestureTimer=null;hoverMessages=!1;shadowHost=null;shadowRoot=null;hoverHighlighter=null;hoverLabel=null;selectedHighlighter=null;selectedLabel=null;hoverSiblingHighlighters=[];selectedSiblingHighlighters=[];mutationObserver=null;stableIds=new G;nodeMap=new Map;throttledRecalculate=null;source;acceptsRawMessages;installedVersion;constructor({source:t="installed",acceptsRawMessages:e=!0,installedVersion:i}={}){this.source=t,this.acceptsRawMessages=e,this.installedVersion=i,this.setupMessageListener(),this.observeLightDarkModeSwitch(),this.setupPinchInterception(),this.setupScrollChaining(),this.setupDragInterception(),this.setupIframeDoubleClickRelay(),this.setupContextMenuInterception(),this.notifyScriptLoaded(),this.throttledRecalculate=this.throttleRAF(this.recalculateSelectedElement.bind(this))}throttleRAF(t){let e=null,i=null;return(...r)=>{i=r,e===null&&(e=requestAnimationFrame(()=>{i!==null&&t(...i),e=null,i=null}))}}isPureTextElement(t){if(!t||!(t instanceof HTMLElement))return!1;let e=t.tagName.toLowerCase();return e==="style"||e==="script"||e==="img"||t.childElementCount>0?!1:Array.from(t.childNodes).every(r=>r.nodeType===Node.TEXT_NODE)}initializeHighlighter(){this.shadowHost=document.createElement("div"),this.shadowHost.style.all="initial",this.shadowRoot=this.shadowHost.attachShadow({mode:"open"}),document.body.appendChild(this.shadowHost);let t=document.createElement("style");t.textContent=se,this.shadowRoot.appendChild(t);let e=document.createElement("style");e.textContent=oe,document.head.appendChild(e),this.hoverHighlighter=document.createElement("div"),this.hoverLabel=document.createElement("div"),this.hoverHighlighter.className="beacon-highlighter beacon-hover-highlighter",this.hoverLabel.className="beacon-label beacon-hover-label",this.selectedHighlighter=document.createElement("div"),this.selectedLabel=document.createElement("div"),this.selectedHighlighter.className="beacon-highlighter beacon-selected-highlighter",this.selectedLabel.className="beacon-label beacon-selected-label",this.shadowRoot.appendChild(this.selectedHighlighter),this.shadowRoot.appendChild(this.selectedLabel),this.shadowRoot.appendChild(this.hoverHighlighter),this.shadowRoot.appendChild(this.hoverLabel)}setupMessageListener(){window.addEventListener("message",this.handleMessage.bind(this))}setupPinchInterception(){window.self!==window.top&&window.addEventListener("wheel",t=>{!this.isCanvasGestureRelayEnabled||!this.isZoomModifierWheel(t)||(t.preventDefault(),this.postMessageToParent({type:"PINCH_WHEEL",timestamp:Date.now(),deltaY:t.deltaY,clientX:t.clientX,clientY:t.clientY,shiftKey:t.shiftKey,altKey:t.altKey,ctrlKey:t.ctrlKey,metaKey:t.metaKey}))},{passive:!1})}setupIframeDoubleClickRelay(){window.self!==window.top&&(document.addEventListener("mousedown",t=>{!this.shouldRelayIframeDoubleClick()||t.detail<2||t.preventDefault()},!0),document.addEventListener("dblclick",t=>{this.shouldRelayIframeDoubleClick()&&(t.preventDefault(),On(t),this.postMessageToParent({type:"IFRAME_DOUBLE_CLICK",timestamp:Date.now(),clientX:t.clientX,clientY:t.clientY}))},!0))}setupContextMenuInterception(){window.self!==window.top&&window.addEventListener("contextmenu",t=>{if(!this.isContextMenuRelayEnabled)return;t.preventDefault(),t["stopImmediatePropagation"](),this.postMessageToParent({type:"IFRAME_CONTEXT_MENU",timestamp:Date.now(),clientX:t.clientX,clientY:t.clientY,altKey:t.altKey,ctrlKey:t.ctrlKey,metaKey:t.metaKey,shiftKey:t.shiftKey})},{capture:!0})}isZoomModifierWheel(t){return t.ctrlKey||t.altKey||t.metaKey}static SCROLL_GESTURE_GAP_MS=150;setupScrollChaining(){window.self!==window.top&&window.addEventListener("wheel",t=>{!this.isCanvasGestureRelayEnabled||this.isZoomModifierWheel(t)||(this.scrollGestureState==="idle"&&(this.scrollGestureState=this.shouldHandOffScrollToParent(t)?"at-boundary":"scrolling"),this.scrollGestureTimer&&clearTimeout(this.scrollGestureTimer),this.scrollGestureTimer=setTimeout(()=>{this.scrollGestureState="idle",this.scrollGestureTimer=null},n.SCROLL_GESTURE_GAP_MS),this.scrollGestureState==="at-boundary"&&(t.preventDefault(),this.postMessageToParent({type:"SCROLL_BOUNDARY",timestamp:Date.now(),deltaX:t.deltaX,deltaY:t.deltaY,clientX:t.clientX,clientY:t.clientY,shiftKey:t.shiftKey,altKey:t.altKey,ctrlKey:t.ctrlKey,metaKey:t.metaKey})))},{passive:!1})}shouldHandOffScrollToParent(t){let e=this.getRelevantScrollAxes(this.normalizeScrollDeltas(t));if(e.length===0)return!1;let i=document.elementFromPoint(t.clientX,t.clientY),r=e.map(({axis:o,delta:l})=>this.canAnyAncestorContinueScrollingOnAxis(i,o,l));return e.length===1?!r[0]:r.every(o=>!o)}getRelevantScrollAxes(t){let e=Math.abs(t.deltaX),i=Math.abs(t.deltaY);return e===0&&i===0?[]:e===0?[{axis:"y",delta:t.deltaY}]:i===0?[{axis:"x",delta:t.deltaX}]:e>=i*We?[{axis:"x",delta:t.deltaX}]:i>=e*We?[{axis:"y",delta:t.deltaY}]:[{axis:"x",delta:t.deltaX},{axis:"y",delta:t.deltaY}]}normalizeScrollDeltas(t){let{deltaX:e,deltaY:i}=t;return t.shiftKey&&!this.isMacPlatform()&&(e=i,i=0),{deltaX:e,deltaY:i}}isMacPlatform(){return navigator.platform.toUpperCase().includes("MAC")}canAnyAncestorContinueScrollingOnAxis(t,e,i){let r=t;for(;r;){if(r instanceof HTMLElement&&this.canElementScrollInDirection(r,e,i))return!0;r=r.parentElement}let o=document.scrollingElement;return o instanceof HTMLElement&&this.canElementScrollInDirection(o,e,i)}canElementScrollInDirection(t,e,i){if(i===0||!this.isScrollableOnAxis(t,e))return!1;let r=e==="x"?t.scrollLeft:t.scrollTop,o=e==="x"?t.scrollWidth-t.clientWidth:t.scrollHeight-t.clientHeight;return o<=0?!1:i>0?r<o-1:r>1}isScrollableOnAxis(t,e){let i=e==="x"?getComputedStyle(t).overflowX:getComputedStyle(t).overflowY;return t===document.scrollingElement||t===document.documentElement||t===document.body?i!=="hidden"&&i!=="clip":i==="auto"||i==="overlay"||i==="scroll"}setupDragInterception(){if(window.self===window.top)return;window.addEventListener("pointerdown",e=>{if(!this.shouldRelayCanvasPointerGestures()){this.dragStartPointer=null,this.dragRelayPointerId=null;return}e.button!==0||e.isPrimary===!1||(this.dragStartPointer={pointerId:e.pointerId,button:e.button,clientX:e.clientX,clientY:e.clientY,shiftKey:e.shiftKey,altKey:e.altKey,ctrlKey:e.ctrlKey,metaKey:e.metaKey})}),window.addEventListener("pointermove",e=>{if(!this.shouldRelayCanvasPointerGestures()){this.dragStartPointer=null,this.dragRelayPointerId=null;return}if(this.dragRelayPointerId===e.pointerId){e.preventDefault(),this.postMessageToParent({type:"DRAG_MOVE",timestamp:Date.now(),pointerId:e.pointerId,movementX:e.movementX,movementY:e.movementY,pressure:e.pressure,shiftKey:e.shiftKey,altKey:e.altKey,ctrlKey:e.ctrlKey,metaKey:e.metaKey});return}let i=this.dragStartPointer;if(i===null||i.pointerId!==e.pointerId)return;let r=e.clientX-i.clientX,o=e.clientY-i.clientY;r*r+o*o<Sn||(e.preventDefault(),this.cancelInteraction(),this.dragStartPointer=null,this.dragRelayPointerId=e.pointerId,this.postMessageToParent({type:"DRAG_START",timestamp:Date.now(),pointerId:e.pointerId,button:i.button,pressure:e.pressure,isPen:e.pointerType==="pen",clientX:e.clientX,clientY:e.clientY,startClientX:i.clientX,startClientY:i.clientY,shiftKey:i.shiftKey,altKey:i.altKey,ctrlKey:i.ctrlKey,metaKey:i.metaKey}))});let t=e=>{this.dragStartPointer?.pointerId===e.pointerId&&(this.dragStartPointer=null),this.dragRelayPointerId===e.pointerId&&(this.postMessageToParent({type:"DRAG_END",timestamp:Date.now(),pointerId:e.pointerId,button:e.button,clientX:e.clientX,clientY:e.clientY,pressure:e.pressure,isPen:e.pointerType==="pen",shiftKey:e.shiftKey,altKey:e.altKey,ctrlKey:e.ctrlKey,metaKey:e.metaKey}),this.dragRelayPointerId=null)};window.addEventListener("pointerup",t),window.addEventListener("pointercancel",t)}shouldRelayCanvasPointerGestures(){return this.isCanvasGestureRelayEnabled&&!(this.enableEditing&&this.selectedElement!==null)}shouldRelayIframeDoubleClick(){return this.isCanvasGestureRelayEnabled&&!this.enableEditing}notifyScriptLoaded(){let t={type:"SELECTOR_SCRIPT_LOADED",timestamp:Date.now(),version:B,source:this.source,supportsTargetedRouting:!0,...this.installedVersion?{installedVersion:this.installedVersion}:{}};this.postMessageToParent(t)}postMessageToParent(t){window.parent&&window.parent.postMessage(t,"*")}handleMouseMove=t=>{if(this.isActive){if(this.hoverMessages){let e=W(t);if(!e||e===this.shadowHost||e===this.selectedElement||e===this.lastHighlightedElement)return;this.lastHighlightedElement=e;let i=e===document.body||e===document.documentElement?document.body:e,r=i.getBoundingClientRect();this.postMessageToParent({type:"ELEMENT_HOVERED",timestamp:Date.now(),elementBounds:{x:r.x,y:r.y,width:r.width,height:r.height},elementName:x(i)});return}if(this.hoverHighlighter){let e=W(t);if(!e||e===this.hoverHighlighter||e===this.selectedHighlighter||e===this.shadowHost||this.selectedSiblingHighlighters.includes(e)||this.hoverSiblingHighlighters.includes(e)){this.hideHighlight(this.hoverHighlighter,this.hoverLabel),this.lastHighlightedElement=null,this.clearHoverSiblingHighlighters();return}if(e===this.selectedElement){this.hideHighlight(this.hoverHighlighter,this.hoverLabel),this.lastHighlightedElement=null,this.clearHoverSiblingHighlighters();return}this.lastHighlightedElement&&this.lastHighlightedElement!==e&&this.lastHighlightedElement!==this.selectedElement&&this.lastHighlightedElement.removeAttribute("contenteditable"),this.lastHighlightedElement=e,this.updateHighlighterPosition(e,this.hoverHighlighter,this.hoverLabel)}}};handleMouseLeave=()=>{if(this.isActive){if(this.hoverMessages){this.lastHighlightedElement&&(this.lastHighlightedElement=null,this.postMessageToParent({type:"ELEMENT_HOVERED",timestamp:Date.now(),elementBounds:null,elementName:""}));return}this.hoverHighlighter&&(this.hoverHighlighter.style.opacity="0"),this.hoverLabel&&(this.hoverLabel.style.opacity="0"),this.hoverSiblingHighlighters.length>0&&this.clearHoverSiblingHighlighters(),this.lastHighlightedElement&&this.lastHighlightedElement!==this.selectedElement&&this.lastHighlightedElement.removeAttribute("contenteditable")}};calculateLabelPosition(t,e){return e<28?{top:`${e}px`,left:`${t.left}px`,transform:"none",marginTop:"2px"}:{top:`${e}px`,left:`${t.left}px`,transform:"translateY(-100%)",marginTop:"-4px"}}updateHighlighterPosition(t,e,i){if(!e||!i)return;let r=D(t,y.MAX_SIBLING_HIGHLIGHTERS,!1);this.enableEditing&&r.length<=1&&t===this.selectedElement&&this.isPureTextElement(t)&&t.setAttribute("contenteditable","plaintext-only");let o=t.getBoundingClientRect(),l=window.innerHeight,s=Math.max(0,o.top),c=Math.min(l,o.bottom),h=Math.max(0,c-s);Object.assign(e.style,{opacity:h>0?"1":"0",top:`${s}px`,left:`${o.left}px`,width:`${o.width}px`,height:`${h}px`}),i.textContent=x(t);let a=this.calculateLabelPosition(o,s);Object.assign(i.style,{...a,opacity:h>0?"1":"0"}),e===this.selectedHighlighter?this.highlightSelectedSiblings(t):this.highlightHoverSiblings(t)}hideHighlight(t,e){t&&(t.style.opacity="0"),e&&(e.style.opacity="0");let i=t===this.hoverHighlighter,r=t===this.selectedHighlighter;i&&this.clearHoverSiblingHighlighters(),r&&this.clearSelectedSiblingHighlighters()}async buildElementPayload(t){this.nodeMap=new Map,Z(document.body,null,this.stableIds,this.nodeMap,this.shadowHost);let e=J(t,this.nodeMap),i;if(!Ge(t))try{i=await ke(t)}catch(r){console.error("[replit-cartographer] Error capturing element screenshot:",r)}return{metadata:e,screenshotBlob:i}}handleClick=async t=>{if(!this.isActive)return;t.preventDefault(),t.stopPropagation();let e=W(t);if((!e||e===this.hoverHighlighter||e===this.selectedHighlighter||e===this.shadowHost)&&(e=this.lastHighlightedElement),!e||e===this.selectedElement)return;if(this.hoverMessages){this.selectedElement=e,document.getElementById("replit-beacon-crosshair")?.remove();let s=e===document.body||e===document.documentElement?document.body:e,{metadata:c,screenshotBlob:h}=await this.buildElementPayload(s),a=s.getBoundingClientRect();this.postMessageToParent({type:"ELEMENT_SELECTED",payload:{...c,screenshotBlob:h??void 0,siblingCount:0},elementBounds:{x:a.x,y:a.y,width:a.width,height:a.height},timestamp:Date.now()});return}this.clearSelection(),this.selectedElement=e;let i=D(e),r=i.length>0;r&&this.highlightSelectedSiblings(e),e.hasAttribute("data-original-text")||e.setAttribute("data-original-text",encodeURIComponent(e.textContent??"")),!e.hasAttribute("data-original-style")&&e.hasAttribute("style")&&e.setAttribute("data-original-style",encodeURIComponent(e.getAttribute("style")??"")),!e.hasAttribute("data-original-src")&&e.hasAttribute("src")&&e.setAttribute("data-original-src",encodeURIComponent(e.getAttribute("src")??"")),!r&&this.enableEditing&&this.isPureTextElement(e)&&(this.selectedElement.setAttribute("contenteditable","plaintext-only"),this.selectedElement.focus()),this.selectedHighlighter&&this.selectedLabel&&(this.selectedHighlighter.style.outlineStyle="solid",this.selectedHighlighter.style.opacity="1",this.selectedHighlighter.style.pointerEvents="none",this.selectedLabel.style.opacity="1",this.selectedLabel.textContent=x(e)),this.hoverHighlighter&&(this.hoverHighlighter.style.opacity="0",this.hoverHighlighter.style.pointerEvents="none"),this.hoverLabel&&(this.hoverLabel.style.opacity="0"),this.clearHoverSiblingHighlighters(),this.updateHighlighterPosition(e,this.selectedHighlighter,this.selectedLabel);let{metadata:o,screenshotBlob:l}=await this.buildElementPayload(e);this.observeSelectedElement(),this.postMessageToParent({type:"ELEMENT_SELECTED",payload:{...o,screenshotBlob:l??void 0,siblingCount:r?i.length:0},timestamp:Date.now()})};restoreElements(){document.querySelectorAll('[data-replit-dirty="true"], [data-original-text], [data-original-style], [data-original-src]').forEach(e=>{if(e.hasAttribute("data-original-text")){if(e.textContent!==decodeURIComponent(e.getAttribute("data-original-text")||"")){let i=decodeURIComponent(e.getAttribute("data-original-text")||"");e.textContent=i}e.removeAttribute("data-original-text")}if(e.hasAttribute("data-original-style")){let i=decodeURIComponent(e.getAttribute("data-original-style")||"");e.setAttribute("style",i),e.removeAttribute("data-original-style")}else e.removeAttribute("style");if(e.hasAttribute("data-original-src")&&e.getAttribute("src")!==decodeURIComponent(e.getAttribute("data-original-src")||"")){let i=decodeURIComponent(e.getAttribute("data-original-src")||"");e.setAttribute("src",i),e.removeAttribute("data-original-src")}e.removeAttribute("data-replit-dirty")})}clearSelection(){this.selectedElement&&(this.selectedElement.removeAttribute("contenteditable"),this.selectedElement=null),this.clearSelectedSiblingHighlighters(),this.mutationObserver&&(this.mutationObserver.disconnect(),this.mutationObserver=null)}isCommandMessage(t){switch(t.type){case"TOGGLE_REPLIT_VISUAL_EDITOR":case"CLEAR_SELECTION":case"UPDATE_SELECTED_ELEMENT":case"CLEAR_ELEMENT_DIRTY":case"RESTORE_DIRTY_ELEMENTS":case"APPLY_THEME_PREVIEW":case"CLEAR_THEME_PREVIEW":case"SCREENSHOT_PAGE":case"REQUEST_CONTENT_HEIGHT":case"RELAY_TO_IFRAME":return!0;default:return!1}}getMessageForThisBeacon(t){return t.type==="REPLIT_BEACON_TARGETED_MESSAGE"?t.targetSource!==this.source||!t.message||!this.isCommandMessage(t.message)?null:t.message:!this.acceptsRawMessages||!this.isCommandMessage(t)?null:t}handleMessage=t=>{if(!De(t.origin))return;let e=t.data;if(!e||typeof e!="object")return;let i=this.getMessageForThisBeacon(e);if(i)switch(i.type){case"TOGGLE_REPLIT_VISUAL_EDITOR":{this.handleVisualEditorToggle(i);break}case"CLEAR_SELECTION":{if(this.clearSelection(),this.hideHighlight(this.selectedHighlighter,this.selectedLabel),this.lastHighlightedElement=null,this.hoverMessages&&!document.getElementById("replit-beacon-crosshair")){let r=document.createElement("style");r.id="replit-beacon-crosshair",r.textContent="* { cursor: crosshair !important; }",document.head.appendChild(r)}break}case"UPDATE_SELECTED_ELEMENT":{if(!this.selectedElement)return;let{attributes:r}=i;[this.selectedElement,...this.selectedSiblingElements].forEach(l=>{r.style!==void 0&&(l.setAttribute("style",Cn(An(l),r.style)),l.setAttribute("data-replit-dirty","true")),r.textContent!==void 0&&(l.textContent=r.textContent,l.setAttribute("data-replit-dirty","true")),r.className!==void 0&&(l.className=r.className,l.setAttribute("data-replit-dirty","true")),r.src!==void 0&&(l.setAttribute("src",r.src),l.setAttribute("data-replit-dirty","true"))}),this.updateHighlighterPosition(this.selectedElement,this.selectedHighlighter,this.selectedLabel),this.selectedSiblingElements.length>0&&(this.clearHighlighters(this.selectedSiblingHighlighters),this.selectedSiblingHighlighters=[],this.selectedSiblingHighlighters=this.highlightElements(this.selectedSiblingElements));break}case"CLEAR_ELEMENT_DIRTY":{let r=document.querySelectorAll('[data-replit-dirty="true"]');for(let o of r)o.removeAttribute("data-replit-dirty"),o.removeAttribute("data-original-text"),o.removeAttribute("data-original-style"),o.removeAttribute("data-original-src");break}case"RESTORE_DIRTY_ELEMENTS":{this.restoreElements();break}case"APPLY_THEME_PREVIEW":{this.handleApplyThemePreview(i);break}case"CLEAR_THEME_PREVIEW":{this.handleClearThemePreview();break}case"SCREENSHOT_PAGE":{this.handleScreenshotPage(i.requestId,i.capture);break}case"RELAY_TO_IFRAME":{this.handleRelayToIframe(i.event);break}case"REQUEST_CONTENT_HEIGHT":{this.handleContentHeightRequest(i.requestId);break}}};handleRelayToIframe(t){switch(t.kind){case"cancel-interaction":{this.cancelInteraction();break}case"set-canvas-gesture-relay":{this.isCanvasGestureRelayEnabled=t.enabled,this.dragStartPointer=null,this.dragRelayPointerId=null,this.scrollGestureState="idle",this.scrollGestureTimer&&(clearTimeout(this.scrollGestureTimer),this.scrollGestureTimer=null);break}case"set-canvas-relay-context-menu":{this.isContextMenuRelayEnabled=t.enabled;break}}}cancelInteraction(){document.getSelection()?.removeAllRanges(),document.activeElement instanceof HTMLElement&&document.activeElement.blur()}handleApplyThemePreview(t){if(t.type!=="APPLY_THEME_PREVIEW")return;let e=document.getElementById(y.THEME_PREVIEW_STYLE_ID);e||(e=document.createElement("style"),e.id=y.THEME_PREVIEW_STYLE_ID,document.head.appendChild(e)),e.textContent=t.themeContent}handleClearThemePreview(){let t=document.getElementById(y.THEME_PREVIEW_STYLE_ID);t&&t.remove()}async handleScreenshotPage(t,e="page"){try{let i=e==="viewport"?await Ue():await ee();this.postMessageToParent({type:"SCREENSHOT_PAGE_RESULT",timestamp:Date.now(),requestId:t,screenshotBlob:i})}catch(i){console.error("[replit-cartographer] Error capturing page screenshot:",i),this.postMessageToParent({type:"SCREENSHOT_PAGE_RESULT",timestamp:Date.now(),requestId:t,error:i instanceof Error?i.message:"Unknown screenshot error"})}}measureContentHeight(){return Nn()}handleContentHeightRequest(t){try{let e=this.measureContentHeight();this.postMessageToParent({type:"CONTENT_HEIGHT_RESULT",timestamp:Date.now(),requestId:t,contentHeight:e})}catch(e){this.postMessageToParent({type:"CONTENT_HEIGHT_RESULT",timestamp:Date.now(),requestId:t,error:e instanceof Error?e.message:"Unknown content height error"})}}handleVisualEditorToggle(t){if(t.type!=="TOGGLE_REPLIT_VISUAL_EDITOR")return;let e=!!t.enabled,i=this.hoverMessages;this.enableEditing=!!t.enableEditing,this.hoverMessages=!!t.hoverMessages,e?(this.hoverMessages||window.dispatchEvent(new CustomEvent("replit-init-tailwind")),this.postMessageToParent({type:"REPLIT_VISUAL_EDITOR_ENABLED",timestamp:Date.now(),hoverMessages:this.hoverMessages||void 0})):this.postMessageToParent({type:"REPLIT_VISUAL_EDITOR_DISABLED",timestamp:Date.now()}),this.isActive!==e?(this.isActive=e,this.toggleEventListeners(e)):this.isActive&&e&&i!==this.hoverMessages&&(this.toggleEventListeners(!1),this.toggleEventListeners(!0))}observeSelectedElement(){if(this.selectedElement){if(!this.isPureTextElement(this.selectedElement)){this.mutationObserver&&(this.mutationObserver.disconnect(),this.mutationObserver=null);return}this.mutationObserver&&this.mutationObserver.disconnect(),this.mutationObserver=new MutationObserver(t=>{if(t.some(i=>i.type==="characterData")&&this.selectedElement){this.selectedElement.setAttribute("data-replit-dirty","true");let i=J(this.selectedElement,this.nodeMap);this.postMessageToParent({type:"ELEMENT_TEXT_CHANGED",payload:i,timestamp:Date.now()}),this.updateHighlighterPosition(this.selectedElement,this.selectedHighlighter,this.selectedLabel)}}),this.mutationObserver.observe(this.selectedElement,{characterData:!0,childList:!1,attributes:!1,subtree:!0})}}observeLightDarkModeSwitch(){let t=new MutationObserver(i=>{i.forEach(r=>{r.type==="attributes"&&r.attributeName==="class"&&(r.target.classList.contains("dark")?this.postMessageToParent({type:"DARK_MODE_USED",timestamp:Date.now()}):this.postMessageToParent({type:"LIGHT_MODE_USED",timestamp:Date.now()}))})}),e=document.documentElement;t.observe(e,{attributes:!0,attributeFilter:["class"],childList:!1,subtree:!1})}recalculateSelectedElement=()=>{if(this.isActive){if(this.hoverMessages){if(this.lastHighlightedElement&&this.lastHighlightedElement!==this.selectedElement){let t=this.lastHighlightedElement===document.body||this.lastHighlightedElement===document.documentElement?document.body:this.lastHighlightedElement,e=t.getBoundingClientRect();this.postMessageToParent({type:"ELEMENT_HOVERED",timestamp:Date.now(),elementBounds:{x:e.x,y:e.y,width:e.width,height:e.height},elementName:x(t)})}return}this.selectedElement&&this.updateHighlighterPosition(this.selectedElement,this.selectedHighlighter,this.selectedLabel),this.lastHighlightedElement&&this.updateHighlighterPosition(this.lastHighlightedElement,this.hoverHighlighter,this.hoverLabel),this.selectedSiblingElements.length>0&&this.updateSiblingHighlighterPositions()}};updateSiblingHighlighterPositions(){for(let t=0;t<this.selectedSiblingHighlighters.length;t++){let e=this.selectedSiblingHighlighters[t],i=this.visibleSelectedSiblingElements[t];if(!e||!i)continue;let r=i.getBoundingClientRect(),o=window.innerHeight,l=Math.max(0,r.top),s=Math.min(o,r.bottom),c=Math.max(0,s-l);Object.assign(e.style,{opacity:c>0?"1":"0",top:`${l}px`,left:`${r.left}px`,width:`${r.width}px`,height:`${c}px`})}}handleKeyDown=t=>{if(this.isActive&&(t.key==="Escape"||t.key==="Esc")){if(this.hoverMessages){if(this.selectedElement){if(this.clearSelection(),this.lastHighlightedElement=null,!document.getElementById("replit-beacon-crosshair")){let e=document.createElement("style");e.id="replit-beacon-crosshair",e.textContent="* { cursor: crosshair !important; }",document.head.appendChild(e)}this.postMessageToParent({type:"ELEMENT_UNSELECTED",timestamp:Date.now()})}else this.handleVisualEditorToggle({type:"TOGGLE_REPLIT_VISUAL_EDITOR",enabled:!1,timestamp:Date.now()});return}this.handleVisualEditorToggle({type:"TOGGLE_REPLIT_VISUAL_EDITOR",enabled:!1,timestamp:Date.now()})}};toggleEventListeners(t){if(t){if(this.hoverMessages){let e=document.createElement("style");e.id="replit-beacon-crosshair",e.textContent="* { cursor: crosshair !important; }",document.head.appendChild(e)}else this.initializeHighlighter();this.enableDisabledElements(),document.addEventListener("mousemove",this.handleMouseMove),document.addEventListener("mouseleave",this.handleMouseLeave),document.addEventListener("click",this.handleClick,!0),document.addEventListener("keydown",this.handleKeyDown),this.throttledRecalculate&&(window.addEventListener("resize",this.throttledRecalculate),window.addEventListener("scroll",this.throttledRecalculate,!0))}else document.getElementById("replit-beacon-crosshair")?.remove(),this.restoreDisabledElements(),this.restoreElements(),document.removeEventListener("mousemove",this.handleMouseMove),document.removeEventListener("click",this.handleClick,!0),document.removeEventListener("mouseleave",this.handleMouseLeave),document.removeEventListener("keydown",this.handleKeyDown),this.throttledRecalculate&&(window.removeEventListener("resize",this.throttledRecalculate),window.removeEventListener("scroll",this.throttledRecalculate,!0)),this.mutationObserver&&(this.mutationObserver.disconnect(),this.mutationObserver=null),this.selectedElement&&(this.selectedElement.removeAttribute("contenteditable"),this.selectedElement.removeAttribute("data-original-text"),document.querySelectorAll('[contenteditable="plaintext-only"]').forEach(e=>{e.removeAttribute("contenteditable")})),this.clearSelectedSiblingHighlighters(),this.clearHoverSiblingHighlighters(),this.hoverHighlighter?.remove(),this.hoverLabel?.remove(),this.selectedHighlighter?.remove(),this.selectedLabel?.remove(),this.shadowHost?.remove(),this.hoverHighlighter=null,this.hoverLabel=null,this.selectedHighlighter=null,this.selectedLabel=null,this.shadowHost=null,this.shadowRoot=null,this.selectedElement=null}clearHighlighters(t){return t.forEach(e=>{e.remove()}),[]}clearHoverSiblingHighlighters(){this.hoverSiblingHighlighters=this.clearHighlighters(this.hoverSiblingHighlighters)}clearSelectedSiblingHighlighters(){this.selectedSiblingElements.forEach(t=>{t.removeAttribute("contenteditable")}),this.selectedSiblingElements=[],this.visibleSelectedSiblingElements=[],this.selectedSiblingHighlighters=this.clearHighlighters(this.selectedSiblingHighlighters)}highlightElements(t){if(!this.shadowRoot||t.length===0)return[];let e=[];return t.forEach(i=>{let r=document.createElement("div");r.className="beacon-highlighter beacon-sibling-highlighter",this.shadowRoot?.appendChild(r),e.push(r);let o=i.getBoundingClientRect(),l=window.innerHeight,s=Math.max(0,o.top),c=Math.min(l,o.bottom),h=Math.max(0,c-s);Object.assign(r.style,{opacity:h>0?"1":"0",top:`${s}px`,left:`${o.left}px`,width:`${o.width}px`,height:`${h}px`})}),e}highlightHoverSiblings(t){this.clearHoverSiblingHighlighters();let e=D(t,y.MAX_SIBLING_HIGHLIGHTERS,!0);this.hoverSiblingHighlighters=this.highlightElements(e)}highlightSelectedSiblings(t){this.clearSelectedSiblingHighlighters();let e=D(t),i=e.filter(r=>te(r));this.selectedSiblingElements=e,this.visibleSelectedSiblingElements=i,this.selectedSiblingHighlighters=this.highlightElements(i)}enableDisabledElements(){document.querySelectorAll("button[disabled], input[disabled]").forEach(t=>{t.removeAttribute("disabled"),t.setAttribute("data-replit-disabled","")})}restoreDisabledElements(){document.querySelectorAll("[data-replit-disabled]").forEach(t=>{t.removeAttribute("data-replit-disabled"),t.setAttribute("disabled","")})}};function ne(n){return n.includes("standalone")?"standalone":"installed"}function ie({currentVersion:n,existingVersion:t,existingCoexistenceStandaloneVersion:e}){let i=ne(n);if(!t)return{options:{source:i,acceptsRawMessages:!0},globalVersion:n,coexistenceStandaloneVersion:null};let r=ne(t);return i==="standalone"&&r==="installed"?e?{options:null,globalVersion:null,coexistenceStandaloneVersion:null}:{options:{source:"standalone",acceptsRawMessages:!1,installedVersion:t},globalVersion:null,coexistenceStandaloneVersion:n}:{options:null,globalVersion:null,coexistenceStandaloneVersion:null}}if(typeof window<"u")try{let n=ie({currentVersion:B,existingVersion:window.REPLIT_BEACON_VERSION,existingCoexistenceStandaloneVersion:window.REPLIT_BEACON_COEXISTENCE_STANDALONE_VERSION});n.options&&new N(n.options),n.globalVersion&&(window.REPLIT_BEACON_VERSION=n.globalVersion),n.coexistenceStandaloneVersion&&(window.REPLIT_BEACON_COEXISTENCE_STANDALONE_VERSION=n.coexistenceStandaloneVersion)}catch(n){console.error("[replit-beacon] Failed to initialize:",n)}})();
+</script>
+<script>(function() {
+  var initialized = false;
+
+  function loadTailwind() {
+    if (initialized) { return; }
+    initialized = true;
+
+        var script = document.createElement('script');
+        script.src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.14";
+
+        if (window.REPLIT_APP_TAILWIND_CONFIG) {
+          script.setAttribute('data-config', JSON.stringify(window.REPLIT_APP_TAILWIND_CONFIG));
+        }
+
+        document.head.appendChild(script);
+  }
+
+  // Listen for the beacon requesting tailwind initialization.
+  window.addEventListener('replit-init-tailwind', function() {
+    if (window.REPLIT_APP_TAILWIND_CONFIG) {
+      loadTailwind();
+    } else {
+      // Config not ready yet â wait for the config-ready event, but proceed
+      // without a config after 1 second.  The config is optional (projects
+      // without a tailwind config file will never fire the ready event).
+      var configTimeout = setTimeout(function() { loadTailwind(); }, 1000);
+      window.addEventListener('replit-tailwind-config-ready', function() {
+        clearTimeout(configTimeout);
+        loadTailwind();
+      }, { once: true });
+    }
+  });
+})();</script>
+<script>window.REPLIT_APP_THEME_TOKENS = {"color":[{"suffix":"background","expr":"hsl(var(--background))"},{"suffix":"foreground","expr":"hsl(var(--foreground))"},{"suffix":"border","expr":"hsl(var(--border))"},{"suffix":"input","expr":"hsl(var(--input))"},{"suffix":"ring","expr":"hsl(var(--ring))"},{"suffix":"card","expr":"hsl(var(--card))"},{"suffix":"card-foreground","expr":"hsl(var(--card-foreground))"},{"suffix":"card-border","expr":"hsl(var(--card-border))"},{"suffix":"popover","expr":"hsl(var(--popover))"},{"suffix":"popover-foreground","expr":"hsl(var(--popover-foreground))"},{"suffix":"popover-border","expr":"hsl(var(--popover-border))"},{"suffix":"primary","expr":"hsl(var(--primary))"},{"suffix":"primary-foreground","expr":"hsl(var(--primary-foreground))"},{"suffix":"primary-border","expr":"var(--primary-border)"},{"suffix":"secondary","expr":"hsl(var(--secondary))"},{"suffix":"secondary-foreground","expr":"hsl(var(--secondary-foreground))"},{"suffix":"secondary-border","expr":"var(--secondary-border)"},{"suffix":"muted","expr":"hsl(var(--muted))"},{"suffix":"muted-foreground","expr":"hsl(var(--muted-foreground))"},{"suffix":"muted-border","expr":"var(--muted-border)"},{"suffix":"accent","expr":"hsl(var(--accent))"},{"suffix":"accent-foreground","expr":"hsl(var(--accent-foreground))"},{"suffix":"accent-border","expr":"var(--accent-border)"},{"suffix":"destructive","expr":"hsl(var(--destructive))"},{"suffix":"destructive-foreground","expr":"hsl(var(--destructive-foreground))"},{"suffix":"destructive-border","expr":"var(--destructive-border)"},{"suffix":"chart-1","expr":"hsl(var(--chart-1))"},{"suffix":"chart-2","expr":"hsl(var(--chart-2))"},{"suffix":"chart-3","expr":"hsl(var(--chart-3))"},{"suffix":"chart-4","expr":"hsl(var(--chart-4))"},{"suffix":"chart-5","expr":"hsl(var(--chart-5))"},{"suffix":"sidebar","expr":"hsl(var(--sidebar))"},{"suffix":"sidebar-foreground","expr":"hsl(var(--sidebar-foreground))"},{"suffix":"sidebar-border","expr":"hsl(var(--sidebar-border))"},{"suffix":"sidebar-primary","expr":"hsl(var(--sidebar-primary))"},{"suffix":"sidebar-primary-foreground","expr":"hsl(var(--sidebar-primary-foreground))"},{"suffix":"sidebar-primary-border","expr":"var(--sidebar-primary-border)"},{"suffix":"sidebar-accent","expr":"hsl(var(--sidebar-accent))"},{"suffix":"sidebar-accent-foreground","expr":"hsl(var(--sidebar-accent-foreground))"},{"suffix":"sidebar-accent-border","expr":"var(--sidebar-accent-border)"},{"suffix":"sidebar-ring","expr":"hsl(var(--sidebar-ring))"}],"font":[{"suffix":"sans","expr":"var(--app-font-sans)"},{"suffix":"serif","expr":"var(--app-font-serif)"},{"suffix":"mono","expr":"var(--app-font-mono)"}],"radius":[{"suffix":"sm","expr":"calc(var(--radius) - 4px)"},{"suffix":"md","expr":"calc(var(--radius) - 2px)"},{"suffix":"lg","expr":"var(--radius)"},{"suffix":"xl","expr":"calc(var(--radius) + 4px)"}]};</script>
+<script id="replit-dev-banner" src="js/banner-script.js" type="text/javascript"></script>
 </head>
 <body>
-
-<svg style="display:none" aria-hidden="true">
-  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
-  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
-  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 3v4M16 3v4"/></symbol>
-  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
-  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
-  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
-  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
-  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 21v-6h6v6"/></symbol>
-  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.6"/><path d="M21.3 20c0-2.8-1.8-4.8-4-5.5"/></symbol>
-  <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></symbol>
-  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v3"/><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="16.3" cy="14" r="1.3"/></symbol>
-  <symbol id="i-list" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></symbol>
-  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></symbol>
-  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></symbol>
-  <symbol id="i-dollar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><text x="12" y="15.8" text-anchor="middle" font-size="10.5" font-weight="700" stroke="none" fill="currentColor" font-family="Arial">$</text></symbol>
-  <symbol id="i-tv" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/><path class="icon-fill" d="M10 9l5 3-5 3V9z"/></symbol>
-  <symbol id="i-trending-up" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
-  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
-  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
-  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/><path d="M6 15h4"/></symbol>
-  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></symbol>
-  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
-  <symbol id="i-message" viewBox="0 0 24 24"><path d="M4 4h16v12H9l-5 4V4z"/></symbol>
-  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.8 5.8l12.4 12.4"/></symbol>
-  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></symbol>
-  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
-  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
-  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17h.01"/></symbol>
-  <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6-6"/><path d="M13 5l1.5-1.5a3.5 3.5 0 1 1 5 5L18 10"/><path d="M11 19l-1.5 1.5a3.5 3.5 0 1 1-5-5L6 14"/></symbol>
-  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"/><path d="M14 6l3 3"/></symbol>
-  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 3h8l10 10-8 8L3 11V3z"/><circle class="icon-fill" cx="7.5" cy="7.5" r="1.4"/></symbol>
-  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></symbol>
-  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M5 5h14l2 7v7H3v-7l2-7z"/></symbol>
-  <symbol id="i-loader" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/></symbol>
-  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 2c3 1 5 4 5 8 0 3-2 6-5 9-3-3-5-6-5-9 0-4 2-7 5-8z"/><circle class="icon-fill" cx="12" cy="9" r="1.6"/><path d="M9 16l-3 5 5-2M15 16l3 5-5-2"/></symbol>
-  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></symbol>
-  <symbol id="i-gamepad" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 10v4M5 12h4"/><circle class="icon-fill" cx="16" cy="11" r="1"/><circle class="icon-fill" cx="18.5" cy="13.5" r="1"/></symbol>
-  <symbol id="i-device" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></symbol>
-  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle class="icon-fill" cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></symbol>
-  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<svg aria-hidden="true" style="display:none">
+<symbol id="i-menu" viewbox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"></path></symbol>
+<symbol id="i-bell" viewbox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></symbol>
+<symbol id="i-calendar" viewbox="0 0 24 24"><rect height="16" rx="3" width="18" x="3" y="5"></rect><path d="M3 9.5h18M8 3v4M16 3v4"></path></symbol>
+<symbol id="i-search" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></symbol>
+<symbol id="i-chevron-down" viewbox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></symbol>
+<symbol id="i-chevron-right" viewbox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></symbol>
+<symbol id="i-chevron-left" viewbox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></symbol>
+<symbol id="i-home" viewbox="0 0 24 24"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 21v-6h6v6"></path></symbol>
+<symbol id="i-users" viewbox="0 0 24 24"><circle cx="9" cy="8" r="3.2"></circle><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"></path><circle cx="17" cy="9" r="2.6"></circle><path d="M21.3 20c0-2.8-1.8-4.8-4-5.5"></path></symbol>
+<symbol id="i-send" viewbox="0 0 24 24"><path d="M22 2L11 13"></path><path d="M22 2l-7 20-4-9-9-4 20-7z"></path></symbol>
+<symbol id="i-wallet" viewbox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v3"></path><rect height="13" rx="2" width="18" x="3" y="7"></rect><circle cx="16.3" cy="14" r="1.3"></circle></symbol>
+<symbol id="i-list" viewbox="0 0 24 24"><rect height="18" rx="2" width="14" x="5" y="3"></rect><path d="M9 8h6M9 12h6M9 16h4"></path></symbol>
+<symbol id="i-shield" viewbox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"></path></symbol>
+<symbol id="i-coin" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9 12h6M12 9v6"></path></symbol>
+<symbol id="i-dollar" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><text fill="currentColor" font-family="Arial" font-size="10.5" font-weight="700" stroke="none" text-anchor="middle" x="12" y="15.8">$</text></symbol>
+<symbol id="i-tv" viewbox="0 0 24 24"><rect height="14" rx="2" width="20" x="2" y="4"></rect><path d="M8 21h8M12 18v3"></path><path class="icon-fill" d="M10 9l5 3-5 3V9z"></path></symbol>
+<symbol id="i-trending-up" viewbox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"></path><path d="M15 7h6v6"></path></symbol>
+<symbol id="i-check" viewbox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></symbol>
+<symbol id="i-x" viewbox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
+<symbol id="i-card" viewbox="0 0 24 24"><rect height="14" rx="3" width="20" x="2" y="5"></rect><path d="M2 10h20"></path><path d="M6 15h4"></path></symbol>
+<symbol id="i-pin" viewbox="0 0 24 24"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"></path><circle cx="12" cy="10" r="2.4"></circle></symbol>
+<symbol id="i-clock" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></symbol>
+<symbol id="i-message" viewbox="0 0 24 24"><path d="M4 4h16v12H9l-5 4V4z"></path></symbol>
+<symbol id="i-ban" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M5.8 5.8l12.4 12.4"></path></symbol>
+<symbol id="i-eye-off" viewbox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle><path d="M3 3l18 18"></path></symbol>
+<symbol id="i-eye" viewbox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></symbol>
+<symbol id="i-mail" viewbox="0 0 24 24"><rect height="14" rx="2" width="18" x="3" y="5"></rect><path d="M3 7l9 6 9-6"></path></symbol>
+<symbol id="i-alert" viewbox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"></path><path d="M12 10v4M12 17h.01"></path></symbol>
+<symbol id="i-link" viewbox="0 0 24 24"><path d="M9 15l6-6"></path><path d="M13 5l1.5-1.5a3.5 3.5 0 1 1 5 5L18 10"></path><path d="M11 19l-1.5 1.5a3.5 3.5 0 1 1-5-5L6 14"></path></symbol>
+<symbol id="i-edit" viewbox="0 0 24 24"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"></path><path d="M14 6l3 3"></path></symbol>
+<symbol id="i-tag" viewbox="0 0 24 24"><path d="M3 3h8l10 10-8 8L3 11V3z"></path><circle class="icon-fill" cx="7.5" cy="7.5" r="1.4"></circle></symbol>
+<symbol id="i-pulse" viewbox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"></path></symbol>
+<symbol id="i-inbox" viewbox="0 0 24 24"><path d="M3 12h5l2 3h4l2-3h5"></path><path d="M5 5h14l2 7v7H3v-7l2-7z"></path></symbol>
+<symbol id="i-loader" viewbox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"></path></symbol>
+<symbol id="i-rocket" viewbox="0 0 24 24"><path d="M12 2c3 1 5 4 5 8 0 3-2 6-5 9-3-3-5-6-5-9 0-4 2-7 5-8z"></path><circle class="icon-fill" cx="12" cy="9" r="1.6"></circle><path d="M9 16l-3 5 5-2M15 16l3 5-5-2"></path></symbol>
+<symbol id="i-trash" viewbox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path><path d="M10 11v6M14 11v6"></path></symbol>
+<symbol id="i-gamepad" viewbox="0 0 24 24"><rect height="11" rx="4" width="20" x="2" y="7"></rect><path d="M7 10v4M5 12h4"></path><circle class="icon-fill" cx="16" cy="11" r="1"></circle><circle class="icon-fill" cx="18.5" cy="13.5" r="1"></circle></symbol>
+<symbol id="i-device" viewbox="0 0 24 24"><rect height="20" rx="3" width="14" x="5" y="2"></rect><path d="M12 18h.01"></path></symbol>
+<symbol id="i-image" viewbox="0 0 24 24"><rect height="18" rx="3" width="18" x="3" y="3"></rect><circle class="icon-fill" cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></symbol>
+<symbol id="i-copy" viewbox="0 0 24 24"><rect height="13" rx="2" width="13" x="9" y="9"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></symbol>
 </svg>
-
 <!-- LOGIN -->
 <div id="login-screen">
-  <div class="login-card">
-    <div class="login-icon"><svg class="icon"><use href="#i-shield"></use></svg></div>
-    <h1 class="brand-mark login-brand">Real Cash</h1>
-    <p class="login-sub">لوحة التحكم — أدخل كلمة السر للمتابعة</p>
-    <input id="login-input" class="form-input" type="password" placeholder="كلمة السر" autocomplete="off" style="text-align:center;margin-bottom:0">
-    <div class="login-error" id="login-error" style="display:none">
-      <svg class="icon"><use href="#i-alert"></use></svg><span>السر غير صحيح</span>
-    </div>
-    <button class="submit-btn" id="login-btn" onclick="attemptLogin()">
-      <svg class="icon"><use href="#i-shield"></use></svg> دخول
-    </button>
-  </div>
+<div class="login-card">
+<div class="login-icon"><svg class="icon"><use href="#i-shield"></use></svg></div>
+<h1 class="brand-mark login-brand">Real Cash</h1>
+<p class="login-sub">ÙÙØ­Ø© Ø§ÙØªØ­ÙÙ â Ø£Ø¯Ø®Ù ÙÙÙØ© Ø§ÙØ³Ø± ÙÙÙØªØ§Ø¨Ø¹Ø©</p>
+<input autocomplete="off" class="form-input" id="login-input" placeholder="ÙÙÙØ© Ø§ÙØ³Ø±" style="text-align:center;margin-bottom:0" type="password"/>
+<div class="login-error" id="login-error" style="display:none">
+<svg class="icon"><use href="#i-alert"></use></svg><span>Ø§ÙØ³Ø± ØºÙØ± ØµØ­ÙØ­</span>
 </div>
-
+<button class="submit-btn" id="login-btn" onclick="attemptLogin()">
+<svg class="icon"><use href="#i-shield"></use></svg> Ø¯Ø®ÙÙ
+    </button>
+</div>
+</div>
 <!-- APP -->
 <div id="app" style="display:none">
-
-  <header class="top-header">
-    <button class="icon-btn" onclick="toggleMenu()" title="تسجيل الخروج"><svg class="icon"><use href="#i-menu"></use></svg></button>
-    <div class="title-area">
-      <h1 id="page-title">لوحة التحكم</h1>
-      <div class="sub">
-        <span class="tg-badge"><svg class="icon"><use href="#i-send"></use></svg></span>
-        <span class="brand-mark" style="font-size:11px">Real Cash</span>
-      </div>
-    </div>
-    <button class="icon-btn notif-btn" onclick="refreshCurrent()">
-      <svg class="icon"><use href="#i-bell"></use></svg>
-      <span class="notif-dot" id="notif-dot" style="display:none"></span>
-    </button>
-  </header>
-
-  <!-- PAGE: الرئيسية -->
-  <div id="page-home" class="page-content active">
-    <div class="greeting-row">
-      <div class="greeting-text">
-        <h2>مرحباً، المدير</h2>
-        <p id="greeting-sub">إليك ملخص أداء البوت</p>
-      </div>
-      <div class="admin-avatar">
-        <svg class="icon"><use href="#i-shield"></use></svg>
-        <span class="online-dot"></span>
-      </div>
-    </div>
-    <div class="filter-row">
-      <div class="date-select">
-        <svg class="icon"><use href="#i-calendar"></use></svg>
-        <select id="range-select" onchange="loadDashboard()">
-          <option value="7">آخر 7 أيام</option>
-          <option value="14">آخر 14 يوم</option>
-          <option value="30">آخر 30 يوم</option>
-        </select>
-      </div>
-    </div>
-    <div class="stat-grid" id="stat-grid">
-      <div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
-      <div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
-      <div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
-      <div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
-    </div>
-    <div class="section-card">
-      <div class="section-header">
-        <span class="section-title">الموسم الحالي</span>
-        <span class="section-action" onclick="openCompetitionsModal()">إدارة</span>
-      </div>
-      <div id="comp-widget"><div class="skeleton" style="height:72px;border-radius:11px"></div></div>
-    </div>
-    <div class="section-card">
-      <div class="section-header">
-        <span class="section-title" style="gap:7px">
-          <span class="live-dot"></span>
-          متصل الآن
-          <span class="live-count num" id="online-count">0</span>
-        </span>
-      </div>
-      <div class="online-strip" id="online-strip">
-        <div class="online-empty"><svg class="icon"><use href="#i-inbox"></use></svg> لا يوجد متصلون الآن</div>
-      </div>
-    </div>
-    <div class="section-card">
-      <div class="section-header">
-        <span class="section-title">النشاط — آخر <span id="range-label" class="num">7</span> أيام</span>
-        <div class="chart-filter"><svg class="icon"><use href="#i-chevron-down"></use></svg></div>
-      </div>
-      <canvas id="activityChart"></canvas>
-      <div class="chart-labels" id="chart-labels"></div>
-    </div>
-    <div class="section-card">
-      <div class="section-header">
-        <span class="section-title">آخر المستخدمين</span>
-        <span class="section-action" onclick="switchPage('users')">عرض الكل</span>
-      </div>
-      <div id="recent-users-list">
-        <div class="skeleton" style="height:50px;margin-bottom:9px;border-radius:11px"></div>
-        <div class="skeleton" style="height:50px;margin-bottom:9px;border-radius:11px"></div>
-        <div class="skeleton" style="height:50px;border-radius:11px"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PAGE: المستخدمين -->
-  <div id="page-users" class="page-content">
-    <div class="search-bar">
-      <svg class="icon"><use href="#i-search"></use></svg>
-      <input id="user-search" type="text" placeholder="ابحث بالاسم أو @username أو ID..." oninput="debounceSearch()">
-    </div>
-    <div class="filter-chips">
-      <div class="chip active" data-filter="all"       onclick="setUserFilter(this,'all')">الكل</div>
-      <div class="chip"       data-filter="top"        onclick="setUserFilter(this,'top')">الأعلى</div>
-      <div class="chip"       data-filter="referrals"  onclick="setUserFilter(this,'referrals')">الأكثر إحالة</div>
-      <div class="chip"       data-filter="banned"     onclick="setUserFilter(this,'banned')">محظور</div>
-      <div class="chip"       data-filter="shadow"     onclick="setUserFilter(this,'shadow')">شادو</div>
-    </div>
-    <div id="users-list"></div>
-    <div class="pagination" id="users-pagination"></div>
-  </div>
-
-  <!-- PAGE: السحوبات -->
-  <div id="page-withdrawals" class="page-content">
-    <div id="subpage-withdrawals">
-      <div class="ton-wallet-bar">
-        <div class="tw-info">
-          <svg class="icon"><use href="#i-card"></use></svg>
-          <span class="tw-addr" id="tw-addr-label">المحفظة غير متصلة</span>
-        </div>
-        <div id="ton-connect-button"></div>
-      </div>
-      <div class="filter-chips">
-        <div class="chip active" data-wfilter="all"     onclick="setWFilter(this,'all')">الكل</div>
-        <div class="chip"       data-wfilter="pending"  onclick="setWFilter(this,'pending')">انتظار</div>
-        <div class="chip"       data-wfilter="approved" onclick="setWFilter(this,'approved')">موافق</div>
-        <div class="chip"       data-wfilter="paid"     onclick="setWFilter(this,'paid')">مدفوع</div>
-        <div class="chip"       data-wfilter="rejected" onclick="setWFilter(this,'rejected')">مرفوض</div>
-      </div>
-      <div id="withdrawals-list"></div>
-      <div class="pagination" id="w-pagination"></div>
-    </div>
-  </div>
-
-  <!-- PAGE: الرسائل -->
-  <div id="page-broadcast" class="page-content">
-    <div class="section-card broadcast-wrap">
-      <label class="form-label"><svg class="icon"><use href="#i-send"></use></svg> إرسال للجميع</label>
-      <textarea id="bc-text" class="form-textarea" placeholder="اكتب رسالة Telegram... *Bold* _Italic_ `code`"></textarea>
-      <div class="photo-attach">
-        <label class="photo-attach-btn" for="bc-photo-input"><svg class="icon"><use href="#i-image"></use></svg> إرفاق صورة من الهاتف</label>
-        <input type="file" id="bc-photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(event,'bc')">
-        <div class="photo-preview" id="bc-photo-preview" style="display:none">
-          <img id="bc-photo-img" src="">
-          <button class="photo-remove-btn" onclick="removePhoto('bc')"><svg class="icon"><use href="#i-x"></use></svg></button>
-        </div>
-      </div>
-      <p class="form-hint"><svg class="icon"><use href="#i-alert"></use></svg> ستُرسل لجميع المستخدمين غير المحظورين — مع صورة، النص بيتحول لكابشن (حد أقصى 1024 حرف)</p>
-      <button class="submit-btn" id="bc-btn" onclick="sendBroadcast()"><svg class="icon"><use href="#i-send"></use></svg> إرسال للجميع</button>
-      <div id="bc-result" class="broadcast-result"></div>
-    </div>
-    <div class="section-card broadcast-wrap" style="margin-top:11px">
-      <label class="form-label"><svg class="icon"><use href="#i-mail"></use></svg> رسالة لمستخدم محدد</label>
-      <input id="dm-id" class="form-input" type="number" placeholder="Telegram ID">
-      <textarea id="dm-text" class="form-textarea" style="margin-top:7px" placeholder="نص الرسالة..."></textarea>
-      <div class="photo-attach">
-        <label class="photo-attach-btn" for="dm-photo-input"><svg class="icon"><use href="#i-image"></use></svg> إرفاق صورة من الهاتف</label>
-        <input type="file" id="dm-photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(event,'dm')">
-        <div class="photo-preview" id="dm-photo-preview" style="display:none">
-          <img id="dm-photo-img" src="">
-          <button class="photo-remove-btn" onclick="removePhoto('dm')"><svg class="icon"><use href="#i-x"></use></svg></button>
-        </div>
-      </div>
-      <button class="submit-btn" id="dm-btn" onclick="sendDM()"><svg class="icon"><use href="#i-mail"></use></svg> إرسال</button>
-      <div id="dm-result" class="broadcast-result"></div>
-    </div>
-  </div>
-
-  <!-- PAGE: السجل -->
-  <div id="page-logs" class="page-content">
-    <div class="subtab-toggle">
-      <button class="subtab-btn active" id="subtab-logs"   onclick="switchLogsSubTab('logs')">السجل</button>
-      <button class="subtab-btn" id="subtab-cheats" onclick="switchLogsSubTab('cheats')">محاولات غش</button>
-    </div>
-
-    <div id="subpage-logs">
-      <div class="filter-chips">
-        <div class="chip active" data-log=""           onclick="setLogFilter(this,'')">الكل</div>
-        <div class="chip"       data-log="game_round" onclick="setLogFilter(this,'game_round')">لعبة</div>
-        <div class="chip"       data-log="ref_copy"   onclick="setLogFilter(this,'ref_copy')">إحالة</div>
-        <div class="chip"       data-log="sec_event"  onclick="setLogFilter(this,'sec_event')">أمان</div>
-        <div class="chip"       data-log="admin_adjust_pts" onclick="setLogFilter(this,'admin_adjust_pts')">ضبط نقاط</div>
-      </div>
-      <div class="section-card" style="padding:6px 12px">
-        <div id="logs-list"></div>
-      </div>
-      <div class="pagination" id="logs-pagination"></div>
-    </div>
-
-    <div id="subpage-cheats" style="display:none">
-      <div id="cheats-list"></div>
-      <div class="pagination" id="cheats-pagination"></div>
-    </div>
-  </div>
-
-  <!-- Bottom Nav -->
-  <nav class="bottom-nav">
-    <div class="nav-item active" id="nav-home" onclick="switchPage('home')">
-      <span class="nav-icon"><svg class="icon"><use href="#i-home"></use></svg></span>
-      <span class="nav-label">الرئيسية</span>
-    </div>
-    <div class="nav-item" id="nav-users" onclick="switchPage('users')">
-      <span class="nav-icon"><svg class="icon"><use href="#i-users"></use></svg></span>
-      <span class="nav-label">المستخدمين</span>
-    </div>
-    <div class="nav-item" id="nav-broadcast" onclick="switchPage('broadcast')">
-      <div class="nav-center-btn"><svg class="icon"><use href="#i-send"></use></svg></div>
-      <span class="nav-label" style="color:var(--gold)">البوت</span>
-    </div>
-    <div class="nav-item" id="nav-withdrawals" onclick="switchPage('withdrawals')">
-      <span class="nav-icon"><svg class="icon"><use href="#i-wallet"></use></svg></span>
-      <span class="nav-label">السحوبات</span>
-      <span class="nav-badge num" id="w-badge" style="display:none">0</span>
-    </div>
-    <div class="nav-item" id="nav-logs" onclick="switchPage('logs')">
-      <span class="nav-icon"><svg class="icon"><use href="#i-list"></use></svg></span>
-      <span class="nav-label">السجل</span>
-    </div>
-  </nav>
+<header class="top-header">
+<button class="icon-btn" onclick="toggleMenu()" title="ØªØ³Ø¬ÙÙ Ø§ÙØ®Ø±ÙØ¬"><svg class="icon"><use href="#i-menu"></use></svg></button>
+<div class="title-area">
+<h1 id="page-title">ÙÙØ­Ø© Ø§ÙØªØ­ÙÙ</h1>
+<div class="sub">
+<span class="tg-badge"><svg class="icon"><use href="#i-send"></use></svg></span>
+<span class="brand-mark" style="font-size:11px">Real Cash</span>
 </div>
-
+</div>
+<button class="icon-btn notif-btn" onclick="refreshCurrent()">
+<svg class="icon"><use href="#i-bell"></use></svg>
+<span class="notif-dot" id="notif-dot" style="display:none"></span>
+</button>
+</header>
+<!-- PAGE: Ø§ÙØ±Ø¦ÙØ³ÙØ© -->
+<div class="page-content active" id="page-home">
+<div class="greeting-row">
+<div class="greeting-text">
+<h2>ÙØ±Ø­Ø¨Ø§ÙØ Ø§ÙÙØ¯ÙØ±</h2>
+<p id="greeting-sub">Ø¥ÙÙÙ ÙÙØ®Øµ Ø£Ø¯Ø§Ø¡ Ø§ÙØ¨ÙØª</p>
+</div>
+<div class="admin-avatar">
+<svg class="icon"><use href="#i-shield"></use></svg>
+<span class="online-dot"></span>
+</div>
+</div>
+<div class="filter-row">
+<div class="date-select">
+<svg class="icon"><use href="#i-calendar"></use></svg>
+<select id="range-select" onchange="loadDashboard()">
+<option value="7">Ø¢Ø®Ø± 7 Ø£ÙØ§Ù</option>
+<option value="14">Ø¢Ø®Ø± 14 ÙÙÙ</option>
+<option value="30">Ø¢Ø®Ø± 30 ÙÙÙ</option>
+</select>
+</div>
+</div>
+<div class="stat-grid" id="stat-grid">
+<div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
+<div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
+<div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
+<div class="stat-card"><div class="skeleton" style="width:40px;height:40px;border-radius:12px"></div><div style="flex:1"><div class="skeleton" style="height:10px;margin-bottom:7px;width:70%"></div><div class="skeleton" style="height:22px;width:50%"></div></div></div>
+</div>
+<div class="section-card">
+<div class="section-header">
+<span class="section-title">Ø§ÙÙÙØ³Ù Ø§ÙØ­Ø§ÙÙ</span>
+<span class="section-action" onclick="openCompetitionsModal()">Ø¥Ø¯Ø§Ø±Ø©</span>
+</div>
+<div id="comp-widget"><div class="skeleton" style="height:72px;border-radius:11px"></div></div>
+</div>
+<div class="section-card">
+<div class="section-header">
+<span class="section-title" style="gap:7px">
+<span class="live-dot"></span>
+          ÙØªØµÙ Ø§ÙØ¢Ù
+          <span class="live-count num" id="online-count">0</span>
+</span>
+</div>
+<div class="online-strip" id="online-strip">
+<div class="online-empty"><svg class="icon"><use href="#i-inbox"></use></svg> ÙØ§ ÙÙØ¬Ø¯ ÙØªØµÙÙÙ Ø§ÙØ¢Ù</div>
+</div>
+</div>
+<div class="section-card">
+<div class="section-header">
+<span class="section-title">Ø§ÙÙØ´Ø§Ø· â Ø¢Ø®Ø± <span class="num" id="range-label">7</span> Ø£ÙØ§Ù</span>
+<div class="chart-filter"><svg class="icon"><use href="#i-chevron-down"></use></svg></div>
+</div>
+<canvas id="activityChart"></canvas>
+<div class="chart-labels" id="chart-labels"></div>
+</div>
+<div class="section-card">
+<div class="section-header">
+<span class="section-title">Ø¢Ø®Ø± Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙ</span>
+<span class="section-action" onclick="switchPage('users')">Ø¹Ø±Ø¶ Ø§ÙÙÙ</span>
+</div>
+<div id="recent-users-list">
+<div class="skeleton" style="height:50px;margin-bottom:9px;border-radius:11px"></div>
+<div class="skeleton" style="height:50px;margin-bottom:9px;border-radius:11px"></div>
+<div class="skeleton" style="height:50px;border-radius:11px"></div>
+</div>
+</div>
+</div>
+<!-- PAGE: Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙ -->
+<div class="page-content" id="page-users">
+<div class="search-bar">
+<svg class="icon"><use href="#i-search"></use></svg>
+<input id="user-search" oninput="debounceSearch()" placeholder="Ø§Ø¨Ø­Ø« Ø¨Ø§ÙØ§Ø³Ù Ø£Ù @username Ø£Ù ID..." type="text"/>
+</div>
+<div class="filter-chips">
+<div class="chip active" data-filter="all" onclick="setUserFilter(this,'all')">Ø§ÙÙÙ</div>
+<div class="chip" data-filter="top" onclick="setUserFilter(this,'top')">Ø§ÙØ£Ø¹ÙÙ</div>
+<div class="chip" data-filter="referrals" onclick="setUserFilter(this,'referrals')">Ø§ÙØ£ÙØ«Ø± Ø¥Ø­Ø§ÙØ©</div>
+<div class="chip" data-filter="banned" onclick="setUserFilter(this,'banned')">ÙØ­Ø¸ÙØ±</div>
+<div class="chip" data-filter="shadow" onclick="setUserFilter(this,'shadow')">Ø´Ø§Ø¯Ù</div>
+</div>
+<div id="users-list"></div>
+<div class="pagination" id="users-pagination"></div>
+</div>
+<!-- PAGE: Ø§ÙØ³Ø­ÙØ¨Ø§Øª -->
+<div class="page-content" id="page-withdrawals">
+<div id="subpage-withdrawals">
+<div class="ton-wallet-bar">
+<div class="tw-info">
+<svg class="icon"><use href="#i-card"></use></svg>
+<span class="tw-addr" id="tw-addr-label">Ø§ÙÙØ­ÙØ¸Ø© ØºÙØ± ÙØªØµÙØ©</span>
+</div>
+<div id="ton-connect-button"></div>
+</div>
+<div class="filter-chips">
+<div class="chip active" data-wfilter="all" onclick="setWFilter(this,'all')">Ø§ÙÙÙ</div>
+<div class="chip" data-wfilter="pending" onclick="setWFilter(this,'pending')">Ø§ÙØªØ¸Ø§Ø±</div>
+<div class="chip" data-wfilter="approved" onclick="setWFilter(this,'approved')">ÙÙØ§ÙÙ</div>
+<div class="chip" data-wfilter="paid" onclick="setWFilter(this,'paid')">ÙØ¯ÙÙØ¹</div>
+<div class="chip" data-wfilter="rejected" onclick="setWFilter(this,'rejected')">ÙØ±ÙÙØ¶</div>
+</div>
+<div id="withdrawals-list"></div>
+<div class="pagination" id="w-pagination"></div>
+</div>
+</div>
+<!-- PAGE: Ø§ÙØ±Ø³Ø§Ø¦Ù -->
+<div class="page-content" id="page-broadcast">
+<div class="section-card broadcast-wrap">
+<label class="form-label"><svg class="icon"><use href="#i-send"></use></svg> Ø¥Ø±Ø³Ø§Ù ÙÙØ¬ÙÙØ¹</label>
+<div class="broadcast-intro">
+<div class="intro-icon"><svg class="icon"><use href="#i-bell"></use></svg></div>
+<div><strong>Ø±Ø³Ø§ÙØ© ØªØµÙ Ø¨Ø´ÙÙ Ø£Ø¬ÙÙ</strong><span>Ø£Ø±Ø³Ù ÙØµØ§Ù Ø£Ù ØµÙØ±Ø©Ø ÙÙÙÙÙÙ Ø¥Ø¶Ø§ÙØ© Ø²Ø± ÙØ§Ø¶Ø­ ÙÙØªØ­ Ø±Ø§Ø¨Ø·Ø§Ù Ø¯Ø§Ø®Ù Telegram.</span></div>
+</div>
+<textarea class="form-textarea" id="bc-text" placeholder="Ø§ÙØªØ¨ Ø±Ø³Ø§ÙØ© Telegram... *Bold* _Italic_ `code`"></textarea>
+<div class="photo-attach">
+<label class="photo-attach-btn" for="bc-photo-input"><svg class="icon"><use href="#i-image"></use></svg> Ø¥Ø±ÙØ§Ù ØµÙØ±Ø© ÙÙ Ø§ÙÙØ§ØªÙ</label>
+<input accept="image/*" id="bc-photo-input" onchange="handlePhotoSelect(event,'bc')" style="display:none" type="file"/>
+<div class="photo-preview" id="bc-photo-preview" style="display:none">
+<img id="bc-photo-img" src=""/>
+<button class="photo-remove-btn" onclick="removePhoto('bc')"><svg class="icon"><use href="#i-x"></use></svg></button>
+</div>
+</div>
+<div class="inline-link-grid">
+<input class="form-input" id="bc-button-text" maxlength="64" placeholder="ÙØµ Ø§ÙØ²Ø±Ø ÙØ«Ø§Ù: Ø§ÙØªØ­ Ø§ÙØªØ·Ø¨ÙÙ" type="text"/>
+<input class="form-input" id="bc-button-url" placeholder="https://example.com" type="url"/>
+</div>
+<div class="link-preview" id="bc-link-preview"><svg class="icon"><use href="#i-link"></use></svg><span id="bc-link-preview-text"></span></div>
+<p class="form-hint"><svg class="icon"><use href="#i-alert"></use></svg> Ø³ØªÙØ±Ø³Ù ÙØ¬ÙÙØ¹ Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙ ØºÙØ± Ø§ÙÙØ­Ø¸ÙØ±ÙÙ â ÙØ¹ ØµÙØ±Ø©Ø Ø§ÙÙØµ Ø¨ÙØªØ­ÙÙ ÙÙØ§Ø¨Ø´Ù (Ø­Ø¯ Ø£ÙØµÙ 1024 Ø­Ø±Ù)</p>
+<button class="submit-btn" id="bc-btn" onclick="sendBroadcast()"><svg class="icon"><use href="#i-send"></use></svg> Ø¥Ø±Ø³Ø§Ù ÙÙØ¬ÙÙØ¹</button>
+<div class="broadcast-result" id="bc-result"></div>
+</div>
+<div class="section-card broadcast-wrap" style="margin-top:11px">
+<label class="form-label"><svg class="icon"><use href="#i-mail"></use></svg> Ø±Ø³Ø§ÙØ© ÙÙØ³ØªØ®Ø¯Ù ÙØ­Ø¯Ø¯</label>
+<input class="form-input" id="dm-id" placeholder="Telegram ID" type="number"/>
+<textarea class="form-textarea" id="dm-text" placeholder="ÙØµ Ø§ÙØ±Ø³Ø§ÙØ©..." style="margin-top:7px"></textarea>
+<div class="photo-attach">
+<label class="photo-attach-btn" for="dm-photo-input"><svg class="icon"><use href="#i-image"></use></svg> Ø¥Ø±ÙØ§Ù ØµÙØ±Ø© ÙÙ Ø§ÙÙØ§ØªÙ</label>
+<input accept="image/*" id="dm-photo-input" onchange="handlePhotoSelect(event,'dm')" style="display:none" type="file"/>
+<div class="photo-preview" id="dm-photo-preview" style="display:none">
+<img id="dm-photo-img" src=""/>
+<button class="photo-remove-btn" onclick="removePhoto('dm')"><svg class="icon"><use href="#i-x"></use></svg></button>
+</div>
+</div>
+<button class="submit-btn" id="dm-btn" onclick="sendDM()"><svg class="icon"><use href="#i-mail"></use></svg> Ø¥Ø±Ø³Ø§Ù</button>
+<div class="broadcast-result" id="dm-result"></div>
+</div>
+</div>
+<!-- PAGE: Ø§ÙØ³Ø¬Ù -->
+<div class="page-content" id="page-logs">
+<div class="subtab-toggle">
+<button class="subtab-btn active" id="subtab-logs" onclick="switchLogsSubTab('logs')">Ø§ÙØ³Ø¬Ù</button>
+<button class="subtab-btn" id="subtab-cheats" onclick="switchLogsSubTab('cheats')">ÙØ­Ø§ÙÙØ§Øª ØºØ´</button>
+</div>
+<div id="subpage-logs">
+<div class="filter-chips">
+<div class="chip active" data-log="" onclick="setLogFilter(this,'')">Ø§ÙÙÙ</div>
+<div class="chip" data-log="game_round" onclick="setLogFilter(this,'game_round')">ÙØ¹Ø¨Ø©</div>
+<div class="chip" data-log="ref_copy" onclick="setLogFilter(this,'ref_copy')">Ø¥Ø­Ø§ÙØ©</div>
+<div class="chip" data-log="sec_event" onclick="setLogFilter(this,'sec_event')">Ø£ÙØ§Ù</div>
+<div class="chip" data-log="admin_adjust_pts" onclick="setLogFilter(this,'admin_adjust_pts')">Ø¶Ø¨Ø· ÙÙØ§Ø·</div>
+</div>
+<div class="section-card" style="padding:6px 12px">
+<div id="logs-list"></div>
+</div>
+<div class="pagination" id="logs-pagination"></div>
+</div>
+<div id="subpage-cheats" style="display:none">
+<div id="cheats-list"></div>
+<div class="pagination" id="cheats-pagination"></div>
+</div>
+</div>
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+<div class="nav-item active" id="nav-home" onclick="switchPage('home')">
+<span class="nav-icon"><svg class="icon"><use href="#i-home"></use></svg></span>
+<span class="nav-label">Ø§ÙØ±Ø¦ÙØ³ÙØ©</span>
+</div>
+<div class="nav-item" id="nav-users" onclick="switchPage('users')">
+<span class="nav-icon"><svg class="icon"><use href="#i-users"></use></svg></span>
+<span class="nav-label">Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙ</span>
+</div>
+<div class="nav-item" id="nav-broadcast" onclick="switchPage('broadcast')">
+<div class="nav-center-btn"><svg class="icon"><use href="#i-send"></use></svg></div>
+<span class="nav-label" style="color:var(--gold)">Ø§ÙØ¨ÙØª</span>
+</div>
+<div class="nav-item" id="nav-withdrawals" onclick="switchPage('withdrawals')">
+<span class="nav-icon"><svg class="icon"><use href="#i-wallet"></use></svg></span>
+<span class="nav-label">Ø§ÙØ³Ø­ÙØ¨Ø§Øª</span>
+<span class="nav-badge num" id="w-badge" style="display:none">0</span>
+</div>
+<div class="nav-item" id="nav-logs" onclick="switchPage('logs')">
+<span class="nav-icon"><svg class="icon"><use href="#i-list"></use></svg></span>
+<span class="nav-label">Ø§ÙØ³Ø¬Ù</span>
+</div>
+</nav>
+</div>
 <!-- USER DETAIL SHEET -->
 <div class="sheet-backdrop" id="user-modal" onclick="closeModal(event)">
-  <div class="sheet" id="modal-content">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header">
-      <h3 class="sheet-title" id="modal-title">تفاصيل المستخدم</h3>
-      <button class="sheet-close" onclick="document.getElementById('user-modal').classList.remove('open')">
-        <svg class="icon"><use href="#i-x"></use></svg>
-      </button>
-    </div>
-    <div id="modal-body" class="sheet-body"></div>
-    <div class="sheet-actions" id="modal-actions"></div>
-  </div>
+<div class="sheet" id="modal-content">
+<div class="sheet-handle"></div>
+<div class="sheet-header">
+<h3 class="sheet-title" id="modal-title">ØªÙØ§ØµÙÙ Ø§ÙÙØ³ØªØ®Ø¯Ù</h3>
+<button class="sheet-close" onclick="document.getElementById('user-modal').classList.remove('open')">
+<svg class="icon"><use href="#i-x"></use></svg>
+</button>
 </div>
-
+<div class="sheet-body" id="modal-body"></div>
+<div class="sheet-actions" id="modal-actions"></div>
+</div>
+</div>
 <!-- Toast -->
 <div class="toast" id="toast"></div>
-
 <script>
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Helpers
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function icon(name, cls) {
   return `<svg class="icon ${cls||''}"><use href="#i-${name}"></use></svg>`;
 }
@@ -958,15 +1141,15 @@ function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function timeAgo(ts) {
-  if (!ts) return '—';
+  if (!ts) return 'â';
   const diff = (Date.now() - new Date(ts)) / 1000;
-  if (diff < 60)    return 'الآن';
-  if (diff < 3600)  return `منذ ${Math.floor(diff/60)} دقيقة`;
-  if (diff < 86400) return `منذ ${Math.floor(diff/3600)} ساعة`;
-  return `منذ ${Math.floor(diff/86400)} يوم`;
+  if (diff < 60)    return 'Ø§ÙØ¢Ù';
+  if (diff < 3600)  return `ÙÙØ° ${Math.floor(diff/60)} Ø¯ÙÙÙØ©`;
+  if (diff < 86400) return `ÙÙØ° ${Math.floor(diff/3600)} Ø³Ø§Ø¹Ø©`;
+  return `ÙÙØ° ${Math.floor(diff/86400)} ÙÙÙ`;
 }
 function fDateTime(ts) {
-  if (!ts) return '—';
+  if (!ts) return 'â';
   return new Date(ts).toLocaleString('ar-u-nu-latn', { dateStyle:'short', timeStyle:'short' });
 }
 function fDay(d) {
@@ -974,7 +1157,7 @@ function fDay(d) {
   return new Date(d).toLocaleDateString('ar-u-nu-latn', { month:'short', day:'numeric' });
 }
 function wStatusLabel(s) {
-  const map = { pending: icon('clock')+' انتظار', approved: icon('check')+' موافق', rejected: icon('x')+' مرفوض', paid: icon('card')+' مدفوع' };
+  const map = { pending: icon('clock')+' Ø§ÙØªØ¸Ø§Ø±', approved: icon('check')+' ÙÙØ§ÙÙ', rejected: icon('x')+' ÙØ±ÙÙØ¶', paid: icon('card')+' ÙØ¯ÙÙØ¹' };
   return map[s] || s;
 }
 function showToast(html, dur=2500) {
@@ -993,9 +1176,9 @@ function renderPagination(containerId, currentPage, totalPages, onPage) {
   el.innerHTML = html;
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Config & State
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const API_URL = '/api/admin';
 let SECRET    = '';
 const SECRET_STORAGE_KEY = 'bl_admin_secret';
@@ -1010,9 +1193,9 @@ const state = {
 };
 let logsSubTab = 'logs';
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  API
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function api(type, data = {}) {
   let r;
   try {
@@ -1022,18 +1205,18 @@ async function api(type, data = {}) {
       body: JSON.stringify({ type, data }),
     });
   } catch (err) {
-    return { ok: false, error: 'تعذّر الاتصال بالسيرفر — تحقق من الإنترنت وحاول تاني' };
+    return { ok: false, error: 'ØªØ¹Ø°ÙØ± Ø§ÙØ§ØªØµØ§Ù Ø¨Ø§ÙØ³ÙØ±ÙØ± â ØªØ­ÙÙ ÙÙ Ø§ÙØ¥ÙØªØ±ÙØª ÙØ­Ø§ÙÙ ØªØ§ÙÙ' };
   }
   try {
     return await r.json();
   } catch (err) {
-    return { ok: false, error: `استجابة غير متوقعة من السيرفر (${r.status}) — جرّب تاني` };
+    return { ok: false, error: `Ø§Ø³ØªØ¬Ø§Ø¨Ø© ØºÙØ± ÙØªÙÙØ¹Ø© ÙÙ Ø§ÙØ³ÙØ±ÙØ± (${r.status}) â Ø¬Ø±ÙØ¨ ØªØ§ÙÙ` };
   }
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Auth
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function initAuth() {
   const saved = sessionStorage.getItem(SECRET_STORAGE_KEY);
   if (saved) {
@@ -1066,7 +1249,7 @@ async function attemptLogin() {
   const val   = input.value.trim();
   if (!val) return;
   err.style.display = 'none';
-  btn.disabled = true; btn.innerHTML = icon('loader','spin')+' جاري التحقق...';
+  btn.disabled = true; btn.innerHTML = icon('loader','spin')+' Ø¬Ø§Ø±Ù Ø§ÙØªØ­ÙÙ...';
   SECRET = val;
   const ok = await tryEnterApp();
   if (ok) {
@@ -1074,13 +1257,13 @@ async function attemptLogin() {
   } else {
     SECRET = '';
     err.style.display = 'flex';
-    btn.disabled = false; btn.innerHTML = icon('shield')+' دخول';
+    btn.disabled = false; btn.innerHTML = icon('shield')+' Ø¯Ø®ÙÙ';
     input.focus(); input.select();
   }
 }
 
 function logout() {
-  if (!confirm('تسجيل الخروج؟')) return;
+  if (!confirm('ØªØ³Ø¬ÙÙ Ø§ÙØ®Ø±ÙØ¬Ø')) return;
   sessionStorage.removeItem(SECRET_STORAGE_KEY);
   SECRET = '';
   if (onlinePollTimer) clearInterval(onlinePollTimer);
@@ -1091,11 +1274,11 @@ function logout() {
   document.getElementById('login-input').focus();
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Navigation
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const pages  = { home:'page-home', users:'page-users', withdrawals:'page-withdrawals', broadcast:'page-broadcast', logs:'page-logs' };
-const titles = { home:'لوحة التحكم', users:'المستخدمين', withdrawals:'السحوبات', broadcast:'إرسال رسائل', logs:'سجل النشاط' };
+const titles = { home:'ÙÙØ­Ø© Ø§ÙØªØ­ÙÙ', users:'Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙ', withdrawals:'Ø§ÙØ³Ø­ÙØ¨Ø§Øª', broadcast:'Ø¥Ø±Ø³Ø§Ù Ø±Ø³Ø§Ø¦Ù', logs:'Ø³Ø¬Ù Ø§ÙÙØ´Ø§Ø·' };
 
 function switchPage(name) {
   Object.values(pages).forEach(id => document.getElementById(id).classList.remove('active'));
@@ -1103,7 +1286,7 @@ function switchPage(name) {
   document.getElementById(pages[name]).classList.add('active');
   const nav = document.getElementById('nav-'+name);
   if (nav) nav.classList.add('active');
-  document.getElementById('page-title').textContent = titles[name] || 'لوحة التحكم';
+  document.getElementById('page-title').textContent = titles[name] || 'ÙÙØ­Ø© Ø§ÙØªØ­ÙÙ';
   if (name === 'users'       && !document.getElementById('users-list').children.length) loadUsers();
   if (name === 'withdrawals' && !document.getElementById('withdrawals-list').children.length) loadWithdrawals();
   if (name === 'logs'        && logsSubTab === 'logs'   && !document.getElementById('logs-list').children.length)   loadLogs();
@@ -1116,7 +1299,7 @@ function switchLogsSubTab(tab) {
   document.getElementById('subtab-cheats').classList.toggle('active', tab === 'cheats');
   document.getElementById('subpage-logs').style.display   = tab === 'logs'   ? '' : 'none';
   document.getElementById('subpage-cheats').style.display = tab === 'cheats' ? '' : 'none';
-  document.getElementById('page-title').textContent = tab === 'cheats' ? 'محاولات غش' : 'السجل';
+  document.getElementById('page-title').textContent = tab === 'cheats' ? 'ÙØ­Ø§ÙÙØ§Øª ØºØ´' : 'Ø§ÙØ³Ø¬Ù';
   if (tab === 'cheats' && !document.getElementById('cheats-list').children.length) loadCheats();
   if (tab === 'logs'   && !document.getElementById('logs-list').children.length)   loadLogs();
 }
@@ -1132,9 +1315,9 @@ function refreshCurrent() {
 function toggleMenu() { logout(); }
 function cycleChartType() { if (dashData) drawChart(dashData.activity); }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Dashboard
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function loadDashboard() {
   const range = parseInt(document.getElementById('range-select').value);
   document.getElementById('range-label').textContent = fNum(range);
@@ -1147,7 +1330,7 @@ async function loadDashboard() {
 
 function renderDashboard(res) {
   const { stats, activity, recent_users, competition } = res;
-  document.getElementById('greeting-sub').textContent = `المسابقة: ${competition?.name || 'Season 1'}`;
+  document.getElementById('greeting-sub').textContent = `Ø§ÙÙØ³Ø§Ø¨ÙØ©: ${competition?.name || 'Season 1'}`;
   if (stats.pending_withdrawals > 0) {
     const b = document.getElementById('w-badge');
     b.textContent = fNum(stats.pending_withdrawals);
@@ -1159,49 +1342,49 @@ function renderDashboard(res) {
     <div class="stat-card">
       <div class="stat-icon blue">${icon('users')}</div>
       <div class="stat-info">
-        <div class="stat-label">إجمالي المستخدمين</div>
+        <div class="stat-label">Ø¥Ø¬ÙØ§ÙÙ Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙ</div>
         <div class="stat-value num">${fNum(stats.total_users)}</div>
-        <div class="stat-change up">${icon('trending-up')} ${fNum(stats.new_users)} جديد</div>
+        <div class="stat-change up">${icon('trending-up')} ${fNum(stats.new_users)} Ø¬Ø¯ÙØ¯</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon green">${icon('coin')}</div>
       <div class="stat-info">
-        <div class="stat-label">إجمالي النقاط</div>
+        <div class="stat-label">Ø¥Ø¬ÙØ§ÙÙ Ø§ÙÙÙØ§Ø·</div>
         <div class="stat-value num">${fCompact(stats.total_pts)}</div>
-        <div class="stat-change neutral">موزّعة</div>
+        <div class="stat-change neutral">ÙÙØ²ÙØ¹Ø©</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon amber">${icon('dollar')}</div>
       <div class="stat-info">
-        <div class="stat-label">إجمالي الأرصدة</div>
+        <div class="stat-label">Ø¥Ø¬ÙØ§ÙÙ Ø§ÙØ£Ø±ØµØ¯Ø©</div>
         <div class="stat-value num">$${stats.total_balance.toFixed(2)}</div>
         <div class="stat-change ${stats.pending_withdrawals>0?'down':'up'}">
-          <span class="num">${fNum(stats.pending_withdrawals)}</span> معلّق
+          <span class="num">${fNum(stats.pending_withdrawals)}</span> ÙØ¹ÙÙÙ
         </div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon purple">${icon('tv')}</div>
       <div class="stat-info">
-        <div class="stat-label">إعلانات مشاهَدة</div>
+        <div class="stat-label">Ø¥Ø¹ÙØ§ÙØ§Øª ÙØ´Ø§ÙÙØ¯Ø©</div>
         <div class="stat-value num">${fNum(stats.total_ads)}</div>
-        <div class="stat-change up">${icon('trending-up')} ${fNum(stats.today_ads)} اليوم</div>
+        <div class="stat-change up">${icon('trending-up')} ${fNum(stats.today_ads)} Ø§ÙÙÙÙ</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon red">${icon('link')}</div>
       <div class="stat-info">
-        <div class="stat-label">روابط اليوم</div>
+        <div class="stat-label">Ø±ÙØ§Ø¨Ø· Ø§ÙÙÙÙ</div>
         <div class="stat-value num">${fNum(stats.today_links_total)}</div>
-        <div class="stat-change neutral"><span class="num">${fNum(stats.today_surf_links)}</span> تصفح · <span class="num">${fNum(stats.today_task_links)}</span> مهام</div>
+        <div class="stat-change neutral"><span class="num">${fNum(stats.today_surf_links)}</span> ØªØµÙØ­ Â· <span class="num">${fNum(stats.today_task_links)}</span> ÙÙØ§Ù</div>
       </div>
     </div>`;
   drawChart(activity);
   const ul = document.getElementById('recent-users-list');
   if (!recent_users?.length) {
-    ul.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>لا يوجد مستخدمون بعد</p></div>`;
+    ul.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>ÙØ§ ÙÙØ¬Ø¯ ÙØ³ØªØ®Ø¯ÙÙÙ Ø¨Ø¹Ø¯</p></div>`;
     return;
   }
   ul.innerHTML = recent_users.map(u => `
@@ -1211,12 +1394,12 @@ function renderDashboard(res) {
         <span class="tg-icon">${icon('send')}</span>
       </div>
       <div class="user-info">
-        <div class="user-name">${esc(u.first_name || '—')}</div>
-        <div class="user-handle">${u.username ? '@'+u.username : 'بدون username'}</div>
+        <div class="user-name">${esc(u.first_name || 'â')}</div>
+        <div class="user-handle">${u.username ? '@'+u.username : 'Ø¨Ø¯ÙÙ username'}</div>
       </div>
       <div class="user-meta">
         <div class="user-time">${timeAgo(u.created_at)}</div>
-        <div class="user-pts num">${fNum(Number(u.pts))} نقطة</div>
+        <div class="user-pts num">${fNum(Number(u.pts))} ÙÙØ·Ø©</div>
       </div>
     </div>`).join('');
 }
@@ -1233,7 +1416,7 @@ function renderOnlineUsers(users, count) {
   document.getElementById('online-count').textContent = fNum(count);
   const strip = document.getElementById('online-strip');
   if (!users.length) {
-    strip.innerHTML = `<div class="online-empty">${icon('inbox')} لا يوجد متصلون الآن</div>`;
+    strip.innerHTML = `<div class="online-empty">${icon('inbox')} ÙØ§ ÙÙØ¬Ø¯ ÙØªØµÙÙÙ Ø§ÙØ¢Ù</div>`;
     return;
   }
   strip.innerHTML = users.map(u => `
@@ -1241,13 +1424,13 @@ function renderOnlineUsers(users, count) {
       <div class="online-avatar">
         ${u.photo_url ? `<img src="${u.photo_url}" onerror="this.parentNode.textContent='${esc((u.first_name||'?')[0])}'">` : esc((u.first_name||'?')[0])}
       </div>
-      <div class="online-name">${esc((u.first_name||'—').split(' ')[0])}</div>
+      <div class="online-name">${esc((u.first_name||'â').split(' ')[0])}</div>
     </div>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Chart
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function drawChart(activity) {
   const canvas = document.getElementById('activityChart');
   const ctx    = canvas.getContext('2d');
@@ -1302,10 +1485,10 @@ function drawChart(activity) {
   });
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Users Page
-// ═══════════════════════════════════════════════════════
-const USERS_PAGE_SIZE = 100; // ✅ كل صفحة فيها 100 مستخدم على الأقل
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+const USERS_PAGE_SIZE = 100; // â ÙÙ ØµÙØ­Ø© ÙÙÙØ§ 100 ÙØ³ØªØ®Ø¯Ù Ø¹ÙÙ Ø§ÙØ£ÙÙ
 let searchTimer;
 function debounceSearch() {
   clearTimeout(searchTimer);
@@ -1329,7 +1512,7 @@ async function loadUsers() {
   state.users.total = res.total;
   const ul = document.getElementById('users-list');
   if (!res.users.length) {
-    ul.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('search')}</div><p>لا توجد نتائج</p></div>`;
+    ul.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('search')}</div><p>ÙØ§ ØªÙØ¬Ø¯ ÙØªØ§Ø¦Ø¬</p></div>`;
     document.getElementById('users-pagination').innerHTML = ''; return;
   }
   ul.innerHTML = res.users.map(u => `
@@ -1339,25 +1522,25 @@ async function loadUsers() {
         <span class="tg-icon">${icon('send')}</span>
       </div>
       <div class="user-card-info">
-        <div class="user-card-name">${esc(u.first_name||'—')}</div>
-        <div class="user-card-sub">${u.username?'@'+u.username:'بدون username'} · <span class="num">#${u.telegram_id}</span></div>
+        <div class="user-card-name">${esc(u.first_name||'â')}</div>
+        <div class="user-card-sub">${u.username?'@'+u.username:'Ø¨Ø¯ÙÙ username'} Â· <span class="num">#${u.telegram_id}</span></div>
         <div class="user-card-stats">
-          <span class="user-stat-pill"><span class="dot" style="background:var(--gold)"></span><span class="num">${fNum(u.pts)}</span> نقطة</span>
+          <span class="user-stat-pill"><span class="dot" style="background:var(--gold)"></span><span class="num">${fNum(u.pts)}</span> ÙÙØ·Ø©</span>
           <span class="user-stat-pill"><span class="dot" style="background:var(--emerald)"></span><span class="num">$${parseFloat(u.balance_usd).toFixed(2)}</span></span>
-          <span class="user-stat-pill"><span class="dot" style="background:var(--violet)"></span><span class="num">${u.daily_ads||0}</span> إعلان</span>
-          ${u.referrals ? `<span class="user-stat-pill"><span class="dot" style="background:var(--gold)"></span><span class="num">${fNum(u.referrals)}</span> إحالة</span>` : ''}
+          <span class="user-stat-pill"><span class="dot" style="background:var(--violet)"></span><span class="num">${u.daily_ads||0}</span> Ø¥Ø¹ÙØ§Ù</span>
+          ${u.referrals ? `<span class="user-stat-pill"><span class="dot" style="background:var(--gold)"></span><span class="num">${fNum(u.referrals)}</span> Ø¥Ø­Ø§ÙØ©</span>` : ''}
         </div>
       </div>
       <span class="badge ${u.banned?'banned':u.shadow_banned?'shadow':'normal'}">
-        ${u.banned?'محظور':u.shadow_banned?'شادو':'نشط'}
+        ${u.banned?'ÙØ­Ø¸ÙØ±':u.shadow_banned?'Ø´Ø§Ø¯Ù':'ÙØ´Ø·'}
       </span>
     </div>`).join('');
   renderPagination('users-pagination', page, Math.ceil(res.total / USERS_PAGE_SIZE), p => { state.users.page = p; loadUsers(); });
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Withdrawals
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function setWFilter(el, filter) {
   document.querySelectorAll('[data-wfilter]').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
@@ -1371,7 +1554,7 @@ async function loadWithdrawals() {
   if (!res.ok) return;
   const wl = document.getElementById('withdrawals-list');
   if (!res.withdrawals.length) {
-    wl.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('wallet')}</div><p>لا توجد سحوبات</p></div>`;
+    wl.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('wallet')}</div><p>ÙØ§ ØªÙØ¬Ø¯ Ø³Ø­ÙØ¨Ø§Øª</p></div>`;
     document.getElementById('w-pagination').innerHTML = ''; return;
   }
   wl.innerHTML = res.withdrawals.map(w => `
@@ -1381,31 +1564,31 @@ async function loadWithdrawals() {
         <span class="withdraw-status ${w.status}">${wStatusLabel(w.status)}</span>
       </div>
       <div class="withdraw-amount num">$${parseFloat(w.amount).toFixed(2)} USDT</div>
-      <div class="withdraw-addr">${icon('pin')} <span style="flex:1">${esc(w.address)}</span><button class="copy-addr-btn" onclick="event.stopPropagation();copyAddr('${w.address.replace(/'/g,"\\'")}',this)" title="نسخ العنوان">${icon('copy')}</button></div>
-      <div class="withdraw-date">${icon('clock')} <span class="num">${fDateTime(w.created_at)}</span> · <span class="num">#${w.telegram_id}</span></div>
+      <div class="withdraw-addr">${icon('pin')} <span style="flex:1">${esc(w.address)}</span><button class="copy-addr-btn" onclick="event.stopPropagation();copyAddr('${w.address.replace(/'/g,"\\'")}',this)" title="ÙØ³Ø® Ø§ÙØ¹ÙÙØ§Ù">${icon('copy')}</button></div>
+      <div class="withdraw-date">${icon('clock')} <span class="num">${fDateTime(w.created_at)}</span> Â· <span class="num">#${w.telegram_id}</span></div>
       ${(w.status==='pending'||w.status==='approved')?`
       <div class="withdraw-actions">
         ${w.status==='pending'?`
-        <button class="action-btn approve" onclick="updateWithdrawal(${w.id},'approved',this)">${icon('check')} موافقة</button>
-        <button class="action-btn reject"  onclick="updateWithdrawal(${w.id},'rejected',this)">${icon('x')} رفض</button>`:''}
-        <button class="action-btn pay" onclick="payWithdrawalTon(${w.id},this)">${icon('card')} دفع عبر TON</button>
+        <button class="action-btn approve" onclick="updateWithdrawal(${w.id},'approved',this)">${icon('check')} ÙÙØ§ÙÙØ©</button>
+        <button class="action-btn reject"  onclick="updateWithdrawal(${w.id},'rejected',this)">${icon('x')} Ø±ÙØ¶</button>`:''}
+        <button class="action-btn pay" onclick="payWithdrawalTon(${w.id},this)">${icon('card')} Ø¯ÙØ¹ Ø¹Ø¨Ø± TON</button>
       </div>`:''}
       ${(w.status==='paid'&&w.tx_hash)?`
-      <div class="tx-hash-row">${icon('card')} ${w.ton_amount?`<span class="num">${w.ton_amount} TON</span> · `:''}<a href="https://tonviewer.com/transaction/${w.tx_hash}" target="_blank" rel="noopener">${w.tx_hash.slice(0,10)}...${w.tx_hash.slice(-6)}</a></div>`:''}
+      <div class="tx-hash-row">${icon('card')} ${w.ton_amount?`<span class="num">${w.ton_amount} TON</span> Â· `:''}<a href="https://tonviewer.com/transaction/${w.tx_hash}" target="_blank" rel="noopener">${w.tx_hash.slice(0,10)}...${w.tx_hash.slice(-6)}</a></div>`:''}
     </div>`).join('');
   renderPagination('w-pagination', page, Math.ceil(res.total / 20), p => { state.withdrawals.page = p; loadWithdrawals(); });
 }
 async function updateWithdrawal(id, status, btn) {
   btn.disabled = true; btn.innerHTML = icon('loader','spin');
   const res = await api('adminUpdateWithdrawal', { id, status });
-  if (res.ok) { showToast(icon('check')+' تم التحديث'); loadWithdrawals(); }
+  if (res.ok) { showToast(icon('check')+' ØªÙ Ø§ÙØªØ­Ø¯ÙØ«'); loadWithdrawals(); }
   else { showToast(icon('x')+' ' + res.error); btn.disabled = false; }
 }
 
-// ═══════════════════════════════════════════════════════
-//  TON Payout — ربط محفظة الأدمن عبر TonConnect ودفع طلبات
-//  السحب مباشرة (USDT بالطلب → TON محوّلة بالسعر اللحظي)
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+//  TON Payout â Ø±Ø¨Ø· ÙØ­ÙØ¸Ø© Ø§ÙØ£Ø¯ÙÙ Ø¹Ø¨Ø± TonConnect ÙØ¯ÙØ¹ Ø·ÙØ¨Ø§Øª
+//  Ø§ÙØ³Ø­Ø¨ ÙØ¨Ø§Ø´Ø±Ø© (USDT Ø¨Ø§ÙØ·ÙØ¨ â TON ÙØ­ÙÙÙØ© Ø¨Ø§ÙØ³Ø¹Ø± Ø§ÙÙØ­Ø¸Ù)
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 let adminTonConnectUI = null;
 
 function initAdminWalletConnect() {
@@ -1423,16 +1606,16 @@ function initAdminWalletConnect() {
     if (!label) return;
     if (wallet) {
       const addr = TON_CONNECT_UI.toUserFriendlyAddress(wallet.account.address);
-      label.textContent = addr.slice(0, 5) + '····' + addr.slice(-4);
+      label.textContent = addr.slice(0, 5) + 'Â·Â·Â·Â·' + addr.slice(-4);
     } else {
-      label.textContent = 'المحفظة غير متصلة';
+      label.textContent = 'Ø§ÙÙØ­ÙØ¸Ø© ØºÙØ± ÙØªØµÙØ©';
     }
   }
   adminTonConnectUI.onStatusChange(render);
   render(adminTonConnectUI.wallet);
 }
 
-// ── نفس بناء تعليق TON on-chain البسيط المستخدم بتطبيق المستخدم (بدون مكتبات خارجية) ──
+// ââ ÙÙØ³ Ø¨ÙØ§Ø¡ ØªØ¹ÙÙÙ TON on-chain Ø§ÙØ¨Ø³ÙØ· Ø§ÙÙØ³ØªØ®Ø¯Ù Ø¨ØªØ·Ø¨ÙÙ Ø§ÙÙØ³ØªØ®Ø¯Ù (Ø¨Ø¯ÙÙ ÙÙØªØ¨Ø§Øª Ø®Ø§Ø±Ø¬ÙØ©) ââ
 const _ADMIN_CRC32C_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {
@@ -1478,24 +1661,24 @@ function tonCommentPayloadAdmin(text) {
 
 async function payWithdrawalTon(id, btn) {
   if (!adminTonConnectUI || !adminTonConnectUI.wallet) {
-    showToast(icon('x')+' اربط محفظتك أولاً من الأعلى');
+    showToast(icon('x')+' Ø§Ø±Ø¨Ø· ÙØ­ÙØ¸ØªÙ Ø£ÙÙØ§Ù ÙÙ Ø§ÙØ£Ø¹ÙÙ');
     try { adminTonConnectUI?.openModal(); } catch {}
     return;
   }
 
   btn.disabled = true;
   const originalHtml = btn.innerHTML;
-  btn.innerHTML = icon('loader','spin') + ' جلب السعر...';
+  btn.innerHTML = icon('loader','spin') + ' Ø¬ÙØ¨ Ø§ÙØ³Ø¹Ø±...';
 
   try {
-    // 1) نجيب سعر TON/USDT اللحظي وكمية TON المطلوبة من السيرفر
+    // 1) ÙØ¬ÙØ¨ Ø³Ø¹Ø± TON/USDT Ø§ÙÙØ­Ø¸Ù ÙÙÙÙØ© TON Ø§ÙÙØ·ÙÙØ¨Ø© ÙÙ Ø§ÙØ³ÙØ±ÙØ±
     const quote = await api('adminWithdrawTonQuote', { id });
     if (!quote.ok) { showToast(icon('x')+' '+quote.error); btn.disabled = false; btn.innerHTML = originalHtml; return; }
 
-    const confirmMsg = `دفع $${quote.usdAmount.toFixed(2)} USDT ≈ ${quote.tonAmount} TON\nالعنوان: ${quote.address}\n\nتأكيد الإرسال من محفظتك؟`;
+    const confirmMsg = `Ø¯ÙØ¹ $${quote.usdAmount.toFixed(2)} USDT â ${quote.tonAmount} TON\nØ§ÙØ¹ÙÙØ§Ù: ${quote.address}\n\nØªØ£ÙÙØ¯ Ø§ÙØ¥Ø±Ø³Ø§Ù ÙÙ ÙØ­ÙØ¸ØªÙØ`;
     if (!confirm(confirmMsg)) { btn.disabled = false; btn.innerHTML = originalHtml; return; }
 
-    btn.innerHTML = icon('loader','spin') + ' بانتظار توقيع المحفظة...';
+    btn.innerHTML = icon('loader','spin') + ' Ø¨Ø§ÙØªØ¸Ø§Ø± ØªÙÙÙØ¹ Ø§ÙÙØ­ÙØ¸Ø©...';
 
     const nanotons = Math.round(quote.tonAmount * 1e9).toString();
     let payload;
@@ -1504,15 +1687,15 @@ async function payWithdrawalTon(id, btn) {
     const adminWalletAddr = adminTonConnectUI.wallet.account.address;
     const sentAtMs = Date.now();
 
-    // 2) الأدمن يوقّع المعاملة من محفظته المتصلة — TON ترسل مباشرة لعنوان المستخدم
+    // 2) Ø§ÙØ£Ø¯ÙÙ ÙÙÙÙØ¹ Ø§ÙÙØ¹Ø§ÙÙØ© ÙÙ ÙØ­ÙØ¸ØªÙ Ø§ÙÙØªØµÙØ© â TON ØªØ±Ø³Ù ÙØ¨Ø§Ø´Ø±Ø© ÙØ¹ÙÙØ§Ù Ø§ÙÙØ³ØªØ®Ø¯Ù
     await adminTonConnectUI.sendTransaction({
       validUntil: Math.floor(Date.now() / 1000) + 300,
       messages: [{ address: quote.address, amount: nanotons, ...(payload ? { payload } : {}) }]
     });
 
-    btn.innerHTML = icon('loader','spin') + ' جاري التحقق على البلوكتشين...';
+    btn.innerHTML = icon('loader','spin') + ' Ø¬Ø§Ø±Ù Ø§ÙØªØ­ÙÙ Ø¹ÙÙ Ø§ÙØ¨ÙÙÙØªØ´ÙÙ...';
 
-    // 3) السيرفر يتحقق فعلياً من TonCenter ويجيب TXID الحقيقي — قد يحتاج عدة محاولات
+    // 3) Ø§ÙØ³ÙØ±ÙØ± ÙØªØ­ÙÙ ÙØ¹ÙÙØ§Ù ÙÙ TonCenter ÙÙØ¬ÙØ¨ TXID Ø§ÙØ­ÙÙÙÙ â ÙØ¯ ÙØ­ØªØ§Ø¬ Ø¹Ø¯Ø© ÙØ­Ø§ÙÙØ§Øª
     const markRes = await markWithdrawPaidWithRetry(id, quote.tonAmount, quote.rate, adminWalletAddr, sentAtMs, btn);
 
     if (!markRes.ok) {
@@ -1521,23 +1704,23 @@ async function payWithdrawalTon(id, btn) {
       return;
     }
 
-    showToast(icon('check')+' تم الدفع وتسجيل الإثبات');
+    showToast(icon('check')+' ØªÙ Ø§ÙØ¯ÙØ¹ ÙØªØ³Ø¬ÙÙ Ø§ÙØ¥Ø«Ø¨Ø§Øª');
     loadWithdrawals();
 
   } catch (err) {
     console.error('[payWithdrawalTon] failed:', err);
-    showToast(icon('x')+' تم إلغاء العملية أو فشلت — لم يُخصم شيء');
+    showToast(icon('x')+' ØªÙ Ø¥ÙØºØ§Ø¡ Ø§ÙØ¹ÙÙÙØ© Ø£Ù ÙØ´ÙØª â ÙÙ ÙÙØ®ØµÙ Ø´ÙØ¡');
     btn.disabled = false; btn.innerHTML = originalHtml;
   }
 }
 
-// ── يعيد محاولة adminMarkWithdrawPaid لأن ظهور المعاملة على TonCenter يستغرق ثواني ──
+// ââ ÙØ¹ÙØ¯ ÙØ­Ø§ÙÙØ© adminMarkWithdrawPaid ÙØ£Ù Ø¸ÙÙØ± Ø§ÙÙØ¹Ø§ÙÙØ© Ø¹ÙÙ TonCenter ÙØ³ØªØºØ±Ù Ø«ÙØ§ÙÙ ââ
 async function markWithdrawPaidWithRetry(id, tonAmount, rate, adminWallet, sentAtMs, btn, maxTries = 4) {
   for (let i = 0; i < maxTries; i++) {
     const res = await api('adminMarkWithdrawPaid', { id, tonAmount, rate, adminWallet, sentAtMs });
     if (res.ok) return res;
     if (res.error && /not found on-chain/i.test(res.error) && i < maxTries - 1) {
-      if (btn) btn.innerHTML = icon('loader','spin') + ` جاري التحقق (${i+2})...`;
+      if (btn) btn.innerHTML = icon('loader','spin') + ` Ø¬Ø§Ø±Ù Ø§ÙØªØ­ÙÙ (${i+2})...`;
       await new Promise(r => setTimeout(r, 3000));
       continue;
     }
@@ -1545,9 +1728,9 @@ async function markWithdrawPaidWithRetry(id, tonAmount, rate, adminWallet, sentA
   }
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Logs
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const logIcons = { game_round:'gamepad', ref_copy:'link', share:'send', sec_event:'shield', admin_adjust_pts:'edit', admin_adjust_balance:'coin', default:'tag' };
 function setLogFilter(el, action) {
   document.querySelectorAll('[data-log]').forEach(c => c.classList.remove('active'));
@@ -1562,7 +1745,7 @@ async function loadLogs() {
   if (!res.ok) return;
   const ll = document.getElementById('logs-list');
   if (!res.logs.length) {
-    ll.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>لا توجد سجلات</p></div>`; return;
+    ll.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>ÙØ§ ØªÙØ¬Ø¯ Ø³Ø¬ÙØ§Øª</p></div>`; return;
   }
   ll.innerHTML = res.logs.map(l => {
     const meta = l.meta && typeof l.meta === 'object' ? JSON.stringify(l.meta).slice(0,80) : '';
@@ -1578,13 +1761,13 @@ async function loadLogs() {
   }).join('');
 }
 
-// ═══════════════════════════════════════════════════════
-//  Cheat Attempts — مستخدمين عندهم أحداث أمان (فتح Developer Tools، دمج DOM، إلخ)
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+//  Cheat Attempts â ÙØ³ØªØ®Ø¯ÙÙÙ Ø¹ÙØ¯ÙÙ Ø£Ø­Ø¯Ø§Ø« Ø£ÙØ§Ù (ÙØªØ­ Developer ToolsØ Ø¯ÙØ¬ DOMØ Ø¥ÙØ®)
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const cheatEventLabels = {
-  devtools_open: 'فتح أدوات المطوّر',
-  dom_tamper:    'تلاعب بالـ DOM',
-  sec_event:     'حدث أمان'
+  devtools_open: 'ÙØªØ­ Ø£Ø¯ÙØ§Øª Ø§ÙÙØ·ÙÙØ±',
+  dom_tamper:    'ØªÙØ§Ø¹Ø¨ Ø¨Ø§ÙÙ DOM',
+  sec_event:     'Ø­Ø¯Ø« Ø£ÙØ§Ù'
 };
 function cheatEventLabel(ev) { return cheatEventLabels[ev] || ev; }
 
@@ -1597,7 +1780,7 @@ async function loadCheats() {
   state.cheats.total = res.total;
   const cl = document.getElementById('cheats-list');
   if (!res.cheaters.length) {
-    cl.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('shield')}</div><p>ولا محاولة غش لهلق</p></div>`;
+    cl.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('shield')}</div><p>ÙÙØ§ ÙØ­Ø§ÙÙØ© ØºØ´ ÙÙÙÙ</p></div>`;
     document.getElementById('cheats-pagination').innerHTML = ''; return;
   }
   cl.innerHTML = res.cheaters.map(c => {
@@ -1609,17 +1792,17 @@ async function loadCheats() {
         <span class="tg-icon">${icon('alert')}</span>
       </div>
       <div class="user-card-info">
-        <div class="user-card-name">${esc(c.first_name||'—')}</div>
-        <div class="user-card-sub">${c.username?'@'+c.username:'بدون username'} · <span class="num">#${c.telegram_id}</span></div>
+        <div class="user-card-name">${esc(c.first_name||'â')}</div>
+        <div class="user-card-sub">${c.username?'@'+c.username:'Ø¨Ø¯ÙÙ username'} Â· <span class="num">#${c.telegram_id}</span></div>
         <div class="user-card-stats">
           <span class="user-stat-pill"><span class="dot" style="background:${riskColor}"></span>Risk <span class="num">${c.risk_score}</span></span>
-          <span class="user-stat-pill"><span class="dot" style="background:var(--rose)"></span><span class="num">${c.attempts}</span> محاولة</span>
+          <span class="user-stat-pill"><span class="dot" style="background:var(--rose)"></span><span class="num">${c.attempts}</span> ÙØ­Ø§ÙÙØ©</span>
         </div>
-        <div class="log-meta" style="margin-top:4px">${(c.events||[]).map(e=>esc(cheatEventLabel(e))).join(' · ')}</div>
+        <div class="log-meta" style="margin-top:4px">${(c.events||[]).map(e=>esc(cheatEventLabel(e))).join(' Â· ')}</div>
         <div class="log-time num" style="margin-top:2px">${icon('clock')} ${fDateTime(c.last_attempt)}</div>
       </div>
       <span class="badge ${c.banned?'banned':c.shadow_banned?'shadow':'normal'}">
-        ${c.banned?'محظور':c.shadow_banned?'شادو':'نشط'}
+        ${c.banned?'ÙØ­Ø¸ÙØ±':c.shadow_banned?'Ø´Ø§Ø¯Ù':'ÙØ´Ø·'}
       </span>
     </div>`;
   }).join('');
@@ -1631,7 +1814,7 @@ let currentUser = null;
 
 async function openUserModal(tgId) {
   currentUser = null;
-  document.getElementById('modal-title').textContent = 'جاري التحميل...';
+  document.getElementById('modal-title').textContent = 'Ø¬Ø§Ø±Ù Ø§ÙØªØ­ÙÙÙ...';
   document.getElementById('modal-body').innerHTML =
     `<div class="skeleton" style="height:80px;border-radius:50%;width:80px;margin:12px auto 0"></div>
      <div class="skeleton" style="height:16px;width:55%;margin:14px auto 7px"></div>
@@ -1651,7 +1834,7 @@ async function openUserModal(tgId) {
 
 function renderUserSheet(res) {
   const u = res.user;
-  document.getElementById('modal-title').textContent = esc(u.first_name || '—');
+  document.getElementById('modal-title').textContent = esc(u.first_name || 'â');
 
   const statusClass = u.banned ? 'is-banned' : u.shadow_banned ? 'is-shadow' : 'is-normal';
   const riskColor   = u.risk_score > 70 ? 'var(--rose)' : u.risk_score > 40 ? 'var(--amber)' : 'var(--emerald)';
@@ -1667,71 +1850,71 @@ function renderUserSheet(res) {
           : esc((u.first_name||'?')[0])}
       </div>
       <div class="user-hero-info">
-        <div class="user-hero-name">${esc(u.first_name || '—')}</div>
-        <div class="user-hero-handle">${u.username ? '@'+u.username : 'بدون username'} · <span class="num">#${u.telegram_id}</span></div>
+        <div class="user-hero-name">${esc(u.first_name || 'â')}</div>
+        <div class="user-hero-handle">${u.username ? '@'+u.username : 'Ø¨Ø¯ÙÙ username'} Â· <span class="num">#${u.telegram_id}</span></div>
         <div class="user-hero-badges">
           ${u.banned
-            ? `<span class="hero-badge banned">${icon('ban')} محظور</span>`
+            ? `<span class="hero-badge banned">${icon('ban')} ÙØ­Ø¸ÙØ±</span>`
             : u.shadow_banned
-              ? `<span class="hero-badge shadow">${icon('eye-off')} شادو بان</span>`
-              : `<span class="hero-badge normal">${icon('check')} نشط</span>`}
+              ? `<span class="hero-badge shadow">${icon('eye-off')} Ø´Ø§Ø¯Ù Ø¨Ø§Ù</span>`
+              : `<span class="hero-badge normal">${icon('check')} ÙØ´Ø·</span>`}
         </div>
       </div>
     </div>
 
-    <!-- الإحصائيات -->
+    <!-- Ø§ÙØ¥Ø­ØµØ§Ø¦ÙØ§Øª -->
     <div class="detail-section">
-      <div class="detail-section-title">الإحصائيات</div>
+      <div class="detail-section-title">Ø§ÙØ¥Ø­ØµØ§Ø¦ÙØ§Øª</div>
       <div class="detail-row">
-        <span class="detail-key">النقاط (pts)</span>
+        <span class="detail-key">Ø§ÙÙÙØ§Ø· (pts)</span>
         <div class="detail-val">
           <div class="risk-editor">
             <input type="number" class="value-input num" id="pts-input" value="${Math.trunc(u.pts)}" min="0" step="1">
-            <button class="risk-save-btn" onclick="saveUserField(${u.telegram_id}, 'pts')">${icon('check')} حفظ</button>
+            <button class="risk-save-btn" onclick="saveUserField(${u.telegram_id}, 'pts')">${icon('check')} Ø­ÙØ¸</button>
           </div>
         </div>
       </div>
       <div class="detail-row">
-        <span class="detail-key">الرصيد USDT</span>
+        <span class="detail-key">Ø§ÙØ±ØµÙØ¯ USDT</span>
         <div class="detail-val">
           <div class="risk-editor">
             <input type="number" class="value-input num" id="balance-input" value="${parseFloat(u.balance_usd).toFixed(4)}" min="0" step="0.0001">
-            <button class="risk-save-btn" onclick="saveUserField(${u.telegram_id}, 'balance_usd')">${icon('check')} حفظ</button>
+            <button class="risk-save-btn" onclick="saveUserField(${u.telegram_id}, 'balance_usd')">${icon('check')} Ø­ÙØ¸</button>
           </div>
         </div>
       </div>
       <div class="detail-row">
-        <span class="detail-key">إعلانات اليوم</span>
+        <span class="detail-key">Ø¥Ø¹ÙØ§ÙØ§Øª Ø§ÙÙÙÙ</span>
         <span class="detail-val num">${u.daily_ads||0} / 30</span>
       </div>
       <div class="detail-row">
-        <span class="detail-key">إجمالي الإعلانات</span>
+        <span class="detail-key">Ø¥Ø¬ÙØ§ÙÙ Ø§ÙØ¥Ø¹ÙØ§ÙØ§Øª</span>
         <span class="detail-val num">${res.ad_stats.total}</span>
       </div>
       <div class="detail-row">
-        <span class="detail-key">مكافآت الإعلانات</span>
-        <span class="detail-val num">${fNum(res.ad_stats.total_reward)} نقطة</span>
+        <span class="detail-key">ÙÙØ§ÙØ¢Øª Ø§ÙØ¥Ø¹ÙØ§ÙØ§Øª</span>
+        <span class="detail-val num">${fNum(res.ad_stats.total_reward)} ÙÙØ·Ø©</span>
       </div>
       <div class="detail-row">
-        <span class="detail-key">روابط التصفح (تصفح واربح)</span>
-        <span class="detail-val num">${fNum(res.link_stats.surf_count)} — $${res.link_stats.surf_earned_usd.toFixed(4)}</span>
+        <span class="detail-key">Ø±ÙØ§Ø¨Ø· Ø§ÙØªØµÙØ­ (ØªØµÙØ­ ÙØ§Ø±Ø¨Ø­)</span>
+        <span class="detail-val num">${fNum(res.link_stats.surf_count)} â $${res.link_stats.surf_earned_usd.toFixed(4)}</span>
       </div>
       <div class="detail-row">
-        <span class="detail-key">روابط المهام (Smart Link)</span>
-        <span class="detail-val num">${fNum(res.link_stats.task_link_count)} — ~${fNum(res.link_stats.task_link_earned_points_est)} نقطة</span>
+        <span class="detail-key">Ø±ÙØ§Ø¨Ø· Ø§ÙÙÙØ§Ù (Smart Link)</span>
+        <span class="detail-val num">${fNum(res.link_stats.task_link_count)} â ~${fNum(res.link_stats.task_link_earned_points_est)} ÙÙØ·Ø©</span>
       </div>
       <div class="detail-row">
-        <span class="detail-key">الإحالات</span>
+        <span class="detail-key">Ø§ÙØ¥Ø­Ø§ÙØ§Øª</span>
         <div class="detail-val">
-          <span class="num">${res.referrals} شخص</span>
-          ${res.referrals > 0 ? `<button class="risk-save-btn" onclick="openReferralsModal(${u.telegram_id})">${icon('users')} عرض</button>` : ''}
+          <span class="num">${res.referrals} Ø´Ø®Øµ</span>
+          ${res.referrals > 0 ? `<button class="risk-save-btn" onclick="openReferralsModal(${u.telegram_id})">${icon('users')} Ø¹Ø±Ø¶</button>` : ''}
         </div>
       </div>
     </div>
 
-    <!-- الأمان -->
+    <!-- Ø§ÙØ£ÙØ§Ù -->
     <div class="detail-section">
-      <div class="detail-section-title">الأمان</div>
+      <div class="detail-section-title">Ø§ÙØ£ÙØ§Ù</div>
       <div class="detail-row">
         <span class="detail-key">Risk Score</span>
         <div class="detail-val">
@@ -1739,26 +1922,26 @@ function renderUserSheet(res) {
             <span class="risk-num num" id="risk-display" style="color:${riskColor}">${u.risk_score}</span>
             <input type="range" class="risk-slider" id="risk-slider" min="0" max="100" value="${u.risk_score}"
               oninput="document.getElementById('risk-display').textContent=this.value;updateRiskColor(this.value)">
-            <button class="risk-save-btn" onclick="saveRiskScore(${u.telegram_id})">${icon('check')} حفظ</button>
+            <button class="risk-save-btn" onclick="saveRiskScore(${u.telegram_id})">${icon('check')} Ø­ÙØ¸</button>
           </div>
         </div>
       </div>
       <div class="detail-row">
-        <span class="detail-key">كود الإحالة</span>
-        <span class="detail-val" style="font-family:monospace;font-size:11px">${u.referral_code||'—'}</span>
+        <span class="detail-key">ÙÙØ¯ Ø§ÙØ¥Ø­Ø§ÙØ©</span>
+        <span class="detail-val" style="font-family:monospace;font-size:11px">${u.referral_code||'â'}</span>
       </div>
     </div>
 
-    <!-- التواريخ -->
+    <!-- Ø§ÙØªÙØ§Ø±ÙØ® -->
     <div class="detail-section">
-      <div class="detail-section-title">معلومات الحساب</div>
+      <div class="detail-section-title">ÙØ¹ÙÙÙØ§Øª Ø§ÙØ­Ø³Ø§Ø¨</div>
       <div class="detail-row">
-        <span class="detail-key">تاريخ التسجيل</span>
+        <span class="detail-key">ØªØ§Ø±ÙØ® Ø§ÙØªØ³Ø¬ÙÙ</span>
         <span class="detail-val num" style="font-size:11.5px">${fDateTime(u.created_at)}</span>
       </div>
       <div class="detail-row">
-        <span class="detail-key">آخر إعلان</span>
-        <span class="detail-val num" style="font-size:11.5px">${u.last_ad_watch ? fDateTime(u.last_ad_watch) : '—'}</span>
+        <span class="detail-key">Ø¢Ø®Ø± Ø¥Ø¹ÙØ§Ù</span>
+        <span class="detail-val num" style="font-size:11.5px">${u.last_ad_watch ? fDateTime(u.last_ad_watch) : 'â'}</span>
       </div>
       <div class="detail-row">
         <span class="detail-key">Telegram ID</span>
@@ -1770,19 +1953,19 @@ function renderUserSheet(res) {
 
   document.getElementById('modal-actions').innerHTML = `
     <button class="modal-btn ${u.banned ? 'unban' : 'ban'}" onclick="toggleBan(${u.telegram_id}, ${u.banned})">
-      ${u.banned ? icon('check')+' رفع الحظر' : icon('ban')+' حظر'}
+      ${u.banned ? icon('check')+' Ø±ÙØ¹ Ø§ÙØ­Ø¸Ø±' : icon('ban')+' Ø­Ø¸Ø±'}
     </button>
     <button class="modal-btn ${u.shadow_banned ? 'shadow-off' : 'shadow-on'}" onclick="toggleShadowBan(${u.telegram_id}, ${u.shadow_banned})">
-      ${u.shadow_banned ? icon('eye')+' رفع شادو' : icon('eye-off')+' شادو بان'}
+      ${u.shadow_banned ? icon('eye')+' Ø±ÙØ¹ Ø´Ø§Ø¯Ù' : icon('eye-off')+' Ø´Ø§Ø¯Ù Ø¨Ø§Ù'}
     </button>
     <button class="modal-btn msg" onclick="quickDM(${u.telegram_id})">${icon('message')}</button>
-    <button class="modal-btn msg" ${u.username ? '' : 'disabled style="opacity:.4;cursor:not-allowed"'} onclick="openTelegramChat('${u.username ? esc(u.username) : ''}')">${icon('send')} فتح المحادثة</button>
+    <button class="modal-btn msg" ${u.username ? '' : 'disabled style="opacity:.4;cursor:not-allowed"'} onclick="openTelegramChat('${u.username ? esc(u.username) : ''}')">${icon('send')} ÙØªØ­ Ø§ÙÙØ­Ø§Ø¯Ø«Ø©</button>
     <button class="modal-btn del" onclick="deleteUser(${u.telegram_id})">${icon('trash')}</button>
   `;
 }
 
 function openTelegramChat(username) {
-  if (!username) { showToast(icon('x')+' هذا المستخدم بدون username، ما ينفتحش تشات مباشر له'); return; }
+  if (!username) { showToast(icon('x')+' ÙØ°Ø§ Ø§ÙÙØ³ØªØ®Ø¯Ù Ø¨Ø¯ÙÙ usernameØ ÙØ§ ÙÙÙØªØ­Ø´ ØªØ´Ø§Øª ÙØ¨Ø§Ø´Ø± ÙÙ'); return; }
   window.open(`https://t.me/${username}`, '_blank');
 }
 
@@ -1794,7 +1977,7 @@ function updateRiskColor(val) {
 async function saveRiskScore(tgId) {
   const score = parseInt(document.getElementById('risk-slider').value, 10);
   const res = await api('adminUpdateRiskScore', { telegram_id: tgId, risk_score: score });
-  if (res.ok) showToast(icon('check')+' تم تحديث Risk Score');
+  if (res.ok) showToast(icon('check')+' ØªÙ ØªØ­Ø¯ÙØ« Risk Score');
   else showToast(icon('x')+' ' + res.error);
 }
 
@@ -1803,7 +1986,7 @@ async function saveUserField(tgId, field) {
   const input   = document.getElementById(inputId);
   const raw     = input.value;
   if (raw === '' || isNaN(Number(raw)) || Number(raw) < 0) {
-    showToast(icon('x')+' قيمة غير صحيحة'); return;
+    showToast(icon('x')+' ÙÙÙØ© ØºÙØ± ØµØ­ÙØ­Ø©'); return;
   }
   const payload = { telegram_id: tgId };
   if (field === 'pts') payload.pts = Math.trunc(Number(raw));
@@ -1811,7 +1994,7 @@ async function saveUserField(tgId, field) {
 
   const res = await api('adminAdjustUser', payload);
   if (res.ok) {
-    showToast(icon('check')+' تم التحديث');
+    showToast(icon('check')+' ØªÙ Ø§ÙØªØ­Ø¯ÙØ«');
     document.getElementById('pts-input').value = res.pts;
     document.getElementById('balance-input').value = parseFloat(res.balance_usd).toFixed(4);
     if (currentUser) { currentUser.pts = res.pts; currentUser.balance_usd = res.balance_usd; }
@@ -1824,12 +2007,12 @@ function closeModal(e) {
     document.getElementById('user-modal').classList.remove('open');
 }
 
-// ═══════════════════════════════════════════════════════
-//  Referrals (إحالات مستخدم معيّن)
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+//  Referrals (Ø¥Ø­Ø§ÙØ§Øª ÙØ³ØªØ®Ø¯Ù ÙØ¹ÙÙÙ)
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function openReferralsModal(tgId) {
-  const name = currentUser ? (currentUser.first_name || '—') : '';
-  document.getElementById('modal-title').textContent = `إحالات ${name}`;
+  const name = currentUser ? (currentUser.first_name || 'â') : '';
+  document.getElementById('modal-title').textContent = `Ø¥Ø­Ø§ÙØ§Øª ${name}`;
   document.getElementById('modal-body').innerHTML =
     [1,2,3].map(()=>`<div class="skeleton" style="height:64px;border-radius:12px;margin-bottom:8px"></div>`).join('');
   document.getElementById('modal-actions').innerHTML = '';
@@ -1842,7 +2025,7 @@ async function loadReferralsModal(tgId, page) {
   if (!res.ok) {
     body.innerHTML = `<div class="empty-state">${icon('alert')}<p>${esc(res.error)}</p></div>`;
   } else if (!res.referrals.length) {
-    body.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>لا يوجد إحالات بعد</p></div>`;
+    body.innerHTML = `<div class="empty-state"><div class="icon-wrap">${icon('inbox')}</div><p>ÙØ§ ÙÙØ¬Ø¯ Ø¥Ø­Ø§ÙØ§Øª Ø¨Ø¹Ø¯</p></div>`;
   } else {
     body.innerHTML = res.referrals.map(u => `
       <div class="user-row" onclick="openUserModal(${u.telegram_id})">
@@ -1851,25 +2034,25 @@ async function loadReferralsModal(tgId, page) {
           <span class="tg-icon">${icon('send')}</span>
         </div>
         <div class="user-info">
-          <div class="user-name">${esc(u.first_name || '—')}</div>
-          <div class="user-handle">${u.username ? '@'+u.username : 'بدون username'}</div>
+          <div class="user-name">${esc(u.first_name || 'â')}</div>
+          <div class="user-handle">${u.username ? '@'+u.username : 'Ø¨Ø¯ÙÙ username'}</div>
         </div>
         <div class="user-meta">
           <div class="user-time">${timeAgo(u.created_at)}</div>
-          <div class="user-pts num">${fNum(u.pts)} نقطة</div>
+          <div class="user-pts num">${fNum(u.pts)} ÙÙØ·Ø©</div>
         </div>
       </div>`).join('') + `<div class="pagination" id="referrals-pagination" style="margin-top:10px"></div>`;
     renderPagination('referrals-pagination', page, Math.ceil(res.total / 20), p => loadReferralsModal(tgId, p));
   }
   document.getElementById('modal-actions').innerHTML = `
-    <button class="modal-btn close" style="flex:1;width:auto" onclick="openUserModal(${tgId})">${icon('chevron-right')} رجوع لتفاصيل المستخدم</button>
+    <button class="modal-btn close" style="flex:1;width:auto" onclick="openUserModal(${tgId})">${icon('chevron-right')} Ø±Ø¬ÙØ¹ ÙØªÙØ§ØµÙÙ Ø§ÙÙØ³ØªØ®Ø¯Ù</button>
   `;
 }
 
 async function toggleBan(tgId, isBanned) {
   const res = await api('banUser', { telegram_id: tgId, unban: isBanned });
   if (res.ok) {
-    showToast(isBanned ? icon('check')+' تم رفع الحظر' : icon('ban')+' تم الحظر');
+    showToast(isBanned ? icon('check')+' ØªÙ Ø±ÙØ¹ Ø§ÙØ­Ø¸Ø±' : icon('ban')+' ØªÙ Ø§ÙØ­Ø¸Ø±');
     document.getElementById('user-modal').classList.remove('open');
     if (document.getElementById('page-users').classList.contains('active')) loadUsers();
   } else showToast(icon('x')+' ' + res.error);
@@ -1878,7 +2061,7 @@ async function toggleBan(tgId, isBanned) {
 async function toggleShadowBan(tgId, isShadowed) {
   const res = await api('adminToggleShadowBan', { telegram_id: tgId, enable: !isShadowed });
   if (res.ok) {
-    showToast(isShadowed ? icon('eye')+' تم رفع الشادو بان' : icon('eye-off')+' تم تفعيل الشادو بان');
+    showToast(isShadowed ? icon('eye')+' ØªÙ Ø±ÙØ¹ Ø§ÙØ´Ø§Ø¯Ù Ø¨Ø§Ù' : icon('eye-off')+' ØªÙ ØªÙØ¹ÙÙ Ø§ÙØ´Ø§Ø¯Ù Ø¨Ø§Ù');
     // reload modal
     await openUserModal(tgId);
     if (document.getElementById('page-users').classList.contains('active')) loadUsers();
@@ -1886,10 +2069,10 @@ async function toggleShadowBan(tgId, isShadowed) {
 }
 
 async function deleteUser(tgId) {
-  if (!confirm(`حذف المستخدم #${tgId} نهائياً؟ لا يمكن التراجع.`)) return;
+  if (!confirm(`Ø­Ø°Ù Ø§ÙÙØ³ØªØ®Ø¯Ù #${tgId} ÙÙØ§Ø¦ÙØ§ÙØ ÙØ§ ÙÙÙÙ Ø§ÙØªØ±Ø§Ø¬Ø¹.`)) return;
   const res = await api('adminDeleteUser', { telegram_id: tgId });
   if (res.ok) {
-    showToast(icon('trash')+' تم الحذف');
+    showToast(icon('trash')+' ØªÙ Ø§ÙØ­Ø°Ù');
     document.getElementById('user-modal').classList.remove('open');
     if (document.getElementById('page-users').classList.contains('active')) loadUsers();
   } else showToast(icon('x')+' ' + res.error);
@@ -1902,9 +2085,9 @@ function quickDM(tgId) {
   document.getElementById('dm-text').focus();
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Broadcast
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const photoState = { bc: null, dm: null }; // { dataUrl, mimetype }
 
 function fileToCompressedImage(file, maxDim, quality) {
@@ -1923,10 +2106,10 @@ function fileToCompressedImage(file, maxDim, quality) {
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
         resolve(canvas.toDataURL('image/jpeg', quality));
       };
-      img.onerror = () => reject(new Error('تعذّر قراءة الصورة'));
+      img.onerror = () => reject(new Error('ØªØ¹Ø°ÙØ± ÙØ±Ø§Ø¡Ø© Ø§ÙØµÙØ±Ø©'));
       img.src = reader.result;
     };
-    reader.onerror = () => reject(new Error('تعذّر قراءة الملف'));
+    reader.onerror = () => reject(new Error('ØªØ¹Ø°ÙØ± ÙØ±Ø§Ø¡Ø© Ø§ÙÙÙÙ'));
     reader.readAsDataURL(file);
   });
 }
@@ -1935,14 +2118,14 @@ async function handlePhotoSelect(e, prefix) {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
-  if (!file.type.startsWith('image/')) { showToast(icon('x')+' الملف لازم يكون صورة'); return; }
+  if (!file.type.startsWith('image/')) { showToast(icon('x')+' Ø§ÙÙÙÙ ÙØ§Ø²Ù ÙÙÙÙ ØµÙØ±Ø©'); return; }
   try {
     const dataUrl = await fileToCompressedImage(file, 1280, 0.82);
     photoState[prefix] = { dataUrl, mimetype: 'image/jpeg' };
     document.getElementById(prefix+'-photo-img').src = dataUrl;
     document.getElementById(prefix+'-photo-preview').style.display = 'flex';
   } catch (err) {
-    showToast(icon('x')+' تعذّر تحميل الصورة');
+    showToast(icon('x')+' ØªØ¹Ø°ÙØ± ØªØ­ÙÙÙ Ø§ÙØµÙØ±Ø©');
   }
 }
 
@@ -1952,6 +2135,19 @@ function removePhoto(prefix) {
   document.getElementById(prefix+'-photo-img').src = '';
 }
 
+function updateBroadcastLinkPreview() {
+  const label = document.getElementById('bc-button-text').value.trim();
+  const url = document.getElementById('bc-button-url').value.trim();
+  const preview = document.getElementById('bc-link-preview');
+  const text = document.getElementById('bc-link-preview-text');
+  if (label && url) {
+    text.textContent = `${label} Â· ${url}`;
+    preview.classList.add('visible');
+  } else {
+    preview.classList.remove('visible');
+  }
+}
+
 async function copyAddr(addr, btn) {
   try {
     await navigator.clipboard.writeText(addr);
@@ -1959,41 +2155,48 @@ async function copyAddr(addr, btn) {
     btn.innerHTML = icon('check');
     btn.style.color = 'var(--emerald)';
     setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 1600);
-    showToast(icon('check') + ' تم نسخ العنوان');
+    showToast(icon('check') + ' ØªÙ ÙØ³Ø® Ø§ÙØ¹ÙÙØ§Ù');
   } catch {
-    showToast(icon('x') + ' تعذّر النسخ');
+    showToast(icon('x') + ' ØªØ¹Ø°ÙØ± Ø§ÙÙØ³Ø®');
   }
 }
 
 async function sendBroadcast() {
   const text  = document.getElementById('bc-text').value.trim();
   const photo = photoState.bc;
-  if (!text && !photo) { showToast(icon('x')+' اكتب رسالة أو أرفق صورة'); return; }
-  if (photo && text.length > 1024) { showToast(icon('x')+' النص مع الصورة لازم يكون أقل من 1024 حرف'); return; }
-  if (!confirm('إرسال الرسالة لجميع المستخدمين؟')) return;
+  const buttonText = document.getElementById('bc-button-text').value.trim();
+  const buttonUrl = document.getElementById('bc-button-url').value.trim();
+  if (!text && !photo) { showToast(icon('x')+' Ø§ÙØªØ¨ Ø±Ø³Ø§ÙØ© Ø£Ù Ø£Ø±ÙÙ ØµÙØ±Ø©'); return; }
+  if (photo && text.length > 1024) { showToast(icon('x')+' Ø§ÙÙØµ ÙØ¹ Ø§ÙØµÙØ±Ø© ÙØ§Ø²Ù ÙÙÙÙ Ø£ÙÙ ÙÙ 1024 Ø­Ø±Ù'); return; }
+  if ((buttonText && !buttonUrl) || (!buttonText && buttonUrl)) { showToast(icon('x')+' Ø§ÙØªØ¨ ÙØµ Ø§ÙØ²Ø± ÙØ§ÙØ±Ø§Ø¨Ø· ÙØ¹Ø§Ù'); return; }
+  if (buttonUrl && !/^https?:\/\//i.test(buttonUrl)) { showToast(icon('x')+' Ø§ÙØ±Ø§Ø¨Ø· ÙØ§Ø²Ù ÙØ¨Ø¯Ø£ Ø¨Ù https:// Ø£Ù http://'); return; }
+  if (!confirm('Ø¥Ø±Ø³Ø§Ù Ø§ÙØ±Ø³Ø§ÙØ© ÙØ¬ÙÙØ¹ Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙØ')) return;
   const btn = document.getElementById('bc-btn');
-  btn.disabled = true; btn.innerHTML = icon('loader','spin')+' جاري الإرسال...';
-  const payload = { text };
+  btn.disabled = true; btn.innerHTML = icon('loader','spin')+' Ø¬Ø§Ø±Ù Ø§ÙØ¥Ø±Ø³Ø§Ù...';
+  const payload = { text, button_text: buttonText, button_url: buttonUrl };
   if (photo) { payload.photo_base64 = photo.dataUrl.split(',')[1]; payload.photo_mimetype = photo.mimetype; }
   const res = await api('adminBroadcast', payload);
   const el  = document.getElementById('bc-result');
   if (res.ok) {
     el.className = 'broadcast-result success';
-    el.innerHTML = `${icon('check')} أُرسلت لـ <span class="num">${fNum(res.sent)}</span> · فشل <span class="num">${fNum(res.failed)}</span>`;
+    el.innerHTML = `${icon('check')} Ø£ÙØ±Ø³ÙØª ÙÙ <span class="num">${fNum(res.sent)}</span> Â· ÙØ´Ù <span class="num">${fNum(res.failed)}</span>`;
     document.getElementById('bc-text').value = '';
+    document.getElementById('bc-button-text').value = '';
+    document.getElementById('bc-button-url').value = '';
+    updateBroadcastLinkPreview();
     removePhoto('bc');
   } else {
     el.className = 'broadcast-result error';
-    el.innerHTML = `${icon('x')} ${esc(res.error || 'خطأ')}`;
+    el.innerHTML = `${icon('x')} ${esc(res.error || 'Ø®Ø·Ø£')}`;
   }
-  btn.disabled = false; btn.innerHTML = icon('send')+' إرسال للجميع';
+  btn.disabled = false; btn.innerHTML = icon('send')+' Ø¥Ø±Ø³Ø§Ù ÙÙØ¬ÙÙØ¹';
 }
 async function sendDM() {
   const chatId = document.getElementById('dm-id').value.trim();
   const text   = document.getElementById('dm-text').value.trim();
   const photo  = photoState.dm;
   if (!chatId || (!text && !photo)) return;
-  if (photo && text.length > 1024) { showToast(icon('x')+' النص مع الصورة لازم يكون أقل من 1024 حرف'); return; }
+  if (photo && text.length > 1024) { showToast(icon('x')+' Ø§ÙÙØµ ÙØ¹ Ø§ÙØµÙØ±Ø© ÙØ§Ø²Ù ÙÙÙÙ Ø£ÙÙ ÙÙ 1024 Ø­Ø±Ù'); return; }
   const btn = document.getElementById('dm-btn');
   btn.disabled = true; btn.innerHTML = icon('loader','spin');
   const payload = { text, telegram_id: chatId };
@@ -2001,44 +2204,44 @@ async function sendDM() {
   const res = await api('adminBroadcast', payload);
   const el  = document.getElementById('dm-result');
   el.className = 'broadcast-result ' + (res.ok ? 'success' : 'error');
-  el.innerHTML = res.ok ? `${icon('check')} أُرسلت` : `${icon('x')} ${esc(res.error || 'خطأ')}`;
+  el.innerHTML = res.ok ? `${icon('check')} Ø£ÙØ±Ø³ÙØª` : `${icon('x')} ${esc(res.error || 'Ø®Ø·Ø£')}`;
   if (res.ok) { removePhoto('dm'); document.getElementById('dm-text').value = ''; }
-  btn.disabled = false; btn.innerHTML = icon('mail')+' إرسال';
+  btn.disabled = false; btn.innerHTML = icon('mail')+' Ø¥Ø±Ø³Ø§Ù';
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Competitions
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function fCountdown(endAt) {
   const diff = new Date(endAt).getTime() - Date.now();
-  if (diff <= 0) return 'قريباً';
+  if (diff <= 0) return 'ÙØ±ÙØ¨Ø§Ù';
   const days  = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
-  if (days > 0)  return `${days} يوم${hours > 0 ? ' و'+hours+' ساعة' : ''}`;
+  if (days > 0)  return `${days} ÙÙÙ${hours > 0 ? ' Ù'+hours+' Ø³Ø§Ø¹Ø©' : ''}`;
   const mins = Math.floor((diff % 3600000) / 60000);
-  if (hours > 0) return `${hours} ساعة و${mins} دقيقة`;
-  return `${mins} دقيقة`;
+  if (hours > 0) return `${hours} Ø³Ø§Ø¹Ø© Ù${mins} Ø¯ÙÙÙØ©`;
+  return `${mins} Ø¯ÙÙÙØ©`;
 }
 async function loadCompetitionWidget() {
   const box = document.getElementById('comp-widget');
   const res = await api('adminCompetitions', {});
-  if (!res.ok) { box.innerHTML = `<div class="online-empty">${icon('alert')} تعذّر التحميل</div>`; return; }
+  if (!res.ok) { box.innerHTML = `<div class="online-empty">${icon('alert')} ØªØ¹Ø°ÙØ± Ø§ÙØªØ­ÙÙÙ</div>`; return; }
   const active = res.competitions.find(c => c.active);
   if (!active) {
-    box.innerHTML = `<div class="online-empty">${icon('inbox')} لا يوجد موسم نشط</div>`; return;
+    box.innerHTML = `<div class="online-empty">${icon('inbox')} ÙØ§ ÙÙØ¬Ø¯ ÙÙØ³Ù ÙØ´Ø·</div>`; return;
   }
   box.innerHTML = `
     <div class="comp-card">
-      <div class="comp-card-top"><span class="comp-status live">${icon('pulse')} نشطة الآن</span></div>
+      <div class="comp-card-top"><span class="comp-status live">${icon('pulse')} ÙØ´Ø·Ø© Ø§ÙØ¢Ù</span></div>
       <div class="comp-name">${esc(active.name)}</div>
       <div class="comp-dates">
-        <span>${icon('calendar')} بدأت ${fDateTime(active.start_at)}</span>
-        <span>${icon('clock')} تنتهي خلال ${fCountdown(active.end_at)}</span>
+        <span>${icon('calendar')} Ø¨Ø¯Ø£Øª ${fDateTime(active.start_at)}</span>
+        <span>${icon('clock')} ØªÙØªÙÙ Ø®ÙØ§Ù ${fCountdown(active.end_at)}</span>
       </div>
     </div>`;
 }
 async function openCompetitionsModal() {
-  document.getElementById('modal-title').textContent = 'إدارة المسابقات';
+  document.getElementById('modal-title').textContent = 'Ø¥Ø¯Ø§Ø±Ø© Ø§ÙÙØ³Ø§Ø¨ÙØ§Øª';
   document.getElementById('modal-body').innerHTML = `<div class="skeleton" style="height:180px;border-radius:11px"></div>`;
   document.getElementById('modal-actions').innerHTML = '';
   document.getElementById('user-modal').classList.add('open');
@@ -2052,47 +2255,47 @@ async function loadCompetitionsModal() {
   let html = '';
   if (active) {
     html += `<div class="comp-card">
-      <div class="comp-card-top"><span class="comp-status live">${icon('pulse')} نشطة الآن</span></div>
+      <div class="comp-card-top"><span class="comp-status live">${icon('pulse')} ÙØ´Ø·Ø© Ø§ÙØ¢Ù</span></div>
       <div class="comp-name">${esc(active.name)}</div>
       <div class="comp-dates">
-        <span>${icon('calendar')} بدأت ${fDateTime(active.start_at)}</span>
-        <span>${icon('clock')} تنتهي خلال <span id="comp-end-countdown">${fCountdown(active.end_at)}</span></span>
+        <span>${icon('calendar')} Ø¨Ø¯Ø£Øª ${fDateTime(active.start_at)}</span>
+        <span>${icon('clock')} ØªÙØªÙÙ Ø®ÙØ§Ù <span id="comp-end-countdown">${fCountdown(active.end_at)}</span></span>
       </div>
-      <div class="detail-section-title" style="margin-top:14px;display:block">تعديل وقت النهاية</div>
+      <div class="detail-section-title" style="margin-top:14px;display:block">ØªØ¹Ø¯ÙÙ ÙÙØª Ø§ÙÙÙØ§ÙØ©</div>
       <div style="display:flex;gap:7px;align-items:center;margin-top:7px">
-        <input id="comp-adjust-hours" class="form-input" type="number" placeholder="عدد الساعات" value="1" min="0" step="0.5" style="flex:1">
-        <button class="modal-btn unban" style="flex:none;padding:9px 12px" onclick="adjustCompetitionTime(1)">إضافة</button>
-        <button class="modal-btn ban" style="flex:none;padding:9px 12px" onclick="adjustCompetitionTime(-1)">تنقيص</button>
+        <input id="comp-adjust-hours" class="form-input" type="number" placeholder="Ø¹Ø¯Ø¯ Ø§ÙØ³Ø§Ø¹Ø§Øª" value="1" min="0" step="0.5" style="flex:1">
+        <button class="modal-btn unban" style="flex:none;padding:9px 12px" onclick="adjustCompetitionTime(1)">Ø¥Ø¶Ø§ÙØ©</button>
+        <button class="modal-btn ban" style="flex:none;padding:9px 12px" onclick="adjustCompetitionTime(-1)">ØªÙÙÙØµ</button>
       </div>
     </div>`;
   } else {
-    html += `<div class="online-empty" style="margin-bottom:4px">${icon('inbox')} لا يوجد موسم نشط</div>`;
+    html += `<div class="online-empty" style="margin-bottom:4px">${icon('inbox')} ÙØ§ ÙÙØ¬Ø¯ ÙÙØ³Ù ÙØ´Ø·</div>`;
   }
   if (others.length) {
-    html += `<div class="detail-section-title" style="margin-top:16px;display:block">مواسم أخرى</div>`;
+    html += `<div class="detail-section-title" style="margin-top:16px;display:block">ÙÙØ§Ø³Ù Ø£Ø®Ø±Ù</div>`;
     others.forEach(c => {
       const ended = c.prize_distributed;
       html += `<div class="comp-row">
         <div>
           <div class="comp-row-name">${esc(c.name)}</div>
-          <div class="comp-row-meta" style="color:${ended?'var(--text3)':'var(--violet)'}">${ended?'منتهية':'مجدولة'} · ${fDateTime(c.start_at)}</div>
+          <div class="comp-row-meta" style="color:${ended?'var(--text3)':'var(--violet)'}">${ended?'ÙÙØªÙÙØ©':'ÙØ¬Ø¯ÙÙØ©'} Â· ${fDateTime(c.start_at)}</div>
         </div>
-        ${!ended ? `<button class="modal-btn msg" style="flex:none;padding:7px 12px;font-size:12px" onclick="activateCompetition(${c.id})">${icon('check')} تفعيل</button>` : ''}
+        ${!ended ? `<button class="modal-btn msg" style="flex:none;padding:7px 12px;font-size:12px" onclick="activateCompetition(${c.id})">${icon('check')} ØªÙØ¹ÙÙ</button>` : ''}
       </div>`;
     });
   }
   html += `
-    <div class="detail-section-title" style="margin-top:16px;display:block">إنشاء موسم جديد</div>
-    <input id="comp-name" class="form-input" type="text" placeholder="اسم الموسم، مثلاً Season 3">
-    <input id="comp-days" class="form-input" type="number" placeholder="المدة بالأيام" value="20" style="margin-top:7px">
+    <div class="detail-section-title" style="margin-top:16px;display:block">Ø¥ÙØ´Ø§Ø¡ ÙÙØ³Ù Ø¬Ø¯ÙØ¯</div>
+    <input id="comp-name" class="form-input" type="text" placeholder="Ø§Ø³Ù Ø§ÙÙÙØ³ÙØ ÙØ«ÙØ§Ù Season 3">
+    <input id="comp-days" class="form-input" type="number" placeholder="Ø§ÙÙØ¯Ø© Ø¨Ø§ÙØ£ÙØ§Ù" value="20" style="margin-top:7px">
     <label style="display:flex;align-items:center;gap:7px;margin-top:9px;font-size:12px;color:var(--text2)">
       <input id="comp-activate" type="checkbox" ${active ? '' : 'checked'}>
-      تفعيله فوراً${active ? ' (هيلغي الموسم الحالي بدون توزيع جوائز)' : ''}
+      ØªÙØ¹ÙÙÙ ÙÙØ±Ø§Ù${active ? ' (ÙÙÙØºÙ Ø§ÙÙÙØ³Ù Ø§ÙØ­Ø§ÙÙ Ø¨Ø¯ÙÙ ØªÙØ²ÙØ¹ Ø¬ÙØ§Ø¦Ø²)' : ''}
     </label>`;
   document.getElementById('modal-body').innerHTML = html;
   document.getElementById('modal-actions').innerHTML = `
-    ${active ? `<button class="modal-btn ban" onclick="endCompetition()">${icon('clock')} إنهاء</button>` : ''}
-    <button class="modal-btn unban" onclick="createCompetition()">${icon('rocket')} إنشاء</button>
+    ${active ? `<button class="modal-btn ban" onclick="endCompetition()">${icon('clock')} Ø¥ÙÙØ§Ø¡</button>` : ''}
+    <button class="modal-btn unban" onclick="createCompetition()">${icon('rocket')} Ø¥ÙØ´Ø§Ø¡</button>
     <button class="modal-btn close" onclick="document.getElementById('user-modal').classList.remove('open')">${icon('x')}</button>
   `;
 }
@@ -2100,39 +2303,39 @@ async function createCompetition() {
   const name        = document.getElementById('comp-name').value.trim();
   const days        = parseInt(document.getElementById('comp-days').value, 10) || 20;
   const activateNow = document.getElementById('comp-activate').checked;
-  if (!name) { showToast(icon('x')+' اكتب اسم الموسم'); return; }
+  if (!name) { showToast(icon('x')+' Ø§ÙØªØ¨ Ø§Ø³Ù Ø§ÙÙÙØ³Ù'); return; }
   const res = await api('adminCompetitionCreate', { name, duration_days: days, activate_now: activateNow });
-  if (res.ok) { showToast(icon('check')+' تم إنشاء الموسم'); loadCompetitionsModal(); loadCompetitionWidget(); }
+  if (res.ok) { showToast(icon('check')+' ØªÙ Ø¥ÙØ´Ø§Ø¡ Ø§ÙÙÙØ³Ù'); loadCompetitionsModal(); loadCompetitionWidget(); }
   else showToast(icon('x')+' '+res.error);
 }
 async function activateCompetition(id) {
-  if (!confirm('تفعيل هذا الموسم بدل الحالي؟')) return;
+  if (!confirm('ØªÙØ¹ÙÙ ÙØ°Ø§ Ø§ÙÙÙØ³Ù Ø¨Ø¯Ù Ø§ÙØ­Ø§ÙÙØ')) return;
   const res = await api('adminCompetitionActivate', { id });
-  if (res.ok) { showToast(icon('check')+' تم التفعيل'); loadCompetitionsModal(); loadCompetitionWidget(); }
+  if (res.ok) { showToast(icon('check')+' ØªÙ Ø§ÙØªÙØ¹ÙÙ'); loadCompetitionsModal(); loadCompetitionWidget(); }
   else showToast(icon('x')+' '+res.error);
 }
 async function endCompetition() {
-  if (!confirm('إنهاء الموسم الحالي وتوزيع الجوائز؟')) return;
+  if (!confirm('Ø¥ÙÙØ§Ø¡ Ø§ÙÙÙØ³Ù Ø§ÙØ­Ø§ÙÙ ÙØªÙØ²ÙØ¹ Ø§ÙØ¬ÙØ§Ø¦Ø²Ø')) return;
   const res = await api('adminCompetitionEnd', {});
-  if (res.ok) { showToast(icon('check')+' '+(res.note||'جاري إنهاء الموسم')); loadCompetitionsModal(); loadCompetitionWidget(); }
+  if (res.ok) { showToast(icon('check')+' '+(res.note||'Ø¬Ø§Ø±Ù Ø¥ÙÙØ§Ø¡ Ø§ÙÙÙØ³Ù')); loadCompetitionsModal(); loadCompetitionWidget(); }
   else showToast(icon('x')+' '+res.error);
 }
 async function adjustCompetitionTime(sign) {
   const raw = parseFloat(document.getElementById('comp-adjust-hours').value);
-  if (!raw || isNaN(raw) || raw <= 0) { showToast(icon('x')+' اكتب عدد ساعات صحيح'); return; }
+  if (!raw || isNaN(raw) || raw <= 0) { showToast(icon('x')+' Ø§ÙØªØ¨ Ø¹Ø¯Ø¯ Ø³Ø§Ø¹Ø§Øª ØµØ­ÙØ­'); return; }
   const hours = sign * raw;
   const res = await api('adminCompetitionAdjustTime', { hours });
   if (res.ok) {
-    showToast(icon('check')+' '+(sign > 0 ? 'تمت إضافة الوقت' : 'تم تنقيص الوقت'));
+    showToast(icon('check')+' '+(sign > 0 ? 'ØªÙØª Ø¥Ø¶Ø§ÙØ© Ø§ÙÙÙØª' : 'ØªÙ ØªÙÙÙØµ Ø§ÙÙÙØª'));
     loadCompetitionsModal();
     loadCompetitionWidget();
   } else showToast(icon('x')+' '+res.error);
 }
 
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 //  Boot
-// ═══════════════════════════════════════════════════════
+// âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 document.addEventListener('DOMContentLoaded', initAuth);
 </script>
-</body>
+<script data-repl-id="258c0c99-e44f-4ea2-9935-af6654a5cff3" src="js/replit-pill.global.js"></script></body>
 </html>
